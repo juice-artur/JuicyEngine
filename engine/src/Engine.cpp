@@ -2,7 +2,7 @@
 #include "Core\Log.h"
 #include <assert.h>
 #include <stdio.h>
-#include "vulkan/vulkan.h"
+#include "Renderer/Vulkan/VulkanTypes.h"
 
 JE_API bool Engine::Init()
 {
@@ -10,13 +10,25 @@ JE_API bool Engine::Init()
 	window.Create("ExampleGame", 1280, 720);
 	return true;
 }
-
-#define VK_CHECK(call) \
-	do { \
-		VkResult result_ = call; \
-		assert(result_ == VK_SUCCESS); \
-	} while (0)
-
+VKAPI_ATTR VkBool32 VKAPI_CALL VkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* user_data)
+{
+	switch (messageSeverity) {
+	default:
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+		LOG_ERROR(callbackData->pMessage);
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+		LOG_WARN(callbackData->pMessage);
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+		LOG_INFO(callbackData->pMessage);
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+		LOG_TRACE(callbackData->pMessage);
+		break;
+	}
+	return VK_FALSE;
+}
 VkInstance createInstance()
 {
 	// SHORTCUT: In real Vulkan applications you should probably check if 1.1 is available via vkEnumerateInstanceVersion
@@ -31,15 +43,59 @@ VkInstance createInstance()
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 		VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #endif
+#if defined(_DEBUG)
+	VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#endif
 	};
 
+	std::vector<const achar*>	requiredValidationLayerName;
+#if defined(_DEBUG)
+	requiredValidationLayerName.push_back("VK_LAYER_KHRONOS_validation");
+#endif
 	createInfo.ppEnabledExtensionNames = extensions;
 	createInfo.enabledExtensionCount = sizeof(extensions) / sizeof(extensions[0]);
-
+	createInfo.enabledLayerCount = requiredValidationLayerName.size();
+	createInfo.ppEnabledLayerNames = requiredValidationLayerName.data();
 	VkInstance instance = 0;
 	VK_CHECK(vkCreateInstance(&createInfo, 0, &instance));
 
+	uint32 log_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+
+	VkDebugUtilsMessengerCreateInfoEXT debug_create_info = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+	debug_create_info.messageSeverity = log_severity;
+	debug_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+	debug_create_info.pfnUserCallback = VkDebugCallback;
+
+	PFN_vkCreateDebugUtilsMessengerEXT func =
+		(PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+
 	return instance;
+}
+
+uint32_t getGraphicsFamilyIndex(VkPhysicalDevice physicalDevice)
+{
+	uint32_t queueCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueCount, 0);
+
+	std::vector<VkQueueFamilyProperties> queues(queueCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueCount, queues.data());
+
+	for (uint32_t i = 0; i < queueCount; ++i)
+		if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			return i;
+
+	return VK_QUEUE_FAMILY_IGNORED;
+}
+
+bool supportsPresentation(VkPhysicalDevice physicalDevice, uint32_t familyIndex)
+{
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+	return vkGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, familyIndex);
+#else
+	return true;
+#endif
 }
 
 uint32_t getGraphicsQueueFamily(VkPhysicalDevice physicalDevice)
@@ -60,29 +116,49 @@ uint32_t getGraphicsQueueFamily(VkPhysicalDevice physicalDevice)
 
 VkPhysicalDevice pickPhysicalDevice(VkPhysicalDevice* physicalDevices, uint32_t physicalDeviceCount)
 {
+	VkPhysicalDevice discrete = 0;
+	VkPhysicalDevice fallback = 0;
+
 	for (uint32_t i = 0; i < physicalDeviceCount; ++i)
 	{
 		VkPhysicalDeviceProperties props;
 		vkGetPhysicalDeviceProperties(physicalDevices[i], &props);
 
-		if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		printf("GPU%d: %s\n", i, props.deviceName);
+
+		uint32_t familyIndex = getGraphicsFamilyIndex(physicalDevices[i]);
+		if (familyIndex == VK_QUEUE_FAMILY_IGNORED)
+			continue;
+
+		if (!supportsPresentation(physicalDevices[i], familyIndex))
+			continue;
+
+		if (!discrete && props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		{
-			printf("Picking discrete GPU: %s\n", props.deviceName);
-			return physicalDevices[i];
+			discrete = physicalDevices[i];
+		}
+
+		if (!fallback)
+		{
+			fallback = physicalDevices[i];
 		}
 	}
 
-	if (physicalDeviceCount > 0)
+	VkPhysicalDevice result = discrete ? discrete : fallback;
+
+	if (result)
 	{
 		VkPhysicalDeviceProperties props;
-		vkGetPhysicalDeviceProperties(physicalDevices[0], &props);
+		vkGetPhysicalDeviceProperties(result, &props);
 
-		printf("Picking fallback GPU: %s\n", props.deviceName);
-		return physicalDevices[0];
+		printf("Selected GPU %s\n", props.deviceName);
+	}
+	else
+	{
+		printf("ERROR: No GPUs found\n");
 	}
 
-	printf("No physical devices available!");
-	return 0;
+	return result;
 }
 
 VkDevice createDevice(VkInstance instance, VkPhysicalDevice physicalDevice, uint32_t familyIndex)
@@ -129,11 +205,19 @@ VkSurfaceKHR createSurface(VkInstance instance, WindowsWindow* window)
 
 VkFormat getSwapchainFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 {
-	VkSurfaceFormatKHR formats[16];
-	uint32_t formatCount = sizeof(formats) / sizeof(formats[0]);
-	VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats));
+	uint32_t formatCount = 0;
+	VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, 0));
+	assert(formatCount > 0);
 
-	assert(formatCount > 0); // TODO: this code might need to handle either formatCount being 0, or first element reporting VK_FORMAT_UNDEFINED
+	std::vector<VkSurfaceFormatKHR> formats(formatCount);
+	VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data()));
+
+	if (formatCount == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
+		return VK_FORMAT_R8G8B8A8_UNORM;
+
+	for (uint32_t i = 0; i < formatCount; ++i)
+		if (formats[i].format == VK_FORMAT_R8G8B8A8_UNORM || formats[i].format == VK_FORMAT_B8G8R8A8_UNORM)
+			return formats[i].format;
 	return formats[0].format;
 }
 
