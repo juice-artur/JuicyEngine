@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include "Renderer/Vulkan/VulkanTypes.h"
-
+#include <algorithm>
 JE_API bool Engine::Init()
 {
 	Log::Init();
@@ -218,14 +218,24 @@ VkFormat getSwapchainFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surfac
 	for (uint32_t i = 0; i < formatCount; ++i)
 		if (formats[i].format == VK_FORMAT_R8G8B8A8_UNORM || formats[i].format == VK_FORMAT_B8G8R8A8_UNORM)
 			return formats[i].format;
+
 	return formats[0].format;
 }
 
-VkSwapchainKHR createSwapchain(VkDevice device, VkSurfaceKHR surface, uint32_t familyIndex, VkFormat format, uint32_t width, uint32_t height)
+VkSwapchainKHR createSwapchain(VkDevice device, VkSurfaceKHR surface, VkSurfaceCapabilitiesKHR surfaceCaps, uint32_t familyIndex, VkFormat format, uint32_t width, uint32_t height)
 {
+	VkCompositeAlphaFlagBitsKHR surfaceComposite =
+		(surfaceCaps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
+		? VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
+		: (surfaceCaps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR)
+		? VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR
+		: (surfaceCaps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR)
+		? VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR
+		: VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+
 	VkSwapchainCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
 	createInfo.surface = surface;
-	createInfo.minImageCount = 2;
+	createInfo.minImageCount = max(2u, surfaceCaps.minImageCount);
 	createInfo.imageFormat = format;
 	createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	createInfo.imageExtent.width = width;
@@ -235,14 +245,11 @@ VkSwapchainKHR createSwapchain(VkDevice device, VkSurfaceKHR surface, uint32_t f
 	createInfo.queueFamilyIndexCount = 1;
 	createInfo.pQueueFamilyIndices = &familyIndex;
 	createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo.compositeAlpha = surfaceComposite;
 	createInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 
 	VkSwapchainKHR swapchain = 0;
-	auto result = vkCreateSwapchainKHR(device, &createInfo, 0, &swapchain);
-	assert(result == VK_SUCCESS);
-		//VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, 0, &swapchain));
-
+	VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, 0, &swapchain));
 
 	return swapchain;
 }
@@ -434,6 +441,25 @@ VkPipeline createGraphicsPipeline(VkDevice device, VkPipelineCache pipelineCache
 
 	return pipeline;
 }
+
+VkImageMemoryBarrier imageBarrier(VkImage image, VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask, VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+	VkImageMemoryBarrier result = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+
+	result.srcAccessMask = srcAccessMask;
+	result.dstAccessMask = dstAccessMask;
+	result.oldLayout = oldLayout;
+	result.newLayout = newLayout;
+	result.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	result.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	result.image = image;
+	result.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	result.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	result.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+	return result;
+}
+
 JE_API void Engine::Tick()
 {
 	VkInstance instance = createInstance();
@@ -446,7 +472,9 @@ JE_API void Engine::Tick()
 	VkPhysicalDevice physicalDevice = pickPhysicalDevice(physicalDevices, physicalDeviceCount);
 	assert(physicalDevice);
 
-	uint32_t familyIndex = getGraphicsQueueFamily(physicalDevice);
+	uint32_t familyIndex = getGraphicsFamilyIndex(physicalDevice);
+	assert(familyIndex != VK_QUEUE_FAMILY_IGNORED);
+
 	VkDevice device = createDevice(instance, physicalDevice, familyIndex);
 	assert(device);
 
@@ -459,9 +487,13 @@ JE_API void Engine::Tick()
 
 	int windowWidth = 1280, windowHeight = 720;
 
+
 	VkFormat swapchainFormat = getSwapchainFormat(physicalDevice, surface);
 
-	VkSwapchainKHR swapchain = createSwapchain(device, surface, familyIndex, swapchainFormat, windowWidth, windowHeight);
+	VkSurfaceCapabilitiesKHR surfaceCaps;
+	VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCaps));
+
+	VkSwapchainKHR swapchain = createSwapchain(device, surface, surfaceCaps, familyIndex, swapchainFormat, windowWidth, windowHeight);
 	assert(swapchain);
 
 	VkSemaphore acquireSemaphore = createSemaphore(device);
@@ -491,19 +523,20 @@ JE_API void Engine::Tick()
 	VkPipeline trianglePipeline = createGraphicsPipeline(device, pipelineCache, renderPass, triangleVS, triangleFS, triangleLayout);
 	assert(trianglePipeline);
 
-	VkImage swapchainImages[16];
-	uint32_t swapchainImageCount = sizeof(swapchainImages) / sizeof(swapchainImages[0]);
-	VK_CHECK(vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages));
-	VK_CHECK(vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, 0)); // TODO: workaround for Intel graphics driver bug; clean this up
+	uint32_t swapchainImageCount = 0;
+	VK_CHECK(vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, 0));
 
-	VkImageView swapchainImageViews[16];
+	std::vector<VkImage> swapchainImages(swapchainImageCount);
+	VK_CHECK(vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages.data()));
+
+	std::vector<VkImageView> swapchainImageViews(swapchainImageCount);
 	for (uint32_t i = 0; i < swapchainImageCount; ++i)
 	{
 		swapchainImageViews[i] = createImageView(device, swapchainImages[i], swapchainFormat);
 		assert(swapchainImageViews[i]);
 	}
 
-	VkFramebuffer swapchainFramebuffers[16];
+	std::vector<VkFramebuffer> swapchainFramebuffers(swapchainImageCount);
 	for (uint32_t i = 0; i < swapchainImageCount; ++i)
 	{
 		swapchainFramebuffers[i] = createFramebuffer(device, renderPass, swapchainImageViews[i], windowWidth, windowHeight);
@@ -520,6 +553,7 @@ JE_API void Engine::Tick()
 
 	VkCommandBuffer commandBuffer = 0;
 	VK_CHECK(vkAllocateCommandBuffers(device, &allocateInfo, &commandBuffer));
+
 	bool				bExit = false;
 
 
@@ -537,67 +571,102 @@ JE_API void Engine::Tick()
 			break;
 		}
 	}
+	uint32_t imageIndex = 0;
+	VK_CHECK(vkAcquireNextImageKHR(device, swapchain, ~0ull, acquireSemaphore, VK_NULL_HANDLE, &imageIndex));
 
-		uint32_t imageIndex = 0;
-		VK_CHECK(vkAcquireNextImageKHR(device, swapchain, ~0ull, acquireSemaphore, VK_NULL_HANDLE, &imageIndex));
+	VK_CHECK(vkResetCommandPool(device, commandPool, 0));
 
-		VK_CHECK(vkResetCommandPool(device, commandPool, 0));
+	VkCommandBufferBeginInfo beginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		VkCommandBufferBeginInfo beginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
-		VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+	VkImageMemoryBarrier renderBeginBarrier = imageBarrier(swapchainImages[imageIndex], 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, 0, 0, 0, 1, &renderBeginBarrier);
 
-		VkClearColorValue color = { 48.f / 255.f, 10.f / 255.f, 36.f / 255.f, 1 };
-		VkClearValue clearColor = { color };
+	VkClearColorValue color = { 48.f / 255.f, 10.f / 255.f, 36.f / 255.f, 1 };
+	VkClearValue clearColor = { color };
 
-		VkRenderPassBeginInfo passBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-		passBeginInfo.renderPass = renderPass;
-		passBeginInfo.framebuffer = swapchainFramebuffers[imageIndex];
-		passBeginInfo.renderArea.extent.width = windowWidth;
-		passBeginInfo.renderArea.extent.height = windowHeight;
-		passBeginInfo.clearValueCount = 1;
-		passBeginInfo.pClearValues = &clearColor;
+	VkRenderPassBeginInfo passBeginInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+	passBeginInfo.renderPass = renderPass;
+	passBeginInfo.framebuffer = swapchainFramebuffers[imageIndex];
+	passBeginInfo.renderArea.extent.width = windowWidth;
+	passBeginInfo.renderArea.extent.height = windowHeight;
+	passBeginInfo.clearValueCount = 1;
+	passBeginInfo.pClearValues = &clearColor;
 
-		vkCmdBeginRenderPass(commandBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(commandBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		VkViewport viewport = { 0, float(windowHeight), float(windowWidth), -float(windowHeight), 0, 1 };
-		VkRect2D scissor = { {0, 0}, {uint32_t(windowWidth), uint32_t(windowHeight)} };
+	VkViewport viewport = { 0, float(windowHeight), float(windowWidth), -float(windowHeight), 0, 1 };
+	VkRect2D scissor = { {0, 0}, {uint32_t(windowWidth), uint32_t(windowHeight)} };
 
-		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipeline);
-		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trianglePipeline);
+	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
-		vkCmdEndRenderPass(commandBuffer);
+	vkCmdEndRenderPass(commandBuffer);
 
-		VK_CHECK(vkEndCommandBuffer(commandBuffer));
+	VkImageMemoryBarrier renderEndBarrier = imageBarrier(swapchainImages[imageIndex], VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, 0, 0, 0, 1, &renderEndBarrier);
 
-		VkPipelineStageFlags submitStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	VK_CHECK(vkEndCommandBuffer(commandBuffer));
 
-		VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &acquireSemaphore;
-		submitInfo.pWaitDstStageMask = &submitStageMask;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &releaseSemaphore;
+	VkPipelineStageFlags submitStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-		vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+	VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &acquireSemaphore;
+	submitInfo.pWaitDstStageMask = &submitStageMask;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &releaseSemaphore;
 
-		VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
-		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = &releaseSemaphore;
-		presentInfo.swapchainCount = 1;
-		presentInfo.pSwapchains = &swapchain;
-		presentInfo.pImageIndices = &imageIndex;
+	VK_CHECK(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
 
-		VK_CHECK(vkQueuePresentKHR(queue, &presentInfo));
+	VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &releaseSemaphore;
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = &swapchain;
+	presentInfo.pImageIndices = &imageIndex;
 
-		VK_CHECK(vkDeviceWaitIdle(device));
+	VK_CHECK(vkQueuePresentKHR(queue, &presentInfo));
+
+	VK_CHECK(vkDeviceWaitIdle(device));
+
 	}
+
+	VK_CHECK(vkDeviceWaitIdle(device));
+
+	vkDestroyCommandPool(device, commandPool, 0);
+
+	for (uint32_t i = 0; i < swapchainImageCount; ++i)
+		vkDestroyFramebuffer(device, swapchainFramebuffers[i], 0);
+
+	for (uint32_t i = 0; i < swapchainImageCount; ++i)
+		vkDestroyImageView(device, swapchainImageViews[i], 0);
+
+	vkDestroyPipeline(device, trianglePipeline, 0);
+	vkDestroyPipelineLayout(device, triangleLayout, 0);
+
+	vkDestroyShaderModule(device, triangleFS, 0);
+	vkDestroyShaderModule(device, triangleVS, 0);
+
+	vkDestroyRenderPass(device, renderPass, 0);
+
+	vkDestroySemaphore(device, releaseSemaphore, 0);
+	vkDestroySemaphore(device, acquireSemaphore, 0);
+
+	vkDestroySwapchainKHR(device, swapchain, 0);
+	vkDestroySurfaceKHR(instance, surface, 0);
+
 	window.Close();
+
+	vkDestroyDevice(device, 0);
+
+
 	vkDestroyInstance(instance, 0);
 }
