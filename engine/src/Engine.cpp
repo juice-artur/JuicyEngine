@@ -2,7 +2,7 @@
 #include "Core\Log.h"
 #include <assert.h>
 #include <stdio.h>
-#include "Renderer/Vulkan/VulkanTypes.h"
+#include "Renderer/VulkanTypes.h"
 #include <algorithm>
 JE_API bool Engine::Init()
 {
