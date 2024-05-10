@@ -9,6 +9,11 @@ jobs:
   format-checking:
     name: Format Checking  
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path:
+          - 'testbed/src'
+          - 'engine/src'
 
     steps:
       - name: Checkout
@@ -18,4 +23,4 @@ jobs:
         uses: jidicula/clang-format-action@v4.9.0
         with:
           clang-format-version: '13'
-          check-path: 'src'	    
+          check-path: ${{ matrix.path }} 
