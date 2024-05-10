@@ -6,7 +6,6 @@ project(${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 17)
 
-
 set(INCLUDE_DIRS 
     "$ENV{VULKAN_SDK}/Include"
 )
@@ -20,12 +19,13 @@ set(LINKER_FLAGS
 add_compile_definitions(D_DEBUG JE_EXPORT)
 
 
-set(SRC_FILES src/test.cpp)
+set(SRC_FILES src/test.cpp
+src/core/log.cpp)
 
 set(INCLUDE_FILES src/defines.h
                 src/test.h 
+                src/core/log.h
 )
-
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
 	${SRC_FILES} ${INCLUDE_FILES}
@@ -34,6 +34,10 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
 add_library(${PROJECT_NAME} SHARED ${SRC_FILES} ${INCLUDE_FILES})
 
 target_include_directories(${PROJECT_NAME}  PUBLIC ${INCLUDE_DIRS} ${HEADERS})
+
+add_subdirectory(external/spdlog  ${CMAKE_CURRENT_BINARY_DIR}/spdlog)
+target_link_libraries(${PROJECT_NAME} PRIVATE spdlog)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>
