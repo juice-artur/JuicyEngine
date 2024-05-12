@@ -21,7 +21,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
 )
 
 
-add_executable(${PROJECT_NAME} ${SRC_FILES} ${INCLUDE_FILES})
+add_executable(${PROJECT_NAME} ${SRC_FILES} ${INCLUDE_FILES} Resources/testbed.rc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../bin/$<CONFIG>/JuicyEngine.lib")
 set_target_properties(${PROJECT_NAME} PROPERTIES
