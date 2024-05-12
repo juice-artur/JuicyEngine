@@ -4,3 +4,6 @@ engine/bin/
 testbed/build/
 
 testbed/bin/
+bin/
+
+testbed/**/*.aps

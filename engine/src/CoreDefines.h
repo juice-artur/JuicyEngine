@@ -1,4 +1,5 @@
 #pragma once
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define JE_PLATFORM_WINDOWS 1
 #ifndef _WIN64
