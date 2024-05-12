@@ -21,14 +21,20 @@ add_compile_definitions(D_DEBUG JE_EXPORT)
 set(SRC_FILES src/Engine.cpp
 src/Core/Log.cpp
 src/Platform/Windows/PlatformWindows.cpp)
+if(WIN32)
+    list(APPEND SRC_FILES src/Platform/Windows/PlatformWindows.cpp)
+endif()
 
 set(INCLUDE_FILES src/CoreDefines.h
                 src/Core/Log.h
                 src/Platform/Platform.h
                 src/Engine.h
-                src/Platform/Windows/PlatformWindows.h
 )
 
+
+if(WIN32)
+    list(APPEND INCLUDE_FILES src/Platform/Windows/PlatformWindows.h)
+endif()
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
 	${SRC_FILES} ${INCLUDE_FILES}
