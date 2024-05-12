@@ -1,7 +1,10 @@
-#include <test.h>
+#include <Engine.h>
 
 int main(void)
 {
-	print_int(42);
+	Engine engine;
+	engine.Init();
+
+	engine.Tick();
 	return 0;
 }

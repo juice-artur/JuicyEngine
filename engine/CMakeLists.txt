@@ -18,13 +18,17 @@ set(LINKER_FLAGS
 add_compile_definitions(D_DEBUG JE_EXPORT)
 
 
-set(SRC_FILES src/test.cpp
-src/core/log.cpp)
+set(SRC_FILES src/Engine.cpp
+src/Core/Log.cpp
+src/Platform/Windows/PlatformWindows.cpp)
 
-set(INCLUDE_FILES src/defines.h
-                src/test.h 
-                src/core/log.h
+set(INCLUDE_FILES src/CoreDefines.h
+                src/Core/Log.h
+                src/Platform/Platform.h
+                src/Engine.h
+                src/Platform/Windows/PlatformWindows.h
 )
+
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
 	${SRC_FILES} ${INCLUDE_FILES}
@@ -32,7 +36,12 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
 
 add_library(${PROJECT_NAME} SHARED ${SRC_FILES} ${INCLUDE_FILES})
 
-target_include_directories(${PROJECT_NAME}  PUBLIC ${INCLUDE_DIRS} ${HEADERS})
+target_include_directories(${PROJECT_NAME}  PUBLIC ${INCLUDE_DIRS}   )
+
+  
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/Platform
+  ${CMAKE_SOURCE_DIR}/src/Core)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE spdlog)
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
