@@ -48,14 +48,14 @@ JE_API bool PlatformWindows::Startup(const char* applicationName, int x, int y, 
 	HICON icon = LoadIcon(hInstance, IDI_APPLICATION);
 	WNDCLASSA wc;
 	memset(&wc, 0, sizeof(wc));
-	wc.style = CS_DBLCLKS;	
+	wc.style = CS_DBLCLKS;
 	wc.lpfnWndProc = win32_process_message;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInstance;
 	wc.hIcon = icon;
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW); 
-	wc.hbrBackground = NULL;				
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground = NULL;
 	wc.lpszClassName = "je_window_class";
 
 	if (!RegisterClassA(&wc))
@@ -65,18 +65,18 @@ JE_API bool PlatformWindows::Startup(const char* applicationName, int x, int y, 
 	}
 
 	// Create window
-	unsigned int  clientX = x;
-	unsigned int  clientY = y;
-	unsigned int  clientWidth = width;
-	unsigned int  clientHeight = height;
+	unsigned int clientX = x;
+	unsigned int clientY = y;
+	unsigned int clientWidth = width;
+	unsigned int clientHeight = height;
 
-	unsigned int  windowX = clientX;
-	unsigned int  windowY = clientY;
-	unsigned int  windowWidth = clientWidth;
-	unsigned int  windowHeight = clientHeight;
+	unsigned int windowX = clientX;
+	unsigned int windowY = clientY;
+	unsigned int windowWidth = clientWidth;
+	unsigned int windowHeight = clientHeight;
 
-	unsigned int  windowStyle = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION;
-	unsigned int  windowExStyle = WS_EX_APPWINDOW;
+	unsigned int windowStyle = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION;
+	unsigned int windowExStyle = WS_EX_APPWINDOW;
 
 	windowStyle |= WS_MAXIMIZEBOX;
 	windowStyle |= WS_MINIMIZEBOX;
@@ -91,8 +91,8 @@ JE_API bool PlatformWindows::Startup(const char* applicationName, int x, int y, 
 	windowWidth += border_rect.right - border_rect.left;
 	windowHeight += border_rect.bottom - border_rect.top;
 
-	HWND handle = CreateWindowExA(windowExStyle, "je_window_class", applicationName, windowStyle, windowX, windowY, windowWidth,
-		windowHeight, 0, 0, hInstance, 0);
+	HWND handle = CreateWindowExA(
+		windowExStyle, "je_window_class", applicationName, windowStyle, windowX, windowY, windowWidth, windowHeight, 0, 0, hInstance, 0);
 
 	if (handle == 0)
 	{

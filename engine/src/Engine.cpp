@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include "Core/Log.h"
-#include "SDL3/SDL.h"
-#include <SDL_init.h>
 #include "Engine.h"
 #include "Platform.h"
 
@@ -31,5 +29,4 @@ JE_API void Engine::Tick()
 		platform->PumpMessages();
 	}
 	platform->Shutdown();
-
 }
