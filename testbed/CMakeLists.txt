@@ -11,9 +11,11 @@ include_directories(GLOB_RECURSE ../engine/src)
 
 add_compile_definitions(D_DEBUG JE_IMPORT)
 
-set(SRC_FILES src/main.cpp)
+set(SRC_FILES src/Game.cpp
+            src/Entry.cpp
+)
 
-set(INCLUDE_FILES)
+set(INCLUDE_FILES src/Game.h)
 
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES

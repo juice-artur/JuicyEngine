@@ -18,7 +18,7 @@ set(LINKER_FLAGS
 add_compile_definitions(D_DEBUG JE_EXPORT)
 
 
-set(SRC_FILES src/Engine.cpp
+set(SRC_FILES src/Core/Application.cpp
 src/Core/Log.cpp
 src/Platform/Windows/PlatformWindows.cpp)
 if(WIN32)
@@ -28,7 +28,9 @@ endif()
 set(INCLUDE_FILES src/CoreDefines.h
                 src/Core/Log.h
                 src/Platform/Platform.h
-                src/Engine.h
+                src/Core/Application.h
+                src/GameTypes.h
+                src/Entry.h
 )
 
 
