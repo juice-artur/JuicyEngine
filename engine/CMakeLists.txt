@@ -21,8 +21,10 @@ add_compile_definitions(D_DEBUG JE_EXPORT)
 set(SRC_FILES src/Core/Application.cpp
 src/Core/Log.cpp
 src/Platform/Windows/PlatformWindows.cpp)
+
 if(WIN32)
-    list(APPEND SRC_FILES src/Platform/Windows/PlatformWindows.cpp)
+    list(APPEND SRC_FILES src/Platform/Windows/PlatformWindows.cpp
+    src/Platform/Windows/WindowsWindow.cpp)
 endif()
 
 set(INCLUDE_FILES src/CoreDefines.h
@@ -31,11 +33,15 @@ set(INCLUDE_FILES src/CoreDefines.h
                 src/Core/Application.h
                 src/GameTypes.h
                 src/Entry.h
+                src/Platform/Common/BaseWindow.h
+                src/Platform/Common/WindowEvent.h
 )
 
 
 if(WIN32)
-    list(APPEND INCLUDE_FILES src/Platform/Windows/PlatformWindows.h)
+    list(APPEND INCLUDE_FILES src/Platform/Windows/PlatformWindows.h
+    src/Platform/Windows/WindowsWindow.h
+    src/Platform/Windows/WindowsPlatform.h)
 endif()
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
@@ -52,6 +58,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/src/Core)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE spdlog)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
 
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -60,6 +67,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/$<CONFIG>
 )
 
-
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}> $<TARGET_FILE_DIR:${PROJECT_NAME}>
+  COMMAND_EXPAND_LISTS
+  )
 
 add_subdirectory(external)

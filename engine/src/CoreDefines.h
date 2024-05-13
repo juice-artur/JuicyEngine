@@ -28,3 +28,11 @@
 #define JE_API
 #endif
 #endif
+
+#if JE_PLATFORM_WINDOWS
+#include "Platform\Windows\WindowsPlatform.h"
+#elif __ANDROID__
+#include "AndroidPlatform.h"
+#else
+#error Unknown platform
+#endif

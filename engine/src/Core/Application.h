@@ -6,10 +6,6 @@ class Platform;
 
 typedef struct ApplicationConfig
 {
-	int startPosX;
-
-	int startPosY;
-
 	int startWidth;
 
 	int startHeight;

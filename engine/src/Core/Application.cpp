@@ -33,8 +33,7 @@ JE_API bool Application::Init(Game* gameInst)
 	is_running = TRUE;
 	is_suspended = FALSE;
 
-	if (!platform->Startup(gameInst->app_config.name, gameInst->app_config.startPosX, gameInst->app_config.startPosY,
-			gameInst->app_config.startWidth, gameInst->app_config.startHeight))
+	if (!platform->Startup(gameInst->app_config.name, gameInst->app_config.startWidth, gameInst->app_config.startHeight))
 	{
 		return FALSE;
 	}
