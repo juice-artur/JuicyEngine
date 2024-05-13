@@ -18,6 +18,5 @@ bool CreateGame(Game* out_game)
 	out_game->initialize = game_initialize;
 	out_game->on_resize = game_on_resize;
 
-
 	return true;
 }
