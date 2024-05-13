@@ -2,6 +2,8 @@
 
 #include "CoreDefines.h"
 
+class BaseWindow;
+
 class Platform
 {
 public:
@@ -10,6 +12,5 @@ public:
 	virtual bool PumpMessages() = 0;
 
 	virtual double GetAbsoluteTime() = 0;
-
-private:
+	virtual const BaseWindow& const GetWindow() = 0;
 };

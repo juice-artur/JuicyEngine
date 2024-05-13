@@ -53,17 +53,16 @@ JE_API bool Application::Init(Game* gameInst)
 
 JE_API void Application::Tick()
 {
-	while (true)
-	{
-		platform->PumpMessages();
-	}
-	platform->Shutdown();
 
 	while (is_running)
 	{
-		if (!platform->PumpMessages())
+		WindowEvent windowEvent;
+		while (platform->GetWindow().PollEvent(windowEvent))
 		{
-			is_running = FALSE;
+			switch (windowEvent.type)
+			{
+				case WET_WindowClose: is_running = false;
+			}
 		}
 
 		if (!is_suspended)
@@ -75,7 +74,6 @@ JE_API void Application::Tick()
 				break;
 			}
 
-			// Call the game's render routine.
 			if (!gameInst->render(0))
 			{
 				LOG_CRITICAL("Game render failed, shutting down.");

@@ -30,3 +30,8 @@ JE_API double PlatformWindows::GetAbsoluteTime()
 	QueryPerformanceCounter(&nowTime);
 	return (float)nowTime.QuadPart * clockFrequency;
 }
+
+const BaseWindow& const PlatformWindows::GetWindow()
+{
+	return window;
+}

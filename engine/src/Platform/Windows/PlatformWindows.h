@@ -10,10 +10,10 @@ public:
 	JE_API void Shutdown() override;
 	JE_API bool PumpMessages() override;
 	JE_API double GetAbsoluteTime() override;
+	const BaseWindow& const GetWindow() override;
 
 private:
 	float clockFrequency;
 	LARGE_INTEGER startTime;
-
 	WindowsWindow window;
 };

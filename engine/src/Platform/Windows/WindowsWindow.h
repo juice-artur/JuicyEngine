@@ -19,7 +19,7 @@ public:
 	void ShowWindow(bool InIsShowWindow) override;
 	void Maximize() override;
 	void Minimize() override;
-	bool PollEvent(WindowEvent& OutWindowEvent) override;
+	bool PollEvent(WindowEvent& OutWindowEvent) const override;
 	void SetTitle(const char* InTitle) override;
 	void SetSize(unsigned int InWidth, unsigned int InHeight) override;
 	void SetFullscreen(bool InIsFullscreen) override;

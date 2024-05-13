@@ -121,7 +121,7 @@ void WindowsWindow::Minimize()
 	}
 }
 
-bool WindowsWindow::PollEvent(WindowEvent& OutWindowEvent)
+bool WindowsWindow::PollEvent(WindowEvent& OutWindowEvent) const
 {
 	if (!sdlWindow)
 	{
