@@ -1,10 +1,10 @@
 #include "game.h"
 
-//#include <Core/Log.h>
+// #include <Core/Log.h>
 
 bool game_initialize()
 {
-	//LOG_TRACE("game_initialize() called!");
+	// LOG_TRACE("game_initialize() called!");
 	return true;
 }
 

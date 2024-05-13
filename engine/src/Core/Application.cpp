@@ -16,15 +16,11 @@ JE_API bool Application::Init(Game* gameInst)
 	platform = new PlatformWindows();
 #endif
 
-    if (initialized)
+	if (initialized)
 	{
 		LOG_CRITICAL("application_create called more than once.");
 		return FALSE;
 	}
-
-
-
-
 
 	this->gameInst = gameInst;
 
@@ -64,7 +60,6 @@ JE_API void Application::Tick()
 	}
 	platform->Shutdown();
 
-
 	while (is_running)
 	{
 		if (!platform->PumpMessages())
@@ -95,5 +90,5 @@ JE_API void Application::Tick()
 
 	platform->Shutdown();
 
-	//return TRUE;
+	// return TRUE;
 }
