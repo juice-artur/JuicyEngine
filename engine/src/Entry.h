@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Application.h"
-// #include "Log.h"
+#include "GameTypes.h"
 
 extern bool CreateGame(Game* outGame);
 

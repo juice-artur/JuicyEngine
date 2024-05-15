@@ -50,6 +50,7 @@ bool WindowsWindow::Create(const char* InTitle, unsigned int InWidth, unsigned i
 		}
 	}
 	sdlWindow = SDL_CreateWindow(InTitle, InWidth, InHeight, sdlFlags);
+
 	if (!sdlWindow)
 	{
 		LOG_ERROR("Error: Failed created window ({0}x{1}) with title '{2}' and flags {3}. SDL error: {4}", InWidth, InHeight, InTitle,
