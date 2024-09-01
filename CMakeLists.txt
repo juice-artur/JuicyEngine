@@ -6,6 +6,7 @@ project(${PROJECT_NAME})
 add_executable(${PROJECT_NAME} src/main.cpp src/shaders.h
 src/stb_image.h
 src/stb_image.cpp
+src/camera.h
 )
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
