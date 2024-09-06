@@ -7,6 +7,8 @@ add_executable(${PROJECT_NAME} src/main.cpp src/shaders.h
 src/stb_image.h
 src/stb_image.cpp
 src/camera.h
+src/mesh.h
+src/model.h
 )
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -19,5 +21,8 @@ target_link_libraries(${PROJECT_NAME} glfw)
 
 add_subdirectory(external/glad)
 target_link_libraries(${PROJECT_NAME} glad)
+
+add_subdirectory(external/assimp)
+target_link_libraries(${PROJECT_NAME} assimp)
 
 include_directories(external/glm)
