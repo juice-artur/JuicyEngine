@@ -1,7 +1,17 @@
-namespace JuicyEngine {
-	__declspec(dllimport) void Print();
-}
+#include <JuicyEngine.h>
 
-void main() {
-	JuicyEngine::Print();
+class Sandbox : public JuicyEngine::Application
+{
+public:
+	Sandbox()
+	{
+	}
+	~Sandbox()
+	{
+	}
+};
+
+JuicyEngine::Application* JuicyEngine::CreateApplication()
+{
+	return new Sandbox();
 }
