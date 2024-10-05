@@ -18,6 +18,9 @@ project "JuicyEngine"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "jepch.h"
+	pchsource "JuicyEngine/src/jepch.cpp"
+
 	files
 	{
 		"%{prj.name}/src/**.h",

@@ -1,7 +1,7 @@
 
 #pragma once
 #include "Event.h"
-#include <sstream>
+
 namespace JuicyEngine {
 	class JE_API MouseMovedEvent : public Event
 	{

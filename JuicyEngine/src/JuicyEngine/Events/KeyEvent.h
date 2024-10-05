@@ -1,6 +1,6 @@
 #pragma once
 #include "Event.h"
-#include <sstream>
+
 namespace JuicyEngine {
 	class JE_API KeyEvent : public Event
 	{

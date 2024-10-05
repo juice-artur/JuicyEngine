@@ -1,7 +1,7 @@
 #pragma once
+#include "jepch.h"
 #include "JuicyEngine/Core.h"
-#include <string>
-#include <functional>
+
 namespace JuicyEngine {
 	enum class EventType
 	{
