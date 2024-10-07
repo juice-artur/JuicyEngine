@@ -13,7 +13,9 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
 IncludeDir["GLFW"] = "JuicyEngine/vendor/GLFW/include"
+IncludeDir["Glad"] = "JuicyEngine/vendor/Glad/include"
 include "JuicyEngine/vendor/GLFW"
+include "JuicyEngine/vendor/Glad"
 
 project "JuicyEngine"
 	location "JuicyEngine"
@@ -36,11 +38,13 @@ project "JuicyEngine"
 	{
 		"%{prj.name}/src",
 		"%{prj.name}/vendor/spdlog/include",
-		"%{IncludeDir.GLFW}"
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.Glad}"
 	}
 	links 
 	{ 
 		"GLFW",
+		"Glad",
 		"opengl32.lib"
 	}
 
@@ -52,7 +56,8 @@ project "JuicyEngine"
 		defines
 		{
 			"JE_PLATFORM_WINDOWS",
-			"JE_BUILD_DLL"
+			"JE_BUILD_DLL",
+			"GLFW_INCLUDE_NONE"
 		}
 
 		postbuildcommands
