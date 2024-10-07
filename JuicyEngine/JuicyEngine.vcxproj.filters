@@ -37,6 +37,12 @@
     <ClInclude Include="src\JuicyEngine\Events\MouseEvent.h">
       <Filter>JuicyEngine\Events</Filter>
     </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Layer.h">
+      <Filter>JuicyEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\LayerStack.h">
+      <Filter>JuicyEngine</Filter>
+    </ClInclude>
     <ClInclude Include="src\JuicyEngine\Log.h">
       <Filter>JuicyEngine</Filter>
     </ClInclude>
@@ -50,6 +56,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JuicyEngine\Application.cpp">
+      <Filter>JuicyEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Layer.cpp">
+      <Filter>JuicyEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\LayerStack.cpp">
       <Filter>JuicyEngine</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Log.cpp">

@@ -62,14 +62,17 @@ project "JuicyEngine"
 
 	filter "configurations:Debug"
 		defines "JE_DEBUG"
+		buildoptions "/MD"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "JE_RELEASE"
+		buildoptions "/MD"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "JE_DIST"
+		buildoptions "/MD"
 		optimize "On"
 
 project "Sandbox"
@@ -109,12 +112,15 @@ project "Sandbox"
 
 	filter "configurations:Debug"
 		defines "JE_DEBUG"
+		buildoptions "/MD"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "JE_RELEASE"
+		buildoptions "/MD"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "JE_DIST"
+		buildoptions "/MD"
 		optimize "On"
