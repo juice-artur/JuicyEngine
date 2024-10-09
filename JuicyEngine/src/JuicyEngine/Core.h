@@ -9,6 +9,10 @@
 #error JuicyEngine only supports Windows!
 #endif
 
+#ifdef HZ_DEBUG
+#define HZ_ENABLE_ASSERTS
+#endif
+
 #ifdef JE_ENABLE_ASSERTS
 #define JE_ASSERT(x, ...) { if(!(x)) { JE_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
 #define JE_CORE_ASSERT(x, ...) { if(!(x)) { JE_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
@@ -18,3 +22,5 @@
 #endif
 
 #define BIT(x) (1 << x)
+
+#define JE_BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)

@@ -155,7 +155,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\JuicyEngine\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\JuicyEngine.h" />
     <ClInclude Include="src\JuicyEngine\Application.h" />
     <ClInclude Include="src\JuicyEngine\Core.h" />
@@ -164,6 +163,7 @@
     <ClInclude Include="src\JuicyEngine\Events\Event.h" />
     <ClInclude Include="src\JuicyEngine\Events\KeyEvent.h" />
     <ClInclude Include="src\JuicyEngine\Events\MouseEvent.h" />
+    <ClInclude Include="src\JuicyEngine\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\JuicyEngine\Layer.h" />
     <ClInclude Include="src\JuicyEngine\LayerStack.h" />
     <ClInclude Include="src\JuicyEngine\Log.h" />
@@ -173,8 +173,8 @@
     <ClInclude Include="src\jepch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\JuicyEngine\Application.cpp" />
+    <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\JuicyEngine\Layer.cpp" />
     <ClCompile Include="src\JuicyEngine\LayerStack.cpp" />
     <ClCompile Include="src\JuicyEngine\Log.cpp" />
