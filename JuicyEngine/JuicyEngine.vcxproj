@@ -164,11 +164,13 @@
     <ClInclude Include="src\JuicyEngine\Events\KeyEvent.h" />
     <ClInclude Include="src\JuicyEngine\Events\MouseEvent.h" />
     <ClInclude Include="src\JuicyEngine\ImGui\ImGuiLayer.h" />
+    <ClInclude Include="src\JuicyEngine\Input.h" />
     <ClInclude Include="src\JuicyEngine\Layer.h" />
     <ClInclude Include="src\JuicyEngine\LayerStack.h" />
     <ClInclude Include="src\JuicyEngine\Log.h" />
     <ClInclude Include="src\JuicyEngine\Window.h" />
     <ClInclude Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.h" />
+    <ClInclude Include="src\Platform\Windows\WindowsInput.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="src\jepch.h" />
   </ItemGroup>
@@ -179,6 +181,7 @@
     <ClCompile Include="src\JuicyEngine\LayerStack.cpp" />
     <ClCompile Include="src\JuicyEngine\Log.cpp" />
     <ClCompile Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.cpp" />
+    <ClCompile Include="src\Platform\Windows\WindowsInput.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\jepch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
