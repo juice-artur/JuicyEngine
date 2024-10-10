@@ -2,6 +2,8 @@
 #include "Application.h"
 #include "JuicyEngine/Log.h"
 
+#include "Input.h"
+
 #include <glad/glad.h>
 
 namespace JuicyEngine {

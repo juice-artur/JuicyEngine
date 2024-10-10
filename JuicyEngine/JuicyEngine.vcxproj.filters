@@ -69,6 +69,8 @@
     </ClInclude>
     <ClInclude Include="src\jepch.h" />
     <ClInclude Include="src\JuicyEngine\Input.h" />
+    <ClInclude Include="src\JuicyEngine\KeyCodes.h" />
+    <ClInclude Include="src\JuicyEngine\MouseButtonCodes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JuicyEngine\Application.cpp">

@@ -9,8 +9,8 @@
 #error JuicyEngine only supports Windows!
 #endif
 
-#ifdef HZ_DEBUG
-#define HZ_ENABLE_ASSERTS
+#ifdef JE_DEBUG
+#define JE_ENABLE_ASSERTS
 #endif
 
 #ifdef JE_ENABLE_ASSERTS
