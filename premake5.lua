@@ -15,6 +15,7 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "JuicyEngine/vendor/GLFW/include"
 IncludeDir["Glad"] = "JuicyEngine/vendor/Glad/include"
 IncludeDir["ImGui"] = "JuicyEngine/vendor/imgui"
+IncludeDir["glm"] = "JuicyEngine/vendor/glm"
 
 group "Dependencies"
 	include "JuicyEngine/vendor/GLFW"
@@ -37,7 +38,9 @@ project "JuicyEngine"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/glm/glm/**.hpp",
+		"%{prj.name}/vendor/glm/glm/**.inl",
 	}
 
 	includedirs
@@ -46,7 +49,8 @@ project "JuicyEngine"
 		"%{prj.name}/vendor/spdlog/include",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.glm}"
 	}
 	links 
 	{ 
@@ -105,7 +109,8 @@ project "Sandbox"
 	includedirs
 	{
 		"JuicyEngine/vendor/spdlog/include",
-		"JuicyEngine/src"
+		"JuicyEngine/src",
+		"%{IncludeDir.glm}"
 	}
 
 	links
