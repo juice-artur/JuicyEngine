@@ -1,6 +1,6 @@
 #include <jepch.h>
 #include <JuicyEngine.h>
-
+#include "imgui/imgui.h"
 class ExampleLayer : public JuicyEngine::Layer
 {
 public:
@@ -23,6 +23,12 @@ public:
 			JE_TRACE("{0}", (char)e.GetKeyCode());
 		}
 	}
+	virtual void OnImGuiRender() override
+	{
+		ImGui::Begin("Test");
+		ImGui::Text("Hello World");
+		ImGui::End();
+	}
 };
 
 class Sandbox : public JuicyEngine::Application
@@ -31,7 +37,6 @@ public:
 	Sandbox()
 	{
 		PushLayer(new ExampleLayer());
-		PushOverlay(new JuicyEngine::ImGuiLayer());
 	}
 	~Sandbox()
 	{

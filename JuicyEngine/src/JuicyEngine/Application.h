@@ -4,6 +4,7 @@
 #include "JuicyEngine/LayerStack.h"
 #include "JuicyEngine/Events/Event.h"
 #include "JuicyEngine/Events/ApplicationEvent.h"
+#include "JuicyEngine/ImGui/ImGuiLayer.h"
 
 namespace JuicyEngine {
 	class JE_API Application
@@ -20,6 +21,7 @@ namespace JuicyEngine {
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 		std::unique_ptr<Window> m_Window;
+		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
 		LayerStack m_LayerStack;
 	private:

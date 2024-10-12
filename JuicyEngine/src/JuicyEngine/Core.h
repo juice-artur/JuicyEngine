@@ -1,9 +1,13 @@
 #pragma once
 #ifdef JE_PLATFORM_WINDOWS
+#if JE_DYNAMIC_LINK
 #ifdef JE_BUILD_DLL
 #define JE_API __declspec(dllexport)
 #else
 #define JE_API __declspec(dllimport)
+#endif
+#else
+#define JE_API
 #endif
 #else
 #error JuicyEngine only supports Windows!
