@@ -26,8 +26,10 @@ group ""
 
 project "JuicyEngine"
 	location "JuicyEngine"
-	kind "SharedLib"
+	kind "StaticLib"
 	language "C++"
+	cppdialect "C++17"
+	staticruntime "on"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -41,6 +43,10 @@ project "JuicyEngine"
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl",
+	}
+	defines
+	{
+		"_CRT_SECURE_NO_WARNINGS"
 	}
 
 	includedirs
@@ -70,11 +76,6 @@ project "JuicyEngine"
 			"JE_PLATFORM_WINDOWS",
 			"JE_BUILD_DLL",
 			"GLFW_INCLUDE_NONE"
-		}
-
-		postbuildcommands
-		{
-			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Sandbox")
 		}
 
 	filter "configurations:Debug"
@@ -110,6 +111,7 @@ project "Sandbox"
 	{
 		"JuicyEngine/vendor/spdlog/include",
 		"JuicyEngine/src",
+		"JuicyEngine/vendor",
 		"%{IncludeDir.glm}"
 	}
 
