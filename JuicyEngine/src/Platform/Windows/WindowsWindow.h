@@ -1,6 +1,7 @@
 #pragma once
 #include "JuicyEngine/Window.h"
 #include <GLFW/glfw3.h>
+#include <JuicyEngine/Renderer/GraphicsContext.h>
 
 namespace JuicyEngine {
 	class WindowsWindow : public Window {
@@ -20,6 +21,7 @@ namespace JuicyEngine {
 		virtual void Shutdown();
 	private:
 		GLFWwindow* m_Window;
+		GraphicsContext* m_Context;
 		struct WindowData
 		{
 			std::string Title;

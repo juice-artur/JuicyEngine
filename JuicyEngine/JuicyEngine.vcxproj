@@ -146,6 +146,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
     <ClInclude Include="src\JuicyEngine.h" />
     <ClInclude Include="src\JuicyEngine\Application.h" />
     <ClInclude Include="src\JuicyEngine\Core.h" />
@@ -161,6 +162,7 @@
     <ClInclude Include="src\JuicyEngine\LayerStack.h" />
     <ClInclude Include="src\JuicyEngine\Log.h" />
     <ClInclude Include="src\JuicyEngine\MouseButtonCodes.h" />
+    <ClInclude Include="src\JuicyEngine\Renderer\GraphicsContext.h" />
     <ClInclude Include="src\JuicyEngine\Window.h" />
     <ClInclude Include="src\Platform\Windows\WindowsInput.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
@@ -583,6 +585,7 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
     <ClCompile Include="src\JuicyEngine\Application.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp" />
