@@ -6,6 +6,8 @@
 #include "JuicyEngine/Events/ApplicationEvent.h"
 #include "JuicyEngine/ImGui/ImGuiLayer.h"
 
+#include "JuicyEngine/Renderer/Shader.h"
+
 namespace JuicyEngine {
 	class JE_API Application
 	{
@@ -26,6 +28,7 @@ namespace JuicyEngine {
 		LayerStack m_LayerStack;
 
 		unsigned int m_VertexArray, m_VertexBuffer, m_IndexBuffer;
+		std::unique_ptr<Shader> m_Shader;
 
 	private:
 		static Application* s_Instance;
