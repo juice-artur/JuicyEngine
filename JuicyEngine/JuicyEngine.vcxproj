@@ -146,8 +146,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\JuicyEngine\Renderer\Shader.h" />
-    <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
+    <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
     <ClInclude Include="src\JuicyEngine.h" />
     <ClInclude Include="src\JuicyEngine\Application.h" />
     <ClInclude Include="src\JuicyEngine\Core.h" />
@@ -163,8 +162,12 @@
     <ClInclude Include="src\JuicyEngine\LayerStack.h" />
     <ClInclude Include="src\JuicyEngine\Log.h" />
     <ClInclude Include="src\JuicyEngine\MouseButtonCodes.h" />
+    <ClInclude Include="src\JuicyEngine\Renderer\Buffer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\GraphicsContext.h" />
+    <ClInclude Include="src\JuicyEngine\Renderer\Renderer.h" />
+    <ClInclude Include="src\JuicyEngine\Renderer\Shader.h" />
     <ClInclude Include="src\JuicyEngine\Window.h" />
+    <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
     <ClInclude Include="src\Platform\Windows\WindowsInput.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="src\jepch.h" />
@@ -586,14 +589,17 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\JuicyEngine\Renderer\Shader.cpp" />
-    <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
     <ClCompile Include="src\JuicyEngine\Application.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\JuicyEngine\Layer.cpp" />
     <ClCompile Include="src\JuicyEngine\LayerStack.cpp" />
     <ClCompile Include="src\JuicyEngine\Log.cpp" />
+    <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\JuicyEngine\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\JuicyEngine\Renderer\Shader.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsInput.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\jepch.cpp">

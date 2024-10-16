@@ -13,8 +13,14 @@
     <Filter Include="src\JuicyEngine\ImGui">
       <UniqueIdentifier>{C0C86176-2C35-1D71-F528-B5CE61543FD9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\JuicyEngine\Renderer">
+      <UniqueIdentifier>{7CF71995-681C-6915-9167-4EA57DEB6733}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\Platform">
       <UniqueIdentifier>{21CA02E5-0D2D-9289-B6B2-CA3FA2F45D0C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\OpenGL">
+      <UniqueIdentifier>{35A49437-A105-7245-2A73-B8F796D3A804}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\Platform\Windows">
       <UniqueIdentifier>{5B054582-4794-CE4B-F0B2-E246DC20DFF1}</UniqueIdentifier>
@@ -87,8 +93,23 @@
     <ClInclude Include="src\JuicyEngine\MouseButtonCodes.h">
       <Filter>src\JuicyEngine</Filter>
     </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Renderer\Buffer.h">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Renderer\GraphicsContext.h">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Renderer\Renderer.h">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Renderer\Shader.h">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\JuicyEngine\Window.h">
       <Filter>src\JuicyEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h">
+      <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
     <ClInclude Include="src\Platform\Windows\WindowsInput.h">
       <Filter>src\Platform\Windows</Filter>
@@ -1347,9 +1368,6 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp">
       <Filter>vendor\glm\glm</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Renderer\GraphicsContext.h" />
-    <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
-    <ClInclude Include="src\JuicyEngine\Renderer\Shader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JuicyEngine\Application.cpp">
@@ -1370,6 +1388,18 @@
     <ClCompile Include="src\JuicyEngine\Log.cpp">
       <Filter>src\JuicyEngine</Filter>
     </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Renderer\Renderer.cpp">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Renderer\Shader.cpp">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
     <ClCompile Include="src\Platform\Windows\WindowsInput.cpp">
       <Filter>src\Platform\Windows</Filter>
     </ClCompile>
@@ -1379,7 +1409,5 @@
     <ClCompile Include="src\jepch.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
-    <ClCompile Include="src\JuicyEngine\Renderer\Shader.cpp" />
   </ItemGroup>
 </Project>
