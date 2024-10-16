@@ -15,6 +15,12 @@ namespace JuicyEngine {
 		glfwMakeContextCurrent(m_WindowHandle);
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		JE_CORE_ASSERT(status, "Failed to initialize Glad!");
+
+		JE_CORE_INFO("OpenGL Info:");
+		JE_CORE_INFO("  Vendor: {0}", (const char*)glGetString(GL_VENDOR));
+		JE_CORE_INFO("  Renderer: {0}", (const char*)glGetString(GL_RENDERER));
+		JE_CORE_INFO("  Version: {0}", (const char*)glGetString(GL_VERSION));
+
 	}
 	void OpenGLContext::SwapBuffers()
 	{
