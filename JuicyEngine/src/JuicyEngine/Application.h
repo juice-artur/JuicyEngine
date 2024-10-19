@@ -10,6 +10,8 @@
 #include "JuicyEngine/Renderer/Buffer.h"
 #include "JuicyEngine/Renderer/VertexArray.h"
 
+#include "JuicyEngine/Renderer/OrthographicCamera.h"
+
 namespace JuicyEngine
 {
 class JE_API Application
@@ -35,6 +37,8 @@ private:
     std::shared_ptr<VertexArray> m_VertexArray;
     std::shared_ptr<Shader> m_BlueShader;
     std::shared_ptr<VertexArray> m_SquareVA;
+
+    OrthographicCamera m_Camera;
 
 private:
     static Application* s_Instance;
