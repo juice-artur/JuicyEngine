@@ -1,5 +1,6 @@
 #pragma once
 #include "JuicyEngine/Core.h"
+#include "JuicyEngine/Core/Timestep.h"
 #include "JuicyEngine/Events/Event.h"
 namespace JuicyEngine
 {
@@ -10,7 +11,7 @@ public:
     virtual ~Layer();
     virtual void OnAttach() {}
     virtual void OnDetach() {}
-    virtual void OnUpdate() {}
+    virtual void OnUpdate(Timestep ts) {}
     virtual void OnImGuiRender() {}
     virtual void OnEvent(Event& event) {}
     inline const std::string& GetName() const { return m_DebugName; }

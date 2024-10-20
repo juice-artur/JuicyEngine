@@ -149,6 +149,7 @@
     <ClInclude Include="src\JuicyEngine.h" />
     <ClInclude Include="src\JuicyEngine\Application.h" />
     <ClInclude Include="src\JuicyEngine\Core.h" />
+    <ClInclude Include="src\JuicyEngine\Core\Timestep.h" />
     <ClInclude Include="src\JuicyEngine\EntryPoint.h" />
     <ClInclude Include="src\JuicyEngine\Events\ApplicationEvent.h" />
     <ClInclude Include="src\JuicyEngine\Events\Event.h" />
