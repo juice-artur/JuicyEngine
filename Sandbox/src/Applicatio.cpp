@@ -1,6 +1,7 @@
 #include <jepch.h>
 #include <JuicyEngine.h>
 #include "imgui/imgui.h"
+#include <glm/gtc/matrix_transform.hpp>
 class ExampleLayer : public JuicyEngine::Layer
 {
 public:
@@ -11,7 +12,8 @@ public:
             0.8f, 0.8f, 0.2f, 1.0f};
         std::shared_ptr<JuicyEngine::VertexBuffer> vertexBuffer;
         vertexBuffer.reset(JuicyEngine::VertexBuffer::Create(vertices, sizeof(vertices)));
-        JuicyEngine::BufferLayout layout = {{JuicyEngine::ShaderDataType::Float3, "a_Position"}, {JuicyEngine::ShaderDataType::Float4, "a_Color"}};
+        JuicyEngine::BufferLayout layout = {
+            {JuicyEngine::ShaderDataType::Float3, "a_Position"}, {JuicyEngine::ShaderDataType::Float4, "a_Color"}};
         vertexBuffer->SetLayout(layout);
         m_VertexArray->AddVertexBuffer(vertexBuffer);
         uint32_t indices[3] = {0, 1, 2};
@@ -19,7 +21,7 @@ public:
         indexBuffer.reset(JuicyEngine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
         m_VertexArray->SetIndexBuffer(indexBuffer);
         m_SquareVA.reset(JuicyEngine::VertexArray::Create());
-        float squareVertices[3 * 4] = {-0.75f, -0.75f, 0.0f, 0.75f, -0.75f, 0.0f, 0.75f, 0.75f, 0.0f, -0.75f, 0.75f, 0.0f};
+        float squareVertices[3 * 4] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.0f, -0.5f, 0.5f, 0.0f};
         std::shared_ptr<JuicyEngine::VertexBuffer> squareVB;
         squareVB.reset(JuicyEngine::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
         squareVB->SetLayout({{JuicyEngine::ShaderDataType::Float3, "a_Position"}});
@@ -34,13 +36,14 @@ public:
 			layout(location = 0) in vec3 a_Position;
 			layout(location = 1) in vec4 a_Color;
 			uniform mat4 u_ViewProjection;
+            uniform mat4 u_Transform;
 			out vec3 v_Position;
 			out vec4 v_Color;
 			void main()
 			{
 				v_Position = a_Position;
 				v_Color = a_Color;
-				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);	
+				gl_Position = u_ViewProjection * u_Transform  * vec4(a_Position, 1.0);	
 			}
 		)";
         std::string fragmentSrc = R"(
@@ -61,11 +64,12 @@ public:
 			
 			layout(location = 0) in vec3 a_Position;
 			uniform mat4 u_ViewProjection;
+            uniform mat4 u_Transform;
 			out vec3 v_Position;
 			void main()
 			{
 				v_Position = a_Position;
-				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);	
+				gl_Position = u_ViewProjection * u_Transform *  vec4(a_Position, 1.0);	
 			}
 		)";
         std::string blueShaderFragmentSrc = R"(
@@ -97,7 +101,16 @@ public:
         m_Camera.SetPosition(m_CameraPosition);
         m_Camera.SetRotation(m_CameraRotation);
         JuicyEngine::Renderer::BeginScene(m_Camera);
-        JuicyEngine::Renderer::Submit(m_BlueShader, m_SquareVA);
+        glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+        for (int y = 0; y < 20; y++)
+        {
+            for (int x = 0; x < 20; x++)
+            {
+                glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
+                glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
+                JuicyEngine::Renderer::Submit(m_BlueShader, m_SquareVA, transform);
+            }
+        }
         JuicyEngine::Renderer::Submit(m_Shader, m_VertexArray);
         JuicyEngine::Renderer::EndScene();
     }
