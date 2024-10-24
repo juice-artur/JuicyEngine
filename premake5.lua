@@ -16,6 +16,7 @@ IncludeDir["GLFW"] = "JuicyEngine/vendor/GLFW/include"
 IncludeDir["Glad"] = "JuicyEngine/vendor/Glad/include"
 IncludeDir["ImGui"] = "JuicyEngine/vendor/imgui"
 IncludeDir["glm"] = "JuicyEngine/vendor/glm"
+IncludeDir["stb_image"] = "JuicyEngine/vendor/stb_image"
 
 group "Dependencies"
 	include "JuicyEngine/vendor/GLFW"
@@ -41,6 +42,8 @@ project "JuicyEngine"
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl",
 	}
@@ -56,7 +59,9 @@ project "JuicyEngine"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.stb_image}"
 	}
 	links 
 	{ 
