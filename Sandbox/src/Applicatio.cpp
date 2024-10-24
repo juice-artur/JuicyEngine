@@ -116,6 +116,7 @@ public:
 		)";
         m_TextureShader.reset(JuicyEngine::Shader::Create(textureShaderVertexSrc, textureShaderFragmentSrc));
         m_Texture = JuicyEngine::Texture2D::Create("assets/textures/Checkerboard.png");
+        m_JuicyLogoTexture = JuicyEngine::Texture2D::Create("assets/textures/JE_Logo.png");
         std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(m_TextureShader)->Bind();
         std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(m_TextureShader)->UploadUniformInt("u_Texture", 0);
     }
@@ -150,6 +151,8 @@ public:
         }
         m_Texture->Bind();
         JuicyEngine::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+        m_JuicyLogoTexture->Bind();
+        JuicyEngine::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
         JuicyEngine::Renderer::EndScene();
     }
     void OnEvent(JuicyEngine::Event& event) override {}
@@ -165,7 +168,7 @@ private:
     JuicyEngine::Ref<JuicyEngine::VertexArray> m_VertexArray;
     JuicyEngine::Ref<JuicyEngine::Shader> m_FlatColorShader, m_TextureShader;
     JuicyEngine::Ref<JuicyEngine::VertexArray> m_SquareVA;
-    JuicyEngine::Ref<JuicyEngine::Texture2D> m_Texture;
+    JuicyEngine::Ref<JuicyEngine::Texture2D> m_Texture, m_JuicyLogoTexture;
     JuicyEngine::OrthographicCamera m_Camera;
     glm::vec3 m_CameraPosition;
     float m_CameraMoveSpeed = 5.0f;
