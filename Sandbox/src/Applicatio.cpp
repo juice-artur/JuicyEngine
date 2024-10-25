@@ -61,7 +61,7 @@ public:
 				color = v_Color;
 			}
 		)";
-        m_Shader.reset(JuicyEngine::Shader::Create(vertexSrc, fragmentSrc));
+        m_Shader = JuicyEngine::Shader::Create("VertexPosColor", vertexSrc, fragmentSrc);
         std::string flatColorShaderVertexSrc = R"(
 			#version 330 core
 			
@@ -86,13 +86,13 @@ public:
 				color = vec4(u_Color, 1.0);
 			}
 		)";
-        m_FlatColorShader.reset(JuicyEngine::Shader::Create(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
+        m_FlatColorShader = JuicyEngine::Shader::Create("FlatColor", flatColorShaderVertexSrc, flatColorShaderFragmentSrc);
 
-        m_TextureShader.reset(JuicyEngine::Shader::Create("assets/shaders/Texture.glsl"));
+        auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
         m_Texture = JuicyEngine::Texture2D::Create("assets/textures/Checkerboard.png");
         m_JuicyLogoTexture = JuicyEngine::Texture2D::Create("assets/textures/JE_Logo.png");
-        std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(m_TextureShader)->Bind();
-        std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(m_TextureShader)->UploadUniformInt("u_Texture", 0);
+        std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(textureShader)->Bind();
+        std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(textureShader)->UploadUniformInt("u_Texture", 0);
     }
     void OnUpdate(JuicyEngine::Timestep ts) override
     {
@@ -123,10 +123,12 @@ public:
                 JuicyEngine::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
             }
         }
+
+        auto textureShader = m_ShaderLibrary.Get("Texture");
         m_Texture->Bind();
-        JuicyEngine::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+        JuicyEngine::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
         m_JuicyLogoTexture->Bind();
-        JuicyEngine::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+        JuicyEngine::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
         JuicyEngine::Renderer::EndScene();
     }
     void OnEvent(JuicyEngine::Event& event) override {}
@@ -138,9 +140,10 @@ public:
     }
 
 private:
+    JuicyEngine::ShaderLibrary m_ShaderLibrary;
     JuicyEngine::Ref<JuicyEngine::Shader> m_Shader;
     JuicyEngine::Ref<JuicyEngine::VertexArray> m_VertexArray;
-    JuicyEngine::Ref<JuicyEngine::Shader> m_FlatColorShader, m_TextureShader;
+    JuicyEngine::Ref<JuicyEngine::Shader> m_FlatColorShader;
     JuicyEngine::Ref<JuicyEngine::VertexArray> m_SquareVA;
     JuicyEngine::Ref<JuicyEngine::Texture2D> m_Texture, m_JuicyLogoTexture;
     JuicyEngine::OrthographicCamera m_Camera;
