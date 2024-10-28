@@ -162,6 +162,7 @@
     <ClInclude Include="src\JuicyEngine\LayerStack.h" />
     <ClInclude Include="src\JuicyEngine\Log.h" />
     <ClInclude Include="src\JuicyEngine\MouseButtonCodes.h" />
+    <ClInclude Include="src\JuicyEngine\OrthographicCameraController.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Buffer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\GraphicsContext.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\OrthographicCamera.h" />
@@ -606,6 +607,7 @@
     <ClCompile Include="src\JuicyEngine\Layer.cpp" />
     <ClCompile Include="src\JuicyEngine\LayerStack.cpp" />
     <ClCompile Include="src\JuicyEngine\Log.cpp" />
+    <ClCompile Include="src\JuicyEngine\OrthographicCameraController.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\OrthographicCamera.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\RenderCommand.cpp" />
