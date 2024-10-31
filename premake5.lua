@@ -78,7 +78,6 @@ project "JuicyEngine"
 
 		defines
 		{
-			"JE_PLATFORM_WINDOWS",
 			"JE_BUILD_DLL",
 			"GLFW_INCLUDE_NONE"
 		}
@@ -129,11 +128,6 @@ project "Sandbox"
 		cppdialect "C++17"
 		staticruntime "On"
 		systemversion "latest"
-
-		defines
-		{
-			"JE_PLATFORM_WINDOWS"
-		}
 
 	filter "configurations:Debug"
 		defines "JE_DEBUG"
