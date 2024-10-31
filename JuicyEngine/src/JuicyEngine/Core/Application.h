@@ -1,7 +1,7 @@
 #pragma once
 #include "Core.h"
 #include "Window.h"
-#include "JuicyEngine/LayerStack.h"
+#include "JuicyEngine/Core/LayerStack.h"
 #include "JuicyEngine/Events/Event.h"
 #include "JuicyEngine/Events/ApplicationEvent.h"
 #include "JuicyEngine/Core/Timestep.h"

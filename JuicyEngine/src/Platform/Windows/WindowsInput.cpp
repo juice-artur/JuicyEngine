@@ -1,6 +1,6 @@
 #include "jepch.h"
 #include "WindowsInput.h"
-#include "JuicyEngine/Application.h"
+#include "JuicyEngine/Core/Application.h"
 #include <GLFW/glfw3.h>
 namespace JuicyEngine
 {

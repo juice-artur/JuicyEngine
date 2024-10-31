@@ -1,6 +1,6 @@
 #include "jepch.h"
 #include "Application.h"
-#include "JuicyEngine/Log.h"
+#include "JuicyEngine/Core/Log.h"
 
 #include "Input.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JuicyEngine/Core.h"
+#include "JuicyEngine/Core/Core.h"
 #include "jepch.h"
 
 namespace JuicyEngine

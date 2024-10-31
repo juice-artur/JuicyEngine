@@ -57,17 +57,38 @@
     <ClInclude Include="src\JuicyEngine.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Application.h">
-      <Filter>src\JuicyEngine</Filter>
+    <ClInclude Include="src\JuicyEngine\Core\Application.h">
+      <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Core.h">
-      <Filter>src\JuicyEngine</Filter>
+    <ClInclude Include="src\JuicyEngine\Core\Core.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\EntryPoint.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\Input.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\KeyCodes.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\Layer.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\LayerStack.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\Log.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\MouseButtonCodes.h">
+      <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Core\Timestep.h">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\EntryPoint.h">
-      <Filter>src\JuicyEngine</Filter>
+    <ClInclude Include="src\JuicyEngine\Core\Window.h">
+      <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Events\ApplicationEvent.h">
       <Filter>src\JuicyEngine\Events</Filter>
@@ -84,24 +105,6 @@
     <ClInclude Include="src\JuicyEngine\ImGui\ImGuiLayer.h">
       <Filter>src\JuicyEngine\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Input.h">
-      <Filter>src\JuicyEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="src\JuicyEngine\KeyCodes.h">
-      <Filter>src\JuicyEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Layer.h">
-      <Filter>src\JuicyEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="src\JuicyEngine\LayerStack.h">
-      <Filter>src\JuicyEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Log.h">
-      <Filter>src\JuicyEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="src\JuicyEngine\MouseButtonCodes.h">
-      <Filter>src\JuicyEngine</Filter>
-    </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\Buffer.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
@@ -109,6 +112,9 @@
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\OrthographicCamera.h">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Renderer\OrthographicCameraController.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\RenderCommand.h">
@@ -128,9 +134,6 @@
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\VertexArray.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Window.h">
-      <Filter>src\JuicyEngine</Filter>
     </ClInclude>
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h">
       <Filter>src\Platform\OpenGL</Filter>
@@ -1410,11 +1413,19 @@
     <ClInclude Include="vendor\stb_image\stb_image.h">
       <Filter>vendor\stb_image</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\OrthographicCameraController.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\JuicyEngine\Application.cpp">
-      <Filter>src\JuicyEngine</Filter>
+    <ClCompile Include="src\JuicyEngine\Core\Application.cpp">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Core\Layer.cpp">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Core\LayerStack.cpp">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Core\Log.cpp">
+      <Filter>src\JuicyEngine\Core</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiBuild.cpp">
       <Filter>src\JuicyEngine\ImGui</Filter>
@@ -1422,19 +1433,13 @@
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp">
       <Filter>src\JuicyEngine\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="src\JuicyEngine\Layer.cpp">
-      <Filter>src\JuicyEngine</Filter>
-    </ClCompile>
-    <ClCompile Include="src\JuicyEngine\LayerStack.cpp">
-      <Filter>src\JuicyEngine</Filter>
-    </ClCompile>
-    <ClCompile Include="src\JuicyEngine\Log.cpp">
-      <Filter>src\JuicyEngine</Filter>
-    </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\OrthographicCamera.cpp">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Renderer\OrthographicCameraController.cpp">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\RenderCommand.cpp">
@@ -1485,6 +1490,5 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp">
       <Filter>vendor\stb_image</Filter>
     </ClCompile>
-    <ClCompile Include="src\JuicyEngine\OrthographicCameraController.cpp" />
   </ItemGroup>
 </Project>

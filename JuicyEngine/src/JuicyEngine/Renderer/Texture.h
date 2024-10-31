@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "JuicyEngine/Core.h"
+#include "JuicyEngine/Core/Core.h"
 namespace JuicyEngine
 {
 class Texture

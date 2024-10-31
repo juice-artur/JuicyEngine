@@ -1,5 +1,5 @@
 #pragma once
-#include "JuicyEngine/Input.h"
+#include "JuicyEngine/Core/Input.h"
 namespace JuicyEngine
 {
 class WindowsInput : public Input

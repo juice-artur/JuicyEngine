@@ -1,5 +1,5 @@
 #pragma once
-#include "JuicyEngine/Core.h"
+#include "JuicyEngine/Core/Core.h"
 #include "JuicyEngine/Core/Timestep.h"
 #include "JuicyEngine/Events/Event.h"
 namespace JuicyEngine

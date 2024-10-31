@@ -147,32 +147,32 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\JuicyEngine.h" />
-    <ClInclude Include="src\JuicyEngine\Application.h" />
-    <ClInclude Include="src\JuicyEngine\Core.h" />
+    <ClInclude Include="src\JuicyEngine\Core\Application.h" />
+    <ClInclude Include="src\JuicyEngine\Core\Core.h" />
+    <ClInclude Include="src\JuicyEngine\Core\EntryPoint.h" />
+    <ClInclude Include="src\JuicyEngine\Core\Input.h" />
+    <ClInclude Include="src\JuicyEngine\Core\KeyCodes.h" />
+    <ClInclude Include="src\JuicyEngine\Core\Layer.h" />
+    <ClInclude Include="src\JuicyEngine\Core\LayerStack.h" />
+    <ClInclude Include="src\JuicyEngine\Core\Log.h" />
+    <ClInclude Include="src\JuicyEngine\Core\MouseButtonCodes.h" />
     <ClInclude Include="src\JuicyEngine\Core\Timestep.h" />
-    <ClInclude Include="src\JuicyEngine\EntryPoint.h" />
+    <ClInclude Include="src\JuicyEngine\Core\Window.h" />
     <ClInclude Include="src\JuicyEngine\Events\ApplicationEvent.h" />
     <ClInclude Include="src\JuicyEngine\Events\Event.h" />
     <ClInclude Include="src\JuicyEngine\Events\KeyEvent.h" />
     <ClInclude Include="src\JuicyEngine\Events\MouseEvent.h" />
     <ClInclude Include="src\JuicyEngine\ImGui\ImGuiLayer.h" />
-    <ClInclude Include="src\JuicyEngine\Input.h" />
-    <ClInclude Include="src\JuicyEngine\KeyCodes.h" />
-    <ClInclude Include="src\JuicyEngine\Layer.h" />
-    <ClInclude Include="src\JuicyEngine\LayerStack.h" />
-    <ClInclude Include="src\JuicyEngine\Log.h" />
-    <ClInclude Include="src\JuicyEngine\MouseButtonCodes.h" />
-    <ClInclude Include="src\JuicyEngine\OrthographicCameraController.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Buffer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\GraphicsContext.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\OrthographicCamera.h" />
+    <ClInclude Include="src\JuicyEngine\Renderer\OrthographicCameraController.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\RenderCommand.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Renderer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\RendererAPI.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Shader.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Texture.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\VertexArray.h" />
-    <ClInclude Include="src\JuicyEngine\Window.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLRendererAPI.h" />
@@ -601,15 +601,15 @@
     <ClInclude Include="vendor\stb_image\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\JuicyEngine\Application.cpp" />
+    <ClCompile Include="src\JuicyEngine\Core\Application.cpp" />
+    <ClCompile Include="src\JuicyEngine\Core\Layer.cpp" />
+    <ClCompile Include="src\JuicyEngine\Core\LayerStack.cpp" />
+    <ClCompile Include="src\JuicyEngine\Core\Log.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp" />
-    <ClCompile Include="src\JuicyEngine\Layer.cpp" />
-    <ClCompile Include="src\JuicyEngine\LayerStack.cpp" />
-    <ClCompile Include="src\JuicyEngine\Log.cpp" />
-    <ClCompile Include="src\JuicyEngine\OrthographicCameraController.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\OrthographicCamera.cpp" />
+    <ClCompile Include="src\JuicyEngine\Renderer\OrthographicCameraController.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\RenderCommand.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\Renderer.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\RendererAPI.cpp" />

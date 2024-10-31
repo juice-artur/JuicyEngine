@@ -1,7 +1,7 @@
 #include "jepch.h"
 #include "OrthographicCameraController.h"
-#include "JuicyEngine/Input.h"
-#include "JuicyEngine/KeyCodes.h"
+#include "JuicyEngine/Core/Input.h"
+#include "JuicyEngine/Core/KeyCodes.h"
 namespace JuicyEngine
 {
 OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)

@@ -1,3 +1,5 @@
+
+#include "JuicyEngine/Core/Core.h"
 #include "Layer.h"
 #include <vector>
 namespace JuicyEngine

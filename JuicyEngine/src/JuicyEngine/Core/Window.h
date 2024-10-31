@@ -1,5 +1,5 @@
 #include "jepch.h"
-#include "JuicyEngine/Core.h"
+#include "JuicyEngine/Core/Core.h"
 #include "JuicyEngine/Events/Event.h"
 namespace JuicyEngine
 {

@@ -1,14 +1,14 @@
 #pragma once
 // For use by JuicyEngine applications
-#include "JuicyEngine/Application.h"
-#include "JuicyEngine/Layer.h"
-#include "JuicyEngine/Log.h"
+#include "JuicyEngine/Core/Application.h"
+#include "JuicyEngine/Core/Layer.h"
+#include "JuicyEngine/Core/Log.h"
 #include "JuicyEngine/Core/Timestep.h"
-#include "JuicyEngine/Input.h"
-#include "JuicyEngine/KeyCodes.h"
-#include "JuicyEngine/MouseButtonCodes.h"
+#include "JuicyEngine/Core/Input.h"
+#include "JuicyEngine/Core/KeyCodes.h"
+#include "JuicyEngine/Core/MouseButtonCodes.h"
 #include "JuicyEngine/ImGui/ImGuiLayer.h"
-#include "JuicyEngine/OrthographicCameraController.h"
+#include "JuicyEngine/Renderer/OrthographicCameraController.h"
 
 // ---Renderer------------------------
 #include "JuicyEngine/Renderer/Renderer.h"
@@ -21,5 +21,5 @@
 
 // -----------------------------------
 // ---Entry Point---------------------
-#include "JuicyEngine/EntryPoint.h"
+#include "JuicyEngine/Core/EntryPoint.h"
 // -----------------------------------

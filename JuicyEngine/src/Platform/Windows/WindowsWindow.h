@@ -1,5 +1,5 @@
 #pragma once
-#include "JuicyEngine/Window.h"
+#include "JuicyEngine/Core/Window.h"
 #include <GLFW/glfw3.h>
 #include <JuicyEngine/Renderer/GraphicsContext.h>
 
