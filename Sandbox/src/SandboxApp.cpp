@@ -1,15 +1,17 @@
 #include <JuicyEngine.h>
-
+#include <JuicyEngine/Core/EntryPoint.h>
 #include "Platform/OpenGL/OpenGLShader.h"
 #include "imgui/imgui.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "Sandbox2D.h"
+
 class ExampleLayer : public JuicyEngine::Layer
 {
 public:
     ExampleLayer() : Layer("Example"), m_CameraController(1280.0f / 720.0f)
     {
-        m_VertexArray.reset(JuicyEngine::VertexArray::Create());
+        m_VertexArray = JuicyEngine::VertexArray::Create();
         float vertices[3 * 7] = {-0.5f, -0.5f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f, 0.5f, -0.5f, 0.0f, 0.2f, 0.3f, 0.8f, 1.0f, 0.0f, 0.5f, 0.0f,
             0.8f, 0.8f, 0.2f, 1.0f};
         JuicyEngine::Ref<JuicyEngine::VertexBuffer> vertexBuffer;
@@ -22,7 +24,7 @@ public:
         JuicyEngine::Ref<JuicyEngine::IndexBuffer> indexBuffer;
         indexBuffer.reset(JuicyEngine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
         m_VertexArray->SetIndexBuffer(indexBuffer);
-        m_SquareVA.reset(JuicyEngine::VertexArray::Create());
+        m_SquareVA = JuicyEngine::VertexArray::Create();
         float squareVertices[5 * 4] = {
             -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f};
         JuicyEngine::Ref<JuicyEngine::VertexBuffer> squareVB;
@@ -142,7 +144,9 @@ private:
 class Sandbox : public JuicyEngine::Application
 {
 public:
-    Sandbox() { PushLayer(new ExampleLayer()); }
+    Sandbox() { //PushLayer(new ExampleLayer());
+        PushLayer(new Sandbox2D());
+    }
     ~Sandbox() {}
 };
 

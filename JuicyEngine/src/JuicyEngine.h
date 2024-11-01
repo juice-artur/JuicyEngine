@@ -20,6 +20,3 @@
 #include "JuicyEngine/Renderer/OrthographicCamera.h"
 
 // -----------------------------------
-// ---Entry Point---------------------
-#include "JuicyEngine/Core/EntryPoint.h"
-// -----------------------------------
