@@ -12,6 +12,7 @@
 
 // ---Renderer------------------------
 #include "JuicyEngine/Renderer/Renderer.h"
+#include "JuicyEngine/Renderer/Renderer2D.h"
 #include "JuicyEngine/Renderer/RenderCommand.h"
 #include "JuicyEngine/Renderer/Buffer.h"
 #include "JuicyEngine/Renderer/Shader.h"
