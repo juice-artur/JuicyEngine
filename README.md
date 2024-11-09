@@ -5,6 +5,7 @@
 
 # Goals
 - C++ is the main programming language
+- Vulkan as primary graphics API
 ---
 # Project setup
 - Cloning
