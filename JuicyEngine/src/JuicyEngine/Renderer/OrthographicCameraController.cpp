@@ -45,6 +45,8 @@ void OrthographicCameraController::OnUpdate(Timestep ts)
 
         m_Camera.SetRotation(m_CameraRotation);
     }
+    m_Camera.SetPosition(m_CameraPosition);
+    m_CameraTranslationSpeed = m_ZoomLevel;
 }
 void OrthographicCameraController::OnEvent(Event& e)
 {
