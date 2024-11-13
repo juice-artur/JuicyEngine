@@ -1,7 +1,6 @@
 #include "jepch.h"
-#include "RenderCommand.h"
-#include "Platform/OpenGL/OpenGLRendererAPI.h"
+#include "JuicyEngine/Renderer/RenderCommand.h"
 namespace JuicyEngine
 {
-RendererAPI* RenderCommand::s_RendererAPI = new OpenGLRendererAPI;
+Scope<RendererAPI> RenderCommand::s_RendererAPI = RendererAPI::Create();
 }

@@ -1,5 +1,5 @@
 #include "jepch.h"
-#include "OrthographicCamera.h"
+#include "JuicyEngine/Renderer/OrthographicCamera.h"
 #include <glm/gtc/matrix_transform.hpp>
 namespace JuicyEngine
 {

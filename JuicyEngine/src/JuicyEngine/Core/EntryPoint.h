@@ -1,4 +1,6 @@
 #pragma once
+#include "JuicyEngine/Core/Core.h"
+
 #ifdef JE_PLATFORM_WINDOWS
 extern JuicyEngine::Application* ::JuicyEngine::CreateApplication();
 int main(int argc, char** argv)

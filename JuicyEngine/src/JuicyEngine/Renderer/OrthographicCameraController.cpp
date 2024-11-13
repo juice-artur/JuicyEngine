@@ -1,5 +1,5 @@
 #include "jepch.h"
-#include "OrthographicCameraController.h"
+#include "JuicyEngine/Renderer/OrthographicCameraController.h"
 #include "JuicyEngine/Core/Input.h"
 #include "JuicyEngine/Core/KeyCodes.h"
 namespace JuicyEngine

@@ -1492,5 +1492,6 @@
       <Filter>vendor\stb_image</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\Renderer2D.cpp" />
+    <ClCompile Include="src\JuicyEngine\Renderer\GraphicsContext.cpp" />
   </ItemGroup>
 </Project>

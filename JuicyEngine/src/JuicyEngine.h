@@ -1,5 +1,6 @@
 #pragma once
 // For use by JuicyEngine applications
+#include "JuicyEngine/Core/Core.h"
 #include "JuicyEngine/Core/Application.h"
 #include "JuicyEngine/Core/Layer.h"
 #include "JuicyEngine/Core/Log.h"

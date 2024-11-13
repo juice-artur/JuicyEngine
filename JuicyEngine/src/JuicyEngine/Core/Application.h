@@ -1,6 +1,6 @@
 #pragma once
-#include "Core.h"
-#include "Window.h"
+#include "JuicyEngine/Core/Core.h"
+#include "JuicyEngine/Core/Window.h"
 #include "JuicyEngine/Core/LayerStack.h"
 #include "JuicyEngine/Events/Event.h"
 #include "JuicyEngine/Events/ApplicationEvent.h"

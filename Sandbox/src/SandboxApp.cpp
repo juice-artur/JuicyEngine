@@ -1,6 +1,5 @@
 #include <JuicyEngine.h>
 #include <JuicyEngine/Core/EntryPoint.h>
-#include "Platform/OpenGL/OpenGLShader.h"
 #include "imgui/imgui.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -14,26 +13,24 @@ public:
         m_VertexArray = JuicyEngine::VertexArray::Create();
         float vertices[3 * 7] = {-0.5f, -0.5f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f, 0.5f, -0.5f, 0.0f, 0.2f, 0.3f, 0.8f, 1.0f, 0.0f, 0.5f, 0.0f,
             0.8f, 0.8f, 0.2f, 1.0f};
-        JuicyEngine::Ref<JuicyEngine::VertexBuffer> vertexBuffer;
-        vertexBuffer.reset(JuicyEngine::VertexBuffer::Create(vertices, sizeof(vertices)));
+        JuicyEngine::Ref<JuicyEngine::VertexBuffer> vertexBuffer = JuicyEngine::VertexBuffer::Create(vertices, sizeof(vertices));
         JuicyEngine::BufferLayout layout = {
             {JuicyEngine::ShaderDataType::Float3, "a_Position"}, {JuicyEngine::ShaderDataType::Float4, "a_Color"}};
         vertexBuffer->SetLayout(layout);
         m_VertexArray->AddVertexBuffer(vertexBuffer);
         uint32_t indices[3] = {0, 1, 2};
-        JuicyEngine::Ref<JuicyEngine::IndexBuffer> indexBuffer;
-        indexBuffer.reset(JuicyEngine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+        JuicyEngine::Ref<JuicyEngine::IndexBuffer> indexBuffer =
+            JuicyEngine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
         m_VertexArray->SetIndexBuffer(indexBuffer);
         m_SquareVA = JuicyEngine::VertexArray::Create();
         float squareVertices[5 * 4] = {
             -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f};
-        JuicyEngine::Ref<JuicyEngine::VertexBuffer> squareVB;
-        squareVB.reset(JuicyEngine::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
+        JuicyEngine::Ref<JuicyEngine::VertexBuffer> squareVB = JuicyEngine::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
         squareVB->SetLayout({{JuicyEngine::ShaderDataType::Float3, "a_Position"}, {JuicyEngine::ShaderDataType::Float2, "a_TexCoord"}});
         m_SquareVA->AddVertexBuffer(squareVB);
         uint32_t squareIndices[6] = {0, 1, 2, 2, 3, 0};
-        JuicyEngine::Ref<JuicyEngine::IndexBuffer> squareIB;
-        squareIB.reset(JuicyEngine::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
+        JuicyEngine::Ref<JuicyEngine::IndexBuffer> squareIB =
+            JuicyEngine::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
         m_SquareVA->SetIndexBuffer(squareIB);
         std::string vertexSrc = R"(
 			#version 330 core
@@ -93,8 +90,8 @@ public:
         auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
         m_Texture = JuicyEngine::Texture2D::Create("assets/textures/Checkerboard.png");
         m_JuicyLogoTexture = JuicyEngine::Texture2D::Create("assets/textures/JE_Logo.png");
-        std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(textureShader)->Bind();
-        std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(textureShader)->UploadUniformInt("u_Texture", 0);
+        textureShader->Bind();
+        textureShader->SetInt("u_Texture", 0);
     }
     void OnUpdate(JuicyEngine::Timestep ts) override
     {
@@ -103,8 +100,8 @@ public:
         JuicyEngine::RenderCommand::Clear();
         JuicyEngine::Renderer::BeginScene(m_CameraController.GetCamera());
         glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
-        std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(m_FlatColorShader)->Bind();
-        std::dynamic_pointer_cast<JuicyEngine::OpenGLShader>(m_FlatColorShader)->UploadUniformFloat3("u_Color", m_SquareColor);
+        m_FlatColorShader->Bind();
+        m_FlatColorShader->SetFloat3("u_Color", m_SquareColor);
         for (int y = 0; y < 20; y++)
         {
             for (int x = 0; x < 20; x++)
@@ -144,7 +141,8 @@ private:
 class Sandbox : public JuicyEngine::Application
 {
 public:
-    Sandbox() { //PushLayer(new ExampleLayer());
+    Sandbox()
+    {  // PushLayer(new ExampleLayer());
         PushLayer(new Sandbox2D());
     }
     ~Sandbox() {}

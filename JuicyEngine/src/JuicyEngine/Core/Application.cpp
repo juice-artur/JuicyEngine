@@ -1,8 +1,8 @@
 #include "jepch.h"
-#include "Application.h"
+#include "JuicyEngine/Core/Application.h"
 #include "JuicyEngine/Core/Log.h"
 
-#include "Input.h"
+#include "JuicyEngine/Core/Input.h"
 
 #include <glfw/glfw3.h>
 
@@ -13,19 +13,20 @@ namespace JuicyEngine
 
 Application* Application::s_Instance = nullptr;
 
-#define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
-
 Application::Application()
 {
     JE_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
     m_Window = std::unique_ptr<Window>(Window::Create());
-    m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+    m_Window->SetEventCallback(JE_BIND_EVENT_FN(Application::OnEvent));
     Renderer::Init();
     m_ImGuiLayer = new ImGuiLayer();
     PushOverlay(m_ImGuiLayer);
 }
-Application::~Application() {}
+Application::~Application()
+{
+    Renderer::Shutdown();
+}
 
 void Application::PushLayer(Layer* layer)
 {
@@ -41,8 +42,8 @@ void Application::PushOverlay(Layer* layer)
 void Application::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
-    dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
-    dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
+    dispatcher.Dispatch<WindowCloseEvent>(JE_BIND_EVENT_FN(Application::OnWindowClose));
+    dispatcher.Dispatch<WindowResizeEvent>(JE_BIND_EVENT_FN(Application::OnWindowResize));
     for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
     {
         (*--it)->OnEvent(e);

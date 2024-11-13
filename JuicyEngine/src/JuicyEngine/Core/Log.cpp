@@ -1,5 +1,5 @@
 #include <jepch.h>
-#include "Log.h"
+#include "JuicyEngine/Core/Log.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace JuicyEngine

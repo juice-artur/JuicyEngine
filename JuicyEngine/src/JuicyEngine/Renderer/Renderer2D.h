@@ -1,6 +1,6 @@
 #pragma once
-#include "OrthographicCamera.h"
-#include "Texture.h"
+#include "JuicyEngine/Renderer/OrthographicCamera.h"
+#include "JuicyEngine/Renderer/Texture.h"
 namespace JuicyEngine
 {
 class Renderer2D
