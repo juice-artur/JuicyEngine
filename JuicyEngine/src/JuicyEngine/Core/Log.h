@@ -22,7 +22,7 @@ private:
 #define JE_CORE_INFO(...) ::JuicyEngine::Log::GetCoreLogger()->info(__VA_ARGS__)
 #define JE_CORE_WARN(...) ::JuicyEngine::Log::GetCoreLogger()->warn(__VA_ARGS__)
 #define JE_CORE_ERROR(...) ::JuicyEngine::Log::GetCoreLogger()->error(__VA_ARGS__)
-#define JE_CORE_FATAL(...) ::JuicyEngine::Log::GetCoreLogger()->fatal(__VA_ARGS__)
+#define JE_CORE_CRITICAL(...) ::JuicyEngine::Log::GetCoreLogger()->critical(__VA_ARGS__)
 // Client log macros
 #define JE_TRACE(...) ::JuicyEngine::Log::GetClientLogger()->trace(__VA_ARGS__)
 #define JE_INFO(...) ::JuicyEngine::Log::GetClientLogger()->info(__VA_ARGS__)

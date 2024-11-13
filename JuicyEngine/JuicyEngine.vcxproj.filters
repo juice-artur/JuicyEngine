@@ -81,7 +81,7 @@
     <ClInclude Include="src\JuicyEngine\Core\Log.h">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Core\MouseButtonCodes.h">
+    <ClInclude Include="src\JuicyEngine\Core\MouseCodes.h">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Core\Timestep.h">
@@ -1493,5 +1493,7 @@
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\Renderer2D.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\GraphicsContext.cpp" />
+    <ClCompile Include="src\JuicyEngine\Core\Input.cpp" />
+    <ClCompile Include="src\JuicyEngine\Core\Window.cpp" />
   </ItemGroup>
 </Project>

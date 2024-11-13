@@ -7,7 +7,7 @@
 #include "JuicyEngine/Core/Timestep.h"
 #include "JuicyEngine/Core/Input.h"
 #include "JuicyEngine/Core/KeyCodes.h"
-#include "JuicyEngine/Core/MouseButtonCodes.h"
+#include "JuicyEngine/Core/MouseCodes.h"
 #include "JuicyEngine/ImGui/ImGuiLayer.h"
 #include "JuicyEngine/Renderer/OrthographicCameraController.h"
 

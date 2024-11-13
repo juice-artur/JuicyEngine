@@ -155,7 +155,7 @@
     <ClInclude Include="src\JuicyEngine\Core\Layer.h" />
     <ClInclude Include="src\JuicyEngine\Core\LayerStack.h" />
     <ClInclude Include="src\JuicyEngine\Core\Log.h" />
-    <ClInclude Include="src\JuicyEngine\Core\MouseButtonCodes.h" />
+    <ClInclude Include="src\JuicyEngine\Core\MouseCodes.h" />
     <ClInclude Include="src\JuicyEngine\Core\Timestep.h" />
     <ClInclude Include="src\JuicyEngine\Core\Window.h" />
     <ClInclude Include="src\JuicyEngine\Events\ApplicationEvent.h" />
@@ -603,9 +603,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JuicyEngine\Core\Application.cpp" />
+    <ClCompile Include="src\JuicyEngine\Core\Input.cpp" />
     <ClCompile Include="src\JuicyEngine\Core\Layer.cpp" />
     <ClCompile Include="src\JuicyEngine\Core\LayerStack.cpp" />
     <ClCompile Include="src\JuicyEngine\Core\Log.cpp" />
+    <ClCompile Include="src\JuicyEngine\Core\Window.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp" />
