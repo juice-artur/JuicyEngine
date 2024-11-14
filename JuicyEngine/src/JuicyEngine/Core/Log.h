@@ -5,7 +5,7 @@
 
 namespace JuicyEngine
 {
-class JE_API Log
+class  Log
 {
 public:
     static void Init();

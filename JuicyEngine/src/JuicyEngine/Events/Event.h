@@ -52,7 +52,7 @@ enum EventCategory
     {                                                                                                                                      \
         return category;                                                                                                                   \
     }
-class JE_API Event
+class  Event
 {
 public:
     bool Handled = false;

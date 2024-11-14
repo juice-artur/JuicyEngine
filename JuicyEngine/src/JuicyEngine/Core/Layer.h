@@ -4,7 +4,7 @@
 #include "JuicyEngine/Events/Event.h"
 namespace JuicyEngine
 {
-class JE_API Layer
+class  Layer
 {
 public:
     Layer(const std::string& name = "Layer");

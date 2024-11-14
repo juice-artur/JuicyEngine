@@ -4,7 +4,7 @@
 #include <vector>
 namespace JuicyEngine
 {
-class JE_API LayerStack
+class  LayerStack
 {
 public:
     LayerStack();

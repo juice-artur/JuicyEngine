@@ -3,7 +3,7 @@
 #include "JuicyEngine/Core/Input.h"
 namespace JuicyEngine
 {
-class JE_API KeyEvent : public Event
+class  KeyEvent : public Event
 {
 public:
     inline KeyCode GetKeyCode() const { return m_KeyCode; }
@@ -12,7 +12,7 @@ protected:
     KeyEvent(KeyCode keycode) : m_KeyCode(keycode) {}
     KeyCode m_KeyCode;
 };
-class JE_API KeyPressedEvent : public KeyEvent
+class  KeyPressedEvent : public KeyEvent
 {
 public:
     KeyPressedEvent(KeyCode keycode, int repeatCount) : KeyEvent(keycode), m_RepeatCount(repeatCount) {}
@@ -27,7 +27,7 @@ public:
 private:
     int m_RepeatCount;
 };
-class JE_API KeyReleasedEvent : public KeyEvent
+class  KeyReleasedEvent : public KeyEvent
 {
 public:
     KeyReleasedEvent(KeyCode keycode) : KeyEvent(keycode) {}
@@ -39,7 +39,7 @@ public:
     }
     EVENT_CLASS_TYPE(KeyReleased)
 };
-class JE_API KeyTypedEvent : public KeyEvent
+class  KeyTypedEvent : public KeyEvent
 {
 public:
     KeyTypedEvent(KeyCode keycode) : KeyEvent(keycode) {}

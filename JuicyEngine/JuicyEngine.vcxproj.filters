@@ -123,6 +123,9 @@
     <ClInclude Include="src\JuicyEngine\Renderer\Renderer.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Renderer\Renderer2D.h">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\RendererAPI.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
@@ -1413,10 +1416,12 @@
     <ClInclude Include="vendor\stb_image\stb_image.h">
       <Filter>vendor\stb_image</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Renderer\Renderer2D.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JuicyEngine\Core\Application.cpp">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Core\Input.cpp">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Core\Layer.cpp">
@@ -1428,6 +1433,9 @@
     <ClCompile Include="src\JuicyEngine\Core\Log.cpp">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Core\Window.cpp">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiBuild.cpp">
       <Filter>src\JuicyEngine\ImGui</Filter>
     </ClCompile>
@@ -1435,6 +1443,9 @@
       <Filter>src\JuicyEngine\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Renderer\GraphicsContext.cpp">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\OrthographicCamera.cpp">
@@ -1447,6 +1458,9 @@
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\Renderer.cpp">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Renderer\Renderer2D.cpp">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\RendererAPI.cpp">
@@ -1491,9 +1505,5 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp">
       <Filter>vendor\stb_image</Filter>
     </ClCompile>
-    <ClCompile Include="src\JuicyEngine\Renderer\Renderer2D.cpp" />
-    <ClCompile Include="src\JuicyEngine\Renderer\GraphicsContext.cpp" />
-    <ClCompile Include="src\JuicyEngine\Core\Input.cpp" />
-    <ClCompile Include="src\JuicyEngine\Core\Window.cpp" />
   </ItemGroup>
 </Project>
