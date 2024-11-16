@@ -5,7 +5,7 @@
 #include <JuicyEngine/Events/MouseEvent.h>
 namespace JuicyEngine
 {
-class  ImGuiLayer : public Layer
+class ImGuiLayer : public Layer
 {
 public:
     ImGuiLayer();
@@ -13,6 +13,7 @@ public:
     virtual void OnAttach() override;
     virtual void OnDetach() override;
     virtual void OnImGuiRender() override;
+    virtual void OnEvent(Event& e) override;
     void Begin();
     void End();
 };

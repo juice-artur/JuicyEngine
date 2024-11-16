@@ -96,7 +96,10 @@ void Renderer2D::Init()
     s_Data.QuadVertexPositions[3] = {-0.5f, 0.5f, 0.0f, 1.0f};
 }
 
-void Renderer2D::Shutdown() {}
+void Renderer2D::Shutdown()
+{
+    delete[] s_Data.QuadVertexBufferBase;
+}
 
 void Renderer2D::BeginScene(const OrthographicCamera& camera)
 {
@@ -120,6 +123,11 @@ void Renderer2D::EndScene()
 
 void Renderer2D::Flush()
 {
+    if (s_Data.QuadIndexCount == 0)
+    {
+        return;
+    }
+
     // Bind textures
     for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
         s_Data.TextureSlots[i]->Bind(i);
@@ -181,7 +189,6 @@ void Renderer2D::DrawQuad(
 {
 
     constexpr size_t quadVertexCount = 4;
-    constexpr glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
     constexpr glm::vec2 textureCoords[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 
     if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
@@ -215,7 +222,7 @@ void Renderer2D::DrawQuad(
     for (size_t i = 0; i < quadVertexCount; i++)
     {
         s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-        s_Data.QuadVertexBufferPtr->Color = color;
+        s_Data.QuadVertexBufferPtr->Color = tintColor;
         s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
         s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
         s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
@@ -273,7 +280,6 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
 {
 
     constexpr size_t quadVertexCount = 4;
-    constexpr glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
     constexpr glm::vec2 textureCoords[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
     if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
     {
@@ -308,7 +314,7 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
     for (size_t i = 0; i < quadVertexCount; i++)
     {
         s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-        s_Data.QuadVertexBufferPtr->Color = color;
+        s_Data.QuadVertexBufferPtr->Color = tintColor;
         s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
         s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
         s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
