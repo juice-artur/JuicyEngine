@@ -9,7 +9,7 @@
 
 namespace JuicyEngine
 {
-class  Application
+class Application
 {
 public:
     Application();
@@ -19,6 +19,7 @@ public:
     void PushLayer(Layer* layer);
     void PushOverlay(Layer* layer);
     inline Window& GetWindow() { return *m_Window; }
+    void Close();
     inline static Application& Get() { return *s_Instance; }
 
 private:

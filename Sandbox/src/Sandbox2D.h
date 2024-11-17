@@ -17,6 +17,7 @@ private:
     // Temp
     JuicyEngine::Ref<JuicyEngine::VertexArray> m_SquareVA;
     JuicyEngine::Ref<JuicyEngine::Shader> m_FlatColorShader;
+    JuicyEngine::Ref<JuicyEngine::Framebuffer> m_Framebuffer;
     JuicyEngine::Ref<JuicyEngine::Texture2D> m_CheckerboardTexture;
     glm::vec4 m_SquareColor = {0.2f, 0.3f, 0.8f, 1.0f};
 };

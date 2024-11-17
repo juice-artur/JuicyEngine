@@ -17,6 +17,7 @@
 #include "JuicyEngine/Renderer/RenderCommand.h"
 #include "JuicyEngine/Renderer/Buffer.h"
 #include "JuicyEngine/Renderer/Shader.h"
+#include "JuicyEngine/Renderer/Framebuffer.h"
 #include "JuicyEngine/Renderer/Texture.h"
 #include "JuicyEngine/Renderer/VertexArray.h"
 #include "JuicyEngine/Renderer/OrthographicCamera.h"

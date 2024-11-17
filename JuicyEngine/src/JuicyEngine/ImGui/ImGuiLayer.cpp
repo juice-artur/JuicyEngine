@@ -14,8 +14,6 @@ namespace JuicyEngine
 {
 ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {}
 
-ImGuiLayer::~ImGuiLayer() {}
-
 void ImGuiLayer::OnAttach()
 {
     // Setup Dear ImGui context
@@ -47,7 +45,7 @@ void ImGuiLayer::OnAttach()
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 410");
+    ImGui_ImplOpenGL3_Init("#version 440");
 }
 
 void ImGuiLayer::OnDetach()
@@ -75,7 +73,7 @@ void ImGuiLayer::End()
 {
     ImGuiIO& io = ImGui::GetIO();
     Application& app = Application::Get();
-    io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+    io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
 
     // Rendering
     ImGui::Render();
@@ -88,11 +86,5 @@ void ImGuiLayer::End()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
-}
-
-void ImGuiLayer::OnImGuiRender()
-{
-    static bool show = true;
-    ImGui::ShowDemoWindow(&show);
 }
 }  // namespace JuicyEngine
