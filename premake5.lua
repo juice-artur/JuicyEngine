@@ -142,3 +142,45 @@ project "Sandbox"
 		defines "JE_DIST"
 		buildoptions "/MD"
 		optimize "On"
+
+project "Juicy-Editor"
+	location "Juicy-Editor"
+	kind "ConsoleApp"
+	language "C++"
+	cppdialect "C++17"
+	staticruntime "on"
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+	includedirs
+	{
+		"JuicyEngine/vendor/spdlog/include",
+		"JuicyEngine/src",
+		"JuicyEngine/vendor",
+		"%{IncludeDir.glm}"
+	}
+	links
+	{
+		"JuicyEngine"
+	}
+	filter "system:windows"
+		systemversion "latest"
+		
+		filter "configurations:Debug"
+		defines "JE_DEBUG"
+		buildoptions "/MD"
+		symbols "On"
+
+	filter "configurations:Release"
+		defines "JE_RELEASE"
+		buildoptions "/MD"
+		optimize "On"
+
+	filter "configurations:Dist"
+		defines "JE_DIST"
+		buildoptions "/MD"
+		optimize "On"

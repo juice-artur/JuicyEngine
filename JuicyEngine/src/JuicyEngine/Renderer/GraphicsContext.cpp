@@ -14,4 +14,4 @@ Scope<GraphicsContext> GraphicsContext::Create(void* window)
     JE_CORE_ASSERT(false, "Unknown RendererAPI!");
     return nullptr;
 }
-}  // namespace Hazel
+}  // namespace JuicyEngine

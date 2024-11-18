@@ -12,7 +12,7 @@ namespace JuicyEngine
 class Application
 {
 public:
-    Application();
+    Application(const std::string& name = "Juicy App");
     virtual ~Application();
     void Run();
     void OnEvent(Event& e);
