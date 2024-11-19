@@ -1,5 +1,6 @@
 workspace "JuicyEngine"
 	architecture "x64"
+	startproject "JuicyEditor"
 
 	configurations
 	{
@@ -143,8 +144,8 @@ project "Sandbox"
 		buildoptions "/MD"
 		optimize "On"
 
-project "Juicy-Editor"
-	location "Juicy-Editor"
+project "JuicyEditor"
+	location "JuicyEditor"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
