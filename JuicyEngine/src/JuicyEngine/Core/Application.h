@@ -20,6 +20,7 @@ public:
     void PushOverlay(Layer* layer);
     inline Window& GetWindow() { return *m_Window; }
     void Close();
+    ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
     inline static Application& Get() { return *s_Instance; }
 
 private:
