@@ -18,6 +18,7 @@ IncludeDir["Glad"] = "JuicyEngine/vendor/Glad/include"
 IncludeDir["ImGui"] = "JuicyEngine/vendor/imgui"
 IncludeDir["glm"] = "JuicyEngine/vendor/glm"
 IncludeDir["stb_image"] = "JuicyEngine/vendor/stb_image"
+IncludeDir["entt"] = "JuicyEngine/vendor/entt/include"
 
 group "Dependencies"
 	include "JuicyEngine/vendor/GLFW"
@@ -63,7 +64,8 @@ project "JuicyEngine"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.entt}"
 	}
 	links 
 	{ 
@@ -116,7 +118,8 @@ project "Sandbox"
 		"JuicyEngine/vendor/spdlog/include",
 		"JuicyEngine/src",
 		"JuicyEngine/vendor",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.entt}"
 	}
 
 	links
@@ -162,7 +165,8 @@ project "JuicyEditor"
 		"JuicyEngine/vendor/spdlog/include",
 		"JuicyEngine/src",
 		"JuicyEngine/vendor",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.entt}"
 	}
 	links
 	{

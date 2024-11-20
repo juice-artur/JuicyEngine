@@ -9,6 +9,8 @@
 #include "JuicyEngine/Core/KeyCodes.h"
 #include "JuicyEngine/Core/MouseCodes.h"
 #include "JuicyEngine/ImGui/ImGuiLayer.h"
+#include "JuicyEngine/Scene/Scene.h"
+#include "JuicyEngine/Scene/Components.h"
 #include "JuicyEngine/Renderer/OrthographicCameraController.h"
 
 // ---Renderer------------------------

@@ -19,6 +19,9 @@
     <Filter Include="src\JuicyEngine\Renderer">
       <UniqueIdentifier>{7CF71995-681C-6915-9167-4EA57DEB6733}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\JuicyEngine\Scene">
+      <UniqueIdentifier>{B3C01177-1F2D-CD71-E820-65CF544CEFD9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\Platform">
       <UniqueIdentifier>{21CA02E5-0D2D-9289-B6B2-CA3FA2F45D0C}</UniqueIdentifier>
     </Filter>
@@ -140,6 +143,12 @@
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\VertexArray.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Scene\Components.h">
+      <Filter>src\JuicyEngine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Scene\Scene.h">
+      <Filter>src\JuicyEngine\Scene</Filter>
     </ClInclude>
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h">
       <Filter>src\Platform\OpenGL</Filter>
@@ -1483,6 +1492,9 @@
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\VertexArray.cpp">
       <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Scene\Scene.cpp">
+      <Filter>src\JuicyEngine\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
       <Filter>src\Platform\OpenGL</Filter>
