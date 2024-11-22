@@ -164,6 +164,7 @@
     <ClInclude Include="src\JuicyEngine\Events\MouseEvent.h" />
     <ClInclude Include="src\JuicyEngine\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Buffer.h" />
+    <ClInclude Include="src\JuicyEngine\Renderer\Camera.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Framebuffer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\GraphicsContext.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\OrthographicCamera.h" />

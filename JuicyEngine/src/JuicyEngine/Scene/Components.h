@@ -1,5 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "JuicyEngine/Renderer/Camera.h"
+
 namespace JuicyEngine
 {
 struct TagComponent
@@ -24,5 +26,13 @@ struct SpriteRendererComponent
     SpriteRendererComponent() = default;
     SpriteRendererComponent(const SpriteRendererComponent&) = default;
     SpriteRendererComponent(const glm::vec4& color) : Color(color) {}
+};
+struct CameraComponent
+{
+    JuicyEngine::Camera Camera;
+    bool Primary = true;
+    CameraComponent() = default;
+    CameraComponent(const CameraComponent&) = default;
+    CameraComponent(const glm::mat4& projection) : Camera(projection) {}
 };
 }  // namespace JuicyEngine
