@@ -1433,6 +1433,7 @@
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Scene\Entity.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Camera.h" />
+    <ClInclude Include="src\JuicyEngine\Scene\SceneCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JuicyEngine\Core\Application.cpp">
@@ -1532,5 +1533,6 @@
       <Filter>vendor\stb_image</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Scene\Entity.cpp" />
+    <ClCompile Include="src\JuicyEngine\Scene\SceneCamera.cpp" />
   </ItemGroup>
 </Project>

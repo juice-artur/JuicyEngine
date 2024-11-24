@@ -179,6 +179,7 @@
     <ClInclude Include="src\JuicyEngine\Scene\Components.h" />
     <ClInclude Include="src\JuicyEngine\Scene\Entity.h" />
     <ClInclude Include="src\JuicyEngine\Scene\Scene.h" />
+    <ClInclude Include="src\JuicyEngine\Scene\SceneCamera.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLFramebuffer.h" />
@@ -630,6 +631,7 @@
     <ClCompile Include="src\JuicyEngine\Renderer\VertexArray.cpp" />
     <ClCompile Include="src\JuicyEngine\Scene\Entity.cpp" />
     <ClCompile Include="src\JuicyEngine\Scene\Scene.cpp" />
+    <ClCompile Include="src\JuicyEngine\Scene\SceneCamera.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLFramebuffer.cpp" />
