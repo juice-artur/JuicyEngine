@@ -11,6 +11,7 @@
 #include "JuicyEngine/ImGui/ImGuiLayer.h"
 #include "JuicyEngine/Scene/Scene.h"
 #include "JuicyEngine/Scene/Entity.h"
+#include "JuicyEngine/Scene/ScriptableEntity.h"
 #include "JuicyEngine/Scene/Components.h"
 #include "JuicyEngine/Renderer/OrthographicCameraController.h"
 
