@@ -79,7 +79,8 @@ void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
                 {
                     glEnableVertexAttribArray(m_VertexBufferIndexOffset);
                     glVertexAttribPointer(m_VertexBufferIndexOffset, count, ShaderDataTypeToOpenGLBaseType(element.Type),
-                        element.Normalized ? GL_TRUE : GL_FALSE, layout.GetStride(), (const void*)(sizeof(float) * count * i));
+                        element.Normalized ? GL_TRUE : GL_FALSE, layout.GetStride(),
+                        (const void*)(element.Offset + sizeof(float) * count * i));
                     glVertexAttribDivisor(m_VertexBufferIndexOffset, 1);
                     m_VertexBufferIndexOffset++;
                 }

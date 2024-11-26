@@ -1,5 +1,5 @@
 #pragma once
-#include "jepch.h"
+#include <sstream>
 #include "JuicyEngine/Core/Core.h"
 #include "JuicyEngine/Events/Event.h"
 namespace JuicyEngine
@@ -15,7 +15,7 @@ struct WindowProps
     }
 };
 // Interface representing a desktop system based Window
-class  Window
+class Window
 {
 public:
     using EventCallbackFn = std::function<void(Event&)>;

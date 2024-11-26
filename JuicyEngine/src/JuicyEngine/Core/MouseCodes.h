@@ -2,7 +2,11 @@
 
 namespace JuicyEngine
 {
-typedef enum class MouseCode : uint16_t
+using MouseCode = uint16_t;
+
+namespace Mouse
+{
+enum : MouseCode
 {
     // From glfw3.h
     Button0 = 0,
@@ -18,24 +22,6 @@ typedef enum class MouseCode : uint16_t
     ButtonLeft = Button0,
     ButtonRight = Button1,
     ButtonMiddle = Button2
-} Mouse;
-
-inline std::ostream& operator<<(std::ostream& os, MouseCode mouseCode)
-{
-    os << static_cast<int32_t>(mouseCode);
-    return os;
-}
+};
+}  // namespace Mouse
 }  // namespace JuicyEngine
-
-#define HZ_MOUSE_BUTTON_0 ::JuicyEngine::Mouse::Button0
-#define HZ_MOUSE_BUTTON_1 ::JuicyEngine::Mouse::Button1
-#define HZ_MOUSE_BUTTON_2 ::JuicyEngine::Mouse::Button2
-#define HZ_MOUSE_BUTTON_3 ::JuicyEngine::Mouse::Button3
-#define HZ_MOUSE_BUTTON_4 ::JuicyEngine::Mouse::Button4
-#define HZ_MOUSE_BUTTON_5 ::JuicyEngine::Mouse::Button5
-#define HZ_MOUSE_BUTTON_6 ::JuicyEngine::Mouse::Button6
-#define HZ_MOUSE_BUTTON_7 ::JuicyEngine::Mouse::Button7
-#define HZ_MOUSE_BUTTON_LAST ::JuicyEngine::Mouse::ButtonLast
-#define HZ_MOUSE_BUTTON_LEFT ::JuicyEngine::Mouse::ButtonLeft
-#define HZ_MOUSE_BUTTON_RIGHT ::JuicyEngine::Mouse::ButtonRight
-#define HZ_MOUSE_BUTTON_MIDDLE ::JuicyEngine::Mouse::ButtonMiddle

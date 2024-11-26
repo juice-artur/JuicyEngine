@@ -1,5 +1,5 @@
 #pragma once
-#include "jepch.h"
+#include <functional>
 #include "JuicyEngine/Core/Core.h"
 #include "spdlog/fmt/bundled/format.h"
 #include <format>
