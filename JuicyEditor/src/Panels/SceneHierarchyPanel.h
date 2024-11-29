@@ -1,6 +1,5 @@
 #pragma once
 #include "JuicyEngine/Core/Core.h"
-#include "JuicyEngine/Core/Log.h"
 #include "JuicyEngine/Scene/Scene.h"
 #include "JuicyEngine/Scene/Entity.h"
 namespace JuicyEngine

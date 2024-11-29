@@ -17,27 +17,8 @@
 #define JE_DEBUGBREAK()
 #endif
 
-#ifdef JE_ENABLE_ASSERTS
-#define JE_ASSERT(x, ...)                                                                                                                  \
-    {                                                                                                                                      \
-        if (!(x))                                                                                                                          \
-        {                                                                                                                                  \
-            JE_ERROR("Assertion Failed: {0}", __VA_ARGS__);                                                                                \
-            JE_DEBUGBREAK();                                                                                                               \
-        }                                                                                                                                  \
-    }
-#define JE_CORE_ASSERT(x, ...)                                                                                                             \
-    {                                                                                                                                      \
-        if (!(x))                                                                                                                          \
-        {                                                                                                                                  \
-            JE_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__);                                                                           \
-            JE_DEBUGBREAK();                                                                                                               \
-        }                                                                                                                                  \
-    }
-#else
-#define JE_ASSERT(x, ...)
-#define JE_CORE_ASSERT(x, ...)
-#endif
+#define JE_EXPAND_MACRO(x) x
+#define JE_STRINGIFY_MACRO(x) #x
 
 #define BIT(x) (1 << x)
 
@@ -61,3 +42,6 @@ constexpr Ref<T> CreateRef(Args&&... args)
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
 }  // namespace JuicyEngine
+
+#include "JuicyEngine/Core/Log.h"
+#include "JuicyEngine/Core/Assert.h"

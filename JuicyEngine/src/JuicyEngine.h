@@ -4,6 +4,7 @@
 #include "JuicyEngine/Core/Application.h"
 #include "JuicyEngine/Core/Layer.h"
 #include "JuicyEngine/Core/Log.h"
+#include "JuicyEngine/Core/Assert.h"
 #include "JuicyEngine/Core/Timestep.h"
 #include "JuicyEngine/Core/Input.h"
 #include "JuicyEngine/Core/KeyCodes.h"
