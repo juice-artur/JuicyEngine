@@ -52,7 +52,7 @@ enum EventCategory
     {                                                                                                                                      \
         return category;                                                                                                                   \
     }
-class  Event
+class Event
 {
 public:
     bool Handled = false;
@@ -74,7 +74,7 @@ public:
     {
         if (m_Event.GetEventType() == T::GetStaticType())
         {
-            m_Event.Handled = func(*(T*)&m_Event);
+            m_Event.Handled |= func(static_cast<T&>(m_Event));
             return true;
         }
         return false;
