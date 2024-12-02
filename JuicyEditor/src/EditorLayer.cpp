@@ -25,7 +25,7 @@ void EditorLayer::OnAttach()
     redSquare.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
     m_SquareEntity = square;
 
-    m_CameraEntity = m_ActiveScene->CreateEntity("");
+    m_CameraEntity = m_ActiveScene->CreateEntity("Camera A");
     m_CameraEntity.AddComponent<CameraComponent>();
     m_SecondCamera = m_ActiveScene->CreateEntity("Camera B");
     auto& cc = m_SecondCamera.AddComponent<CameraComponent>();
