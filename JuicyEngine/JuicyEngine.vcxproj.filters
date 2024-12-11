@@ -63,6 +63,9 @@
     <ClInclude Include="src\JuicyEngine\Core\Application.h">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\Assert.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\JuicyEngine\Core\Core.h">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
@@ -160,6 +163,9 @@
       <Filter>src\JuicyEngine\Scene</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Scene\SceneCamera.h">
+      <Filter>src\JuicyEngine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Scene\SceneSerializer.h">
       <Filter>src\JuicyEngine\Scene</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Scene\ScriptableEntity.h">
@@ -1509,6 +1515,9 @@
       <Filter>src\JuicyEngine\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Scene\SceneCamera.cpp">
+      <Filter>src\JuicyEngine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Scene\SceneSerializer.cpp">
       <Filter>src\JuicyEngine\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">

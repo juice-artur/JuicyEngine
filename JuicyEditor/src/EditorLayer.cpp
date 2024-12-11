@@ -3,6 +3,7 @@
 #include <imgui/imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "JuicyEngine/Scene/SceneSerializer.h"
 namespace JuicyEngine
 {
 EditorLayer::EditorLayer() : Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f), m_SquareColor({0.2f, 0.3f, 0.8f, 1.0f}) {}
@@ -17,7 +18,7 @@ void EditorLayer::OnAttach()
     m_Framebuffer = Framebuffer::Create(fbSpec);
 
     m_ActiveScene = CreateRef<Scene>();
-
+#if 0
     // Entity
     auto square = m_ActiveScene->CreateEntity("Green Square");
     square.AddComponent<SpriteRendererComponent>(glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
@@ -64,7 +65,7 @@ void EditorLayer::OnAttach()
     };
     m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
     m_SecondCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-
+#endif
     m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 }
 
@@ -157,7 +158,16 @@ void EditorLayer::OnImGuiRender()
             // Disabling fullscreen would allow the window to be moved to the front of other windows,
             // which we can't undo at the moment without finer window depth/z control.
             // ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
-
+            if (ImGui::MenuItem("Serialize"))
+            {
+                SceneSerializer serializer(m_ActiveScene);
+                serializer.Serialize("assets/scenes/Example.je");
+            }
+            if (ImGui::MenuItem("Deserialize"))
+            {
+                SceneSerializer serializer(m_ActiveScene);
+                serializer.Deserialize("assets/scenes/Example.je");
+            }
             if (ImGui::MenuItem("Exit")) Application::Get().Close();
             ImGui::EndMenu();
         }
