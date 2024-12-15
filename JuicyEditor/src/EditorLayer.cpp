@@ -263,23 +263,23 @@ void EditorLayer::NewScene()
 
 void EditorLayer::OpenScene()
 {
-    std::string filepath = FileDialogs::OpenFile("JuicyEngine Scene(*.je)\0*.je\0");
-    if (!filepath.empty())
+    std::optional<std::string> filepath = FileDialogs::OpenFile("JuicyEngine Scene(*.je)\0*.je\0");
+    if (filepath)
     {
         m_ActiveScene = CreateRef<Scene>();
         m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
         m_SceneHierarchyPanel.SetContext(m_ActiveScene);
         SceneSerializer serializer(m_ActiveScene);
-        serializer.Deserialize(filepath);
+        serializer.Deserialize(*filepath);
     }
 }
 void EditorLayer::SaveSceneAs()
 {
-    std::string filepath = FileDialogs::SaveFile("JuicyEngine Scene(*.je)\0*.je\0");
-    if (!filepath.empty())
+    std::optional<std::string> filepath = FileDialogs::SaveFile("JuicyEngine Scene(*.je)\0*.je\0");
+    if (filepath)
     {
         SceneSerializer serializer(m_ActiveScene);
-        serializer.Serialize(filepath);
+        serializer.Serialize(*filepath);
     }
 }
 }  // namespace JuicyEngine
