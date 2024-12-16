@@ -32,6 +32,7 @@ IncludeDir["glm"] = "%{wks.location}/JuicyEngine/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/JuicyEngine/vendor/stb_image"
 IncludeDir["entt"] = "%{wks.location}/JuicyEngine/vendor/entt/include"
 IncludeDir["yaml_cpp"] = "%{wks.location}/JuicyEngine/vendor/yaml-cpp/include"
+IncludeDir["ImGuizmo"] = "%{wks.location}/JuicyEngine/vendor/ImGuizmo"
 
 group "Dependencies"
 	include "vendor/premake"

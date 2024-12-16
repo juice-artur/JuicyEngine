@@ -16,7 +16,8 @@ project "JuicyEditor"
 		"%{wks.location}/JuicyEngine/src",
 		"%{wks.location}/JuicyEngine/vendor",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.entt}"
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.ImGuizmo}"
 	}
 	links
 	{
