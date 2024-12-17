@@ -2,7 +2,7 @@
 #pragma once
 #include "JuicyEngine/Events/Event.h"
 #include "JuicyEngine/Core/Input.h"
-
+#include "sstream"
 namespace JuicyEngine
 {
 class MouseMovedEvent : public Event

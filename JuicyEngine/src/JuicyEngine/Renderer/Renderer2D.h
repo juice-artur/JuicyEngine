@@ -2,6 +2,7 @@
 #include "JuicyEngine/Renderer/OrthographicCamera.h"
 #include "JuicyEngine/Renderer/Texture.h"
 #include "JuicyEngine/Renderer/Camera.h"
+#include "JuicyEngine/Renderer/EditorCamera.h"
 
 namespace JuicyEngine
 {
@@ -11,6 +12,7 @@ public:
     static void Init();
     static void Shutdown();
     static void BeginScene(const Camera& camera, const glm::mat4& transform);
+    static void BeginScene(const EditorCamera& camera);
     static void BeginScene(const OrthographicCamera& camera);
     static void EndScene();
     static void Flush();

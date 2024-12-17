@@ -1,6 +1,7 @@
 #pragma once
 #include "JuicyEngine.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "JuicyEngine/Renderer/EditorCamera.h"
 namespace JuicyEngine
 {
 class EditorLayer : public Layer
@@ -31,6 +32,7 @@ private:
     Entity m_CameraEntity;
     Entity m_SecondCamera;
     bool m_PrimaryCamera = true;
+    EditorCamera m_EditorCamera;
     Ref<Texture2D> m_CheckerboardTexture;
 
     bool m_ViewportFocused = false, m_ViewportHovered = false;

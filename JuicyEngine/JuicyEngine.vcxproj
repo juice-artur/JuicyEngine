@@ -171,6 +171,7 @@
     <ClInclude Include="src\JuicyEngine\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Buffer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Camera.h" />
+    <ClInclude Include="src\JuicyEngine\Renderer\EditorCamera.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\Framebuffer.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\GraphicsContext.h" />
     <ClInclude Include="src\JuicyEngine\Renderer\OrthographicCamera.h" />
@@ -627,6 +628,7 @@
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\JuicyEngine\Renderer\EditorCamera.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\Framebuffer.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\GraphicsContext.cpp" />
     <ClCompile Include="src\JuicyEngine\Renderer\OrthographicCamera.cpp" />
