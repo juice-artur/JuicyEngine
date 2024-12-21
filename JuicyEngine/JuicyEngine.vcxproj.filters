@@ -16,6 +16,9 @@
     <Filter Include="src\JuicyEngine\ImGui">
       <UniqueIdentifier>{C0C86176-2C35-1D71-F528-B5CE61543FD9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\JuicyEngine\Math">
+      <UniqueIdentifier>{AF9D90E4-9B2C-1AAE-444B-2EA930B92A54}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\JuicyEngine\Renderer">
       <UniqueIdentifier>{7CF71995-681C-6915-9167-4EA57DEB6733}</UniqueIdentifier>
     </Filter>
@@ -24,9 +27,6 @@
     </Filter>
     <Filter Include="src\JuicyEngine\Utils">
       <UniqueIdentifier>{F6543F77-62C1-FA71-2BB5-92CF97E01CDA}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\Math">
-      <UniqueIdentifier>{261422CF-12E1-7CDA-3BFA-6A822726B268}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\Platform">
       <UniqueIdentifier>{21CA02E5-0D2D-9289-B6B2-CA3FA2F45D0C}</UniqueIdentifier>
@@ -123,10 +123,16 @@
     <ClInclude Include="src\JuicyEngine\ImGui\ImGuiLayer.h">
       <Filter>src\JuicyEngine\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Math\Math.h">
+      <Filter>src\JuicyEngine\Math</Filter>
+    </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\Buffer.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\Camera.h">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Renderer\EditorCamera.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\Framebuffer.h">
@@ -182,9 +188,6 @@
     </ClInclude>
     <ClInclude Include="src\JuicyEngine\Utils\PlatformUtils.h">
       <Filter>src\JuicyEngine\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Math\Math.h">
-      <Filter>src\Math</Filter>
     </ClInclude>
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h">
       <Filter>src\Platform\OpenGL</Filter>
@@ -1467,7 +1470,6 @@
     <ClInclude Include="vendor\stb_image\stb_image.h">
       <Filter>vendor\stb_image</Filter>
     </ClInclude>
-    <ClInclude Include="src\JuicyEngine\Renderer\EditorCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JuicyEngine\Core\Application.cpp">
@@ -1491,7 +1493,13 @@
     <ClCompile Include="src\JuicyEngine\ImGui\ImGuiLayer.cpp">
       <Filter>src\JuicyEngine\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Math\Math.cpp">
+      <Filter>src\JuicyEngine\Math</Filter>
+    </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\Buffer.cpp">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Renderer\EditorCamera.cpp">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\Framebuffer.cpp">
@@ -1539,9 +1547,6 @@
     <ClCompile Include="src\JuicyEngine\Scene\SceneSerializer.cpp">
       <Filter>src\JuicyEngine\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="src\JuicyEngine\Math\Math.cpp">
-      <Filter>src\Math</Filter>
-    </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
@@ -1581,6 +1586,5 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp">
       <Filter>vendor\stb_image</Filter>
     </ClCompile>
-    <ClCompile Include="src\JuicyEngine\Renderer\EditorCamera.cpp" />
   </ItemGroup>
 </Project>
