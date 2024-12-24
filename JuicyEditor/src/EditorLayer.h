@@ -1,7 +1,10 @@
 #pragma once
+
 #include "JuicyEngine.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ContentBrowserPanel.h"
 #include "JuicyEngine/Renderer/EditorCamera.h"
+
 namespace JuicyEngine
 {
 class EditorLayer : public Layer
@@ -46,5 +49,6 @@ private:
 
     // Panels
     SceneHierarchyPanel m_SceneHierarchyPanel;
+    ContentBrowserPanel m_ContentBrowserPanel;
 };
 }  // namespace JuicyEngine
