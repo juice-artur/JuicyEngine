@@ -35,7 +35,7 @@ project "yaml-cpp"
 		staticruntime "off"
 
 	filter "configurations:Debug"
-		buildoptions "/MD"
+		buildoptions "/MDd"
 		optimize "on"
 
 	filter "configurations:Release"

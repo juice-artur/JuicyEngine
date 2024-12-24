@@ -2,7 +2,7 @@ project "JuicyEditor"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "on"
+	staticruntime "off"
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 	files
@@ -21,13 +21,14 @@ project "JuicyEditor"
 	}
 	links
 	{
+		
 		"JuicyEngine"
 	}
 	filter "system:windows"
 		systemversion "latest"
 	filter "configurations:Debug"
 		defines "JE_DEBUG"
-		buildoptions "/MD"
+		buildoptions "/MDd"
 		symbols "on"
 	filter "configurations:Release"
 		defines "JE_RELEASE"

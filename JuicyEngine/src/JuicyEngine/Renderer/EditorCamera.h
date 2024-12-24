@@ -4,7 +4,7 @@
 #include "JuicyEngine/Events/Event.h"
 #include "JuicyEngine/Events/MouseEvent.h"
 #include <glm/glm.hpp>
-
+#define GLM_FORCE_QUAT_DATA_WXYZ
 namespace JuicyEngine
 {
 class EditorCamera : public Camera

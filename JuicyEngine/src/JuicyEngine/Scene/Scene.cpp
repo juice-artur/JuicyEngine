@@ -67,7 +67,7 @@ void Scene::OnUpdateRuntime(Timestep ts)
         {
             auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
 
-           Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+            Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
         }
 
         Renderer2D::EndScene();
@@ -125,7 +125,10 @@ void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformCompone
 template <>
 void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
 {
-    component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+    if (m_ViewportWidth > 0 && m_ViewportHeight > 0)
+    {
+        component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+    }
 }
 template <>
 void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)

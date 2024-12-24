@@ -2,7 +2,7 @@ project "JuicyEngine"
 	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "on"
+	staticruntime "off"
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 	pchheader "jepch.h"
@@ -35,7 +35,8 @@ project "JuicyEngine"
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.yaml_cpp}",
-		"%{IncludeDir.ImGuizmo}"
+		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.VulkanSDK}"
 	}
 	links
 	{
@@ -51,18 +52,34 @@ project "JuicyEngine"
 
 	filter "system:windows"
 		systemversion "latest"
-		defines
-		{
-		}
+
 	filter "configurations:Debug"
 		defines "JE_DEBUG"
-		buildoptions "/MD"
+		buildoptions "/MDd"
 		symbols "on"
+		links
+		{
+			"%{Library.ShaderC_Debug}",
+			"%{Library.SPIRV_Cross_Debug}",
+			"%{Library.SPIRV_Cross_GLSL_Debug}"
+		}
 	filter "configurations:Release"
 		defines "JE_RELEASE"
 		buildoptions "/MD"
 		optimize "on"
+		links
+		{
+			"%{Library.ShaderC_Release}",
+			"%{Library.SPIRV_Cross_Release}",
+			"%{Library.SPIRV_Cross_GLSL_Release}"
+		}
 	filter "configurations:Dist"
 		defines "JE_DIST"
 		buildoptions "/MD"
 		optimize "on"
+		links
+		{
+			"%{Library.ShaderC_Release}",
+			"%{Library.SPIRV_Cross_Release}",
+			"%{Library.SPIRV_Cross_GLSL_Release}"
+		}

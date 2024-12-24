@@ -102,6 +102,9 @@
     <ClInclude Include="src\JuicyEngine\Core\PlatformDetection.h">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Core\Timer.h">
+      <Filter>src\JuicyEngine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\JuicyEngine\Core\Timestep.h">
       <Filter>src\JuicyEngine\Core</Filter>
     </ClInclude>
@@ -165,6 +168,9 @@
     <ClInclude Include="src\JuicyEngine\Renderer\Texture.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\JuicyEngine\Renderer\UniformBuffer.h">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\JuicyEngine\Renderer\VertexArray.h">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClInclude>
@@ -205,6 +211,9 @@
       <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
     <ClInclude Include="src\Platform\OpenGL\OpenGLTexture.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLUniformBuffer.h">
       <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
     <ClInclude Include="src\Platform\OpenGL\OpenGLVertexArray.h">
@@ -1532,6 +1541,9 @@
     <ClCompile Include="src\JuicyEngine\Renderer\Texture.cpp">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\JuicyEngine\Renderer\UniformBuffer.cpp">
+      <Filter>src\JuicyEngine\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="src\JuicyEngine\Renderer\VertexArray.cpp">
       <Filter>src\JuicyEngine\Renderer</Filter>
     </ClCompile>
@@ -1563,6 +1575,9 @@
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLTexture.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLUniformBuffer.cpp">
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLVertexArray.cpp">

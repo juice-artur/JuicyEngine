@@ -1,4 +1,5 @@
 include "./vendor/premake/premake_customization/solution_items.lua"
+include "Dependencies.lua"
 
 workspace "JuicyEngine"
 	architecture "x86_64"
@@ -22,17 +23,6 @@ workspace "JuicyEngine"
 	}
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
-
--- Include directories relative to root folder (solution directory)
-IncludeDir = {}
-IncludeDir["GLFW"] = "%{wks.location}/JuicyEngine/vendor/GLFW/include"
-IncludeDir["Glad"] = "%{wks.location}/JuicyEngine/vendor/Glad/include"
-IncludeDir["ImGui"] = "%{wks.location}/JuicyEngine/vendor/imgui"
-IncludeDir["glm"] = "%{wks.location}/JuicyEngine/vendor/glm"
-IncludeDir["stb_image"] = "%{wks.location}/JuicyEngine/vendor/stb_image"
-IncludeDir["entt"] = "%{wks.location}/JuicyEngine/vendor/entt/include"
-IncludeDir["yaml_cpp"] = "%{wks.location}/JuicyEngine/vendor/yaml-cpp/include"
-IncludeDir["ImGuizmo"] = "%{wks.location}/JuicyEngine/vendor/ImGuizmo"
 
 group "Dependencies"
 	include "vendor/premake"
