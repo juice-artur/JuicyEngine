@@ -23,6 +23,7 @@ private:
     bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
     void NewScene();
     void OpenScene();
+    void OpenScene(const std::filesystem::path& path);
     void SaveSceneAs();
 
 private:
