@@ -22,6 +22,12 @@ project "Sandbox"
 	{
 		"JuicyEngine"
 	}
+
+	postbuildcommands
+	{
+		"{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\""
+	}
+
 	filter "system:windows"
 		systemversion "latest"
 	filter "configurations:Debug"

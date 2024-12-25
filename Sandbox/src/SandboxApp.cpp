@@ -7,14 +7,14 @@
 class Sandbox : public JuicyEngine::Application
 {
 public:
-    Sandbox()
+    Sandbox(JuicyEngine::ApplicationCommandLineArgs args)
     {  // PushLayer(new ExampleLayer());
         PushLayer(new Sandbox2D());
     }
     ~Sandbox() {}
 };
 
-JuicyEngine::Application* JuicyEngine::CreateApplication()
+JuicyEngine::Application* JuicyEngine::CreateApplication(JuicyEngine::ApplicationCommandLineArgs args)
 {
-    return new Sandbox();
+    return new Sandbox(args);
 }
