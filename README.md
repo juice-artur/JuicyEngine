@@ -10,6 +10,5 @@
 # Project setup
 - Cloning
     ```bash
-    git clone https://github.com/juice-artur/JuicyEngine.git --recursive
+    git clone https://github.com/juice-artur/JuicyEngine.git
     ```
-- Run the ```GenerateProjects.bat``` file found in scripts folder. Which will then generate a Visual Studio solution file 
