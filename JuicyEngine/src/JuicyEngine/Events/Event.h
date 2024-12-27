@@ -56,6 +56,8 @@ class JE_API Event
     friend class EventDispatcher;
 
 public:
+    bool Handled = false;
+
     virtual EventType GetEventType() const { return EventType::None; };
     virtual const char* GetName() const { return ""; };
     virtual int GetCategoryFlags() const { return 0; };
@@ -63,7 +65,6 @@ public:
     inline bool IsInCategory(EventCategory category) { return GetCategoryFlags() & category; }
 
 protected:
-    bool m_Handled = false;
 };
 class EventDispatcher
 {
@@ -77,7 +78,7 @@ public:
     {
         if (m_Event.GetEventType() == T::GetStaticType())
         {
-            m_Event.m_Handled = func(*(T*)&m_Event);
+            m_Event.Handled = func(*(T*)&m_Event);
             return true;
         }
         return false;

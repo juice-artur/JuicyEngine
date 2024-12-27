@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "Core/Window.h"
 #include "Events/ApplicationEvent.h"
+#include "Core/LayerStack.h"
 
 namespace JuicyEngine
 {
@@ -14,11 +15,14 @@ public:
     virtual ~Application();
     void Run();
     void OnEvent(Event& e);
+    void PushLayer(Layer* layer);
+    void PushOverlay(Layer* layer);
 
 private:
     bool OnWindowClose(WindowCloseEvent& e);
     Scope<Window> m_Window;
     bool m_Running = true;
+    LayerStack m_LayerStack;
 
 };
 
