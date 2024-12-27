@@ -1,7 +1,8 @@
 #pragma once
 
-#include <sstream>
+#include "jepch.h"
 #include "JuicyEngine/Core.h"
+#include "JuicyEngine/Events/Event.h"
 
 namespace JuicyEngine
 {
@@ -19,10 +20,14 @@ struct WindowProps
 class Window
 {
 public:
+    using EventCallbackFn = std::function<void(Event&)>;
     virtual ~Window() {}
+    virtual void OnUpdate() = 0;
     virtual uint32_t GetWidth() const = 0;
     virtual uint32_t GetHeight() const = 0;
     virtual void* GetNativeWindow() const = 0;
     static Scope<Window> Create(const WindowProps& props = WindowProps());
+    // Window attributes
+    virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
 };
 }  // namespace JuicyEngine

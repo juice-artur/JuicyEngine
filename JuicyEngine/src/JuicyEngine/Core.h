@@ -14,6 +14,10 @@
 #error JuicyEngine only supports Windows!
 #endif
 
+#define BIT(x) (1 << x)
+#define JE_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
+
+
 namespace JuicyEngine
 {
 template <typename T>

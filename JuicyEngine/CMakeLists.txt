@@ -9,12 +9,15 @@ source_group("src/JuicyEngine" FILES ${Engine})
 file(GLOB Core "src/JuicyEngine/Core/*.h" "src/JuicyEngine/Core/*.hpp" "src/JuicyEngine/Core/*.cpp")
 source_group("src/JuicyEngine/Core" FILES ${Core})
 
+file(GLOB Events "src/JuicyEngine/Events/*.h" "src/JuicyEngine/Events/*.hpp" "src/JuicyEngine/Events/*.cpp")
+source_group("src/JuicyEngine/Events" FILES ${Events})
+
 IF (WIN32)
 file(GLOB Platform-Windows "src/JuicyEngine/Platform/Windows/*.h" "src/JuicyEngine/Platform/Windows/*.hpp" "src/JuicyEngine/Platform/Windows/*.cpp")
 source_group("src/JuicyEngine/Platform/Windows" FILES ${Platform-Windows})
 ENDIF()
 
-set(SOURCE_FILES ${src} ${Engine} ${Core} ${Platform-Windows})
+set(SOURCE_FILES ${src} ${Engine} ${Core} ${Platform-Windows} ${Events})
 
 # Target
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})

@@ -7,27 +7,30 @@ namespace JuicyEngine
 Application::Application()
 {
     m_Window = Scope<Window>(Window::Create());
+    m_Window->SetEventCallback(JE_BIND_EVENT_FN(OnEvent));
 }
 
 Application::~Application() {}
 
+void Application::OnEvent(Event& e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<WindowCloseEvent>(JE_BIND_EVENT_FN(OnWindowClose));
+    JE_CORE_TRACE("{0}", e);
+}
+
 void Application::Run()
 {
-    // TODO: Think about platform agnostic event
     while (m_Running)
     {
-        MSG message;
-        while (PeekMessage(&message, NULL, 0, 0, PM_REMOVE))
-        {
-            if (message.message == WM_QUIT)
-            {
-                m_Running = false;
-                break;
-            }
-            TranslateMessage(&message);
-            DispatchMessage(&message);
-        }
+        m_Window->OnUpdate();
     }
+}
+
+bool Application::OnWindowClose(WindowCloseEvent& e)
+{
+    m_Running = false;
+    return true;
 }
 
 }  // namespace JuicyEngine
