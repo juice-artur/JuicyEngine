@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Core.h"
+#include "Core/LayerStack.h"
 #include "Core/Window.h"
 #include "Events/ApplicationEvent.h"
-#include "Core/LayerStack.h"
 
 namespace JuicyEngine
 {
