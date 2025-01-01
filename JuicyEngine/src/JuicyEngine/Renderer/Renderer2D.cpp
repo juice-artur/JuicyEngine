@@ -124,7 +124,7 @@ void Renderer2D::BeginScene(const OrthographicCamera& camera)
 
 void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform)
 {
-	s_Data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
+    s_Data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
     s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
     StartBatch();
@@ -306,7 +306,14 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
 
 void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src, int entityID)
 {
-    DrawQuad(transform, src.Color, entityID);
+    if (src.Texture)
+    {
+        DrawQuad(transform, src.Texture, src.TilingFactor, src.Color, entityID);
+    }
+    else
+    {
+        DrawQuad(transform, src.Color, entityID);
+    }
 }
 
 void Renderer2D::ResetStats()
