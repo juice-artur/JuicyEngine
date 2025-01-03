@@ -1,4 +1,0 @@
-[submodule "JuicyEngine/vendor/spdlog"]
-	path = JuicyEngine/vendor/spdlog
-	url = https://github.com/gabime/spdlog
-	branch = v1.x
