@@ -55,9 +55,9 @@ class Event
     friend class EventDispatcher;
 
 public:
-    virtual EventType GetEventType() const = 0;
-    virtual const char* GetName() const = 0;
-    virtual int GetCategoryFlags() const = 0;
+    virtual EventType GetEventType() const { return EventType::None; };
+    virtual const char* GetName() const { return ""; };
+    virtual int GetCategoryFlags() const { return 0; };
     virtual std::string ToString() const { return GetName(); }
     inline bool IsInCategory(EventCategory category) { return GetCategoryFlags() & category; }
 
@@ -90,3 +90,13 @@ inline std::ostream& operator<<(std::ostream& os, const Event& e)
     return os << e.ToString();
 }
 }  // namespace JuicyEngine
+
+template <typename T>
+struct fmt::formatter<T, std::enable_if_t<std::is_base_of_v<JuicyEngine::Event, T>, char>> : fmt::formatter<std::string>
+{
+    template <typename FormatContext>
+    auto format(const T& event, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        return fmt::formatter<std::string>::format(event.ToString(), ctx);
+    }
+};

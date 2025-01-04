@@ -1,8 +1,9 @@
 #pragma once
-
 #include "JuicyEngine/Core/Window.h"
-#include <Windows.h>
-#include <string>
+#include "JuicyEngine/Events/ApplicationEvent.h"
+#include "JuicyEngine/Events/MouseEvent.h"
+#include "JuicyEngine/Events/KeyEvent.h"
+#include <windows.h>
 
 namespace JuicyEngine
 {
@@ -11,12 +12,9 @@ class WindowsWindow : public Window
 public:
     WindowsWindow(const WindowProps& props);
     virtual ~WindowsWindow();
-
     void OnUpdate() override;
-
     inline unsigned int GetWidth() const override { return m_Data.Width; }
     inline unsigned int GetHeight() const override { return m_Data.Height; }
-
     // Window attributes
     inline void SetEventCallback(const EventCallbackFn& callback) override { m_Data.EventCallback = callback; }
     void SetVSync(bool enabled) override;
@@ -25,13 +23,12 @@ public:
 private:
     virtual void Init(const WindowProps& props);
     virtual void Shutdown();
-
+    void ProcessMessages();
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
-    HWND m_WindowHandle;
+    HWND m_Window;
     HINSTANCE m_HInstance;
-
     struct WindowData
     {
         std::string Title;
@@ -39,7 +36,6 @@ private:
         bool VSync;
         EventCallbackFn EventCallback;
     };
-
     WindowData m_Data;
 };
-}  // namespace JuicyEngine
+};  // namespace JuicyEngine
