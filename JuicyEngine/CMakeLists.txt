@@ -9,7 +9,12 @@ source_group("src/JuicyEngine/Core" FILES ${Core})
 file(GLOB_RECURSE Events "src/JuicyEngine/Events/*.h" "src/JuicyEngine/Events/*.hpp" "src/JuicyEngine/Events/*.cpp" )
 source_group("src/JuicyEngine/Events" FILES ${Events})
 
-set(SOURCE_FILES ${src} ${Core} ${Events})
+if (WIN32)
+    file(GLOB_RECURSE PlatformWindows "src/JuicyEngine/Platform/Windows/*.h" "src/JuicyEngine/Platform/Windows/*.hpp" "src/JuicyEngine/Platform/Windows/*.cpp" )
+    source_group("src/JuicyEngine/Platform/Windows" FILES ${PlatformWindows})
+endif ()
+
+set(SOURCE_FILES ${src} ${Core} ${Events} ${PlatformWindows})
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 

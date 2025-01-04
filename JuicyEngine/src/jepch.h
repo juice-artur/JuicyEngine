@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include "JuicyEngine/Core/Log.h"
 #include <utility>
 #include <vector>
 #ifdef JE_PLATFORM_WINDOWS

@@ -6,18 +6,16 @@
 
 namespace JuicyEngine
 {
-Application::Application() {}
+Application::Application()
+{
+    m_Window = std::unique_ptr<Window>(Window::Create());
+}
 Application::~Application() {}
 void Application::Run()
 {
-    WindowResizeEvent e(1280, 720);
-    if (e.IsInCategory(EventCategoryApplication))
+    while (m_Running)
     {
-        JE_TRACE(e.ToString());
-    }
-    if (e.IsInCategory(EventCategoryInput))
-    {
-        JE_TRACE(e.ToString());
+        m_Window->OnUpdate();
     }
 }
 }  // namespace JuicyEngine
