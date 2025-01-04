@@ -9,3 +9,5 @@ source_group("src/JuicyEngine/Core" FILES ${Core})
 set(SOURCE_FILES ${src} ${Core})
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
+
+target_include_directories(${PROJECT_NAME} PRIVATE "vendor/spdlog/include")

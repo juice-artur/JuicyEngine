@@ -4,7 +4,7 @@
 
 class Sandbox : public JuicyEngine::Application {
  public:
-  Sandbox() { std::cout << "Hello, Application!" << std::endl;
+  Sandbox() { JE_CORE_INFO("Hello, JuicyEngine!");
   }
   ~Sandbox() {}
 };
