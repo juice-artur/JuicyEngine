@@ -2,20 +2,22 @@
 
 #include <JuicyEngine/Events/ApplicationEvent.h>
 
-#include <iostream>
-
 #include "Log.h"
 
-namespace JuicyEngine {
+namespace JuicyEngine
+{
 Application::Application() {}
 Application::~Application() {}
-void Application::Run() {
-  WindowResizeEvent e(1280, 720);
-  if (e.IsInCategory(EventCategoryApplication)) {
-    JE_TRACE(e.ToString());
-  }
-  if (e.IsInCategory(EventCategoryInput)) {
-    JE_TRACE(e.ToString());
-  }
+void Application::Run()
+{
+    WindowResizeEvent e(1280, 720);
+    if (e.IsInCategory(EventCategoryApplication))
+    {
+        JE_TRACE(e.ToString());
+    }
+    if (e.IsInCategory(EventCategoryInput))
+    {
+        JE_TRACE(e.ToString());
+    }
 }
 }  // namespace JuicyEngine

@@ -926,9 +926,8 @@ private:
     memory_buf_t cached_datetime_;
 
 #ifndef SPDLOG_NO_TLS
-    mdc_formatter<null_scoped_padder> mdc_formatter_{padding_info{}};
+    mdc_formatter<null_scoped_padder> mdc_formatter_{padding_info {}};
 #endif
-
 };
 
 }  // namespace details

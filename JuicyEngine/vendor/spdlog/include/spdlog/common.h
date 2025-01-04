@@ -262,18 +262,15 @@ enum level_enum : int {
 #define SPDLOG_LEVEL_NAME_OFF spdlog::string_view_t("off", 3)
 
 #if !defined(SPDLOG_LEVEL_NAMES)
-    #define SPDLOG_LEVEL_NAMES                                                                  \
-        {                                                                                       \
-            SPDLOG_LEVEL_NAME_TRACE, SPDLOG_LEVEL_NAME_DEBUG, SPDLOG_LEVEL_NAME_INFO,           \
-                SPDLOG_LEVEL_NAME_WARNING, SPDLOG_LEVEL_NAME_ERROR, SPDLOG_LEVEL_NAME_CRITICAL, \
-                SPDLOG_LEVEL_NAME_OFF                                                           \
-        }
+    #define SPDLOG_LEVEL_NAMES                                                           \
+        {SPDLOG_LEVEL_NAME_TRACE,   SPDLOG_LEVEL_NAME_DEBUG, SPDLOG_LEVEL_NAME_INFO,     \
+         SPDLOG_LEVEL_NAME_WARNING, SPDLOG_LEVEL_NAME_ERROR, SPDLOG_LEVEL_NAME_CRITICAL, \
+         SPDLOG_LEVEL_NAME_OFF}
 #endif
 
 #if !defined(SPDLOG_SHORT_LEVEL_NAMES)
 
-    #define SPDLOG_SHORT_LEVEL_NAMES \
-        { "T", "D", "I", "W", "E", "C", "O" }
+    #define SPDLOG_SHORT_LEVEL_NAMES {"T", "D", "I", "W", "E", "C", "O"}
 #endif
 
 SPDLOG_API const string_view_t &to_string_view(spdlog::level::level_enum l) SPDLOG_NOEXCEPT;
@@ -365,17 +362,17 @@ SPDLOG_CONSTEXPR_FUNC spdlog::wstring_view_t to_string_view(spdlog::wstring_view
 #endif
 
 #ifndef SPDLOG_USE_STD_FORMAT
-#if FMT_VERSION >= 110100
+    #if FMT_VERSION >= 110100
 template <typename T, typename... Args>
 inline fmt::basic_string_view<T> to_string_view(fmt::basic_format_arg<T> fmt) {
     return fmt;
 }
-#else
+    #else
 template <typename T, typename... Args>
 inline fmt::basic_string_view<T> to_string_view(fmt::basic_format_string<T, Args...> fmt) {
     return fmt;
 }
-#endif
+    #endif
 #elif __cpp_lib_format >= 202207L
 template <typename T, typename... Args>
 SPDLOG_CONSTEXPR_FUNC std::basic_string_view<T> to_string_view(

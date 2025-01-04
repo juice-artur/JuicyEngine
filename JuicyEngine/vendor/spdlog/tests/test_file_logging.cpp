@@ -56,7 +56,7 @@ TEST_CASE("simple_file_logger", "[truncate]") {
     logger->info("Test message {}", 2.71);
     logger->flush();
     REQUIRE(count_lines(SIMPLE_LOG) == 2);
-    
+
     sink->truncate();
     REQUIRE(count_lines(SIMPLE_LOG) == 0);
 
