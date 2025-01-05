@@ -12,6 +12,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/../JuicyEngine/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/../JuicyEngine/vendor/spdlog/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../JuicyEngine/vendor/glm"
 )
 
 # Link with oxylus.

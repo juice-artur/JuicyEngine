@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include "JuicyEngine/Core/KeyCodes.h"
 #include "JuicyEngine/Core/MouseCodes.h"
 
@@ -12,7 +13,7 @@ public:
     static bool IsKeyPressed(KeyCode key);
 
     static bool IsMouseButtonPressed(MouseCode button);
-    // static glm::vec2 GetMousePosition();
+    static glm::vec2 GetMousePosition();
     static float GetMouseX();
     static float GetMouseY();
 };

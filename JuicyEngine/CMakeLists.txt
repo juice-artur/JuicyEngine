@@ -23,6 +23,8 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/jepch.h)
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
 "src"
-"vendor/spdlog/include")
+"vendor/spdlog/include"
+"vendor/glm")
+
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC JE_PLATFORM_WINDOWS)
