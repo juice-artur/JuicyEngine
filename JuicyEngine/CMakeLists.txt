@@ -9,8 +9,15 @@ source_group("src/JuicyEngine/Core" FILES ${Core})
 file(GLOB_RECURSE Events "src/JuicyEngine/Events/*.h" "src/JuicyEngine/Events/*.hpp" "src/JuicyEngine/Events/*.cpp" )
 source_group("src/JuicyEngine/Events" FILES ${Events})
 
-file(GLOB_RECURSE PlatformVulkan "src/JuicyEngine/Platform/Vulkan/*.h" "src/JuicyEngine/Platform/Vulkan/*.hpp" "src/JuicyEngine/Platform/Vulkan/*.cpp" )
-source_group("src/JuicyEngine/Platform/Vulkan" FILES ${PlatformVulkan})
+file(GLOB VulkanRHI "src/JuicyEngine/RHI/VulkanRHI/*.h" "src/JuicyEngine/RHI/VulkanRHI/*.hpp" "src/JuicyEngine/RHI/VulkanRHI/*.cpp" )
+source_group("src/JuicyEngine/RHI/VulkanRHI" FILES ${VulkanRHI})
+
+file(GLOB_RECURSE VulkanRHIPlatform "src/JuicyEngine/RHI/VulkanRHI/Platform/VulkanPlatform.h")
+
+list(APPEND VulkanRHIPlatform "src/JuicyEngine/RHI/VulkanRHI/Platform/VulkanPlatformWindows.cpp")
+
+
+source_group("src/JuicyEngine/RHI/VulkanRHI/Platform" FILES ${VulkanRHIPlatform})
 
 file(GLOB_RECURSE Renderer "src/JuicyEngine/Renderer/*.h" "src/JuicyEngine/Renderer/*.hpp" "src/JuicyEngine/Renderer/*.cpp" )
 source_group("src/JuicyEngine/Renderer" FILES ${Renderer})
@@ -20,7 +27,7 @@ if (WIN32)
     source_group("src/JuicyEngine/Platform/Windows" FILES ${PlatformWindows})
 endif ()
 
-set(SOURCE_FILES ${src} ${Core} ${Events} ${PlatformWindows} ${PlatformVulkan} ${Renderer})
+set(SOURCE_FILES ${src} ${Core} ${Events} ${PlatformWindows} ${VulkanRHI} ${Renderer} ${VulkanRHIPlatform})
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 

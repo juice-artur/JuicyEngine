@@ -3,7 +3,7 @@
 #include "JuicyEngine/Events/ApplicationEvent.h"
 #include "JuicyEngine/Events/MouseEvent.h"
 #include "JuicyEngine/Events/KeyEvent.h"
-#include "JuicyEngine/Platform/Vulkan/VulkanContext.h"
+#include "JuicyEngine/RHI/VulkanRHI/VulkanContext.h"
 
 namespace JuicyEngine
 {
