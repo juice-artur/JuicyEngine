@@ -24,6 +24,10 @@ set(SOURCE_FILES ${src} ${Core} ${Events} ${PlatformWindows} ${PlatformVulkan} $
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 
+find_package(Vulkan REQUIRED)
+target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan::Vulkan)
+target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
+
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/jepch.h)
 
 

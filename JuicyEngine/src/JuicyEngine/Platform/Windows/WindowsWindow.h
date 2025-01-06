@@ -1,12 +1,10 @@
 #pragma once
 
-
 #include "JuicyEngine/Core/Window.h"
 #include "JuicyEngine/Events/ApplicationEvent.h"
 #include "JuicyEngine/Events/MouseEvent.h"
 #include "JuicyEngine/Events/KeyEvent.h"
 #include <JuicyEngine/Renderer/GraphicsContext.h>
-
 
 namespace JuicyEngine
 {

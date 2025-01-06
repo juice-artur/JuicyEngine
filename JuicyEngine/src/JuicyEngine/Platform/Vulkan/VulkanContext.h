@@ -2,6 +2,7 @@
 
 #include "JuicyEngine/Renderer/GraphicsContext.h"
 #include "JuicyEngine/Core/Window.h"
+#include "vulkan/vulkan.h"
 
 namespace JuicyEngine
 {
@@ -16,5 +17,7 @@ public:
 
 private:
     Window* m_Window;
+
+    VkInstance m_Instance;
 };
 }  // namespace JuicyEngine

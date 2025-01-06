@@ -26,25 +26,25 @@ bool Input::IsMouseButtonPressed(const MouseCode button)
     return (GetAsyncKeyState(buttonCode) & 0x8000) != 0;
 }
 
- glm::vec2 Input::GetMousePosition()
+glm::vec2 Input::GetMousePosition()
 {
-     // Get the current cursor position using GetCursorPos
-     POINT point;
-     if (GetCursorPos(&point))
-     {
-         return {(float)point.x, (float)point.y};
-     }
+    // Get the current cursor position using GetCursorPos
+    POINT point;
+    if (GetCursorPos(&point))
+    {
+        return {(float)point.x, (float)point.y};
+    }
 
-     return {0.0f, 0.0f};
- }
+    return {0.0f, 0.0f};
+}
 
 float Input::GetMouseX()
 {
-     return GetMousePosition().x;
+    return GetMousePosition().x;
 }
 
 float Input::GetMouseY()
 {
-     return GetMousePosition().y;
+    return GetMousePosition().y;
 }
 }  // namespace JuicyEngine
