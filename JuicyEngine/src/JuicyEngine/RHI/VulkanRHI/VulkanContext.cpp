@@ -8,7 +8,7 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 {
     JE_CORE_ASSERT(windowHandle, "Window handle is null!");
 }
-void VulkanContext::Init() 
+void VulkanContext::Init()
 {
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -27,13 +27,41 @@ void VulkanContext::Init()
     GetVulkanPlatformRequiredExtensionNames(extensions);
 
     // TODO: Add validation layers
+#ifdef JE_DEBUG
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
+
+    unsigned int availableExtensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(0, &availableExtensionCount, 0);
+    std::vector<VkExtensionProperties> availableExtensions;
+    availableExtensions.resize(availableExtensionCount);
+    vkEnumerateInstanceExtensionProperties(0, &availableExtensionCount, availableExtensions.data());
+
+        // Verify required extensions are available.
+    for (unsigned int i = 0; i < extensions.size(); ++i)
+    {
+        bool found = false;
+        for (unsigned int j = 0; j < availableExtensionCount; ++j)
+        {
+            if (std::strcmp(extensions[i], availableExtensions[j].extensionName))
+            {
+                found = true;
+                JE_INFO("Required exension found: {0}...", extensions[i]);
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            JE_CORE_FATAL("Required extension is missing: {0}", extensions[i]);
+        }
+    }
+    
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
-
-
 }
 void VulkanContext::SwapBuffers()
 {

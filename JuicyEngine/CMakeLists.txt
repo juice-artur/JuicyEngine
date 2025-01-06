@@ -44,4 +44,4 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 "vendor/glm")
 
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC JE_PLATFORM_WINDOWS)
+target_compile_definitions(${PROJECT_NAME} PUBLIC JE_PLATFORM_WINDOWS JE_DEBUG)
