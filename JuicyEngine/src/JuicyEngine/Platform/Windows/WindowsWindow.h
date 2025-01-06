@@ -1,9 +1,12 @@
 #pragma once
+
+
 #include "JuicyEngine/Core/Window.h"
 #include "JuicyEngine/Events/ApplicationEvent.h"
 #include "JuicyEngine/Events/MouseEvent.h"
 #include "JuicyEngine/Events/KeyEvent.h"
-#include <windows.h>
+#include <JuicyEngine/Renderer/GraphicsContext.h>
+
 
 namespace JuicyEngine
 {
@@ -29,6 +32,8 @@ private:
 private:
     HWND m_Window;
     HINSTANCE m_HInstance;
+    GraphicsContext* m_Context;
+
     struct WindowData
     {
         std::string Title;
