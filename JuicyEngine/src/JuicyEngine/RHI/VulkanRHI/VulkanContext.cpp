@@ -31,19 +31,22 @@ void VulkanContext::Init()
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
 
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
+
     unsigned int availableExtensionCount = 0;
     vkEnumerateInstanceExtensionProperties(0, &availableExtensionCount, 0);
     std::vector<VkExtensionProperties> availableExtensions;
     availableExtensions.resize(availableExtensionCount);
     vkEnumerateInstanceExtensionProperties(0, &availableExtensionCount, availableExtensions.data());
 
-        // Verify required extensions are available.
+    // Verify required extensions are available.
     for (unsigned int i = 0; i < extensions.size(); ++i)
     {
         bool found = false;
         for (unsigned int j = 0; j < availableExtensionCount; ++j)
         {
-            if (std::strcmp(extensions[i], availableExtensions[j].extensionName))
+            if (std::strcmp(extensions[i], availableExtensions[j].extensionName) == 0)
             {
                 found = true;
                 JE_INFO("Required exension found: {0}...", extensions[i]);
@@ -56,10 +59,40 @@ void VulkanContext::Init()
             JE_CORE_FATAL("Required extension is missing: {0}", extensions[i]);
         }
     }
-    
 
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
+    const std::vector<const char*> requiredValidationLayers = {"VK_LAYER_KHRONOS_validation"};
+    unsigned int requiredValidationLayerCount = requiredValidationLayers.size();
+
+    // Obtain a list of available validation layers
+    unsigned int availableLayerCount = 0;
+
+    vkEnumerateInstanceLayerProperties(&availableLayerCount, 0);
+    std::vector<VkLayerProperties> availableLayers;
+    availableLayers.resize(availableLayerCount);
+    vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers.data());
+
+    // Verify all required layers are available.
+    for (unsigned int i = 0; i < requiredValidationLayerCount; ++i)
+    {
+        bool found = false;
+        for (unsigned int j = 0; j < availableLayerCount; ++j)
+        {
+            if (std::strcmp(requiredValidationLayers[i], availableLayers[j].layerName) == 0)
+            {
+                found = true;
+                JE_CORE_INFO("Found validation layer: {0}...", requiredValidationLayers[i]);
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            JE_CORE_FATAL("Required validation layer is missing: {0}", requiredValidationLayers[i]);
+        }
+    }
+
+    createInfo.enabledLayerCount = requiredValidationLayers.size();
+    createInfo.ppEnabledLayerNames = requiredValidationLayers.data();
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
 }
