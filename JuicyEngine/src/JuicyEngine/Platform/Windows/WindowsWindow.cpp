@@ -60,6 +60,7 @@ void WindowsWindow::Init(const WindowProps& props)
 void WindowsWindow::Shutdown()
 {
     DestroyWindow(m_Window);
+    delete m_Context;
 }
 
 void WindowsWindow::OnUpdate()

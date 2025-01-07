@@ -7,7 +7,7 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 {
     JE_CORE_ASSERT(windowHandle, "Window handle is null!");
 }
-void VulkanContext::Init() 
+void VulkanContext::Init()
 {
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -21,7 +21,6 @@ void VulkanContext::Init()
     VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
-
 }
 void VulkanContext::SwapBuffers()
 {

@@ -10,14 +10,19 @@ class VulkanContext : public GraphicsContext
 {
 public:
     VulkanContext(Window* windowHandle);
-
+    virtual ~VulkanContext() override;
     // Inherited via GraphicsContext
     void Init() override;
     void SwapBuffers() override;
 
 private:
+    void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+    void SetupDebugMessenger();
+
+private:
     Window* m_Window;
 
     VkInstance m_Instance;
+    VkDebugUtilsMessengerEXT debugMessenger;
 };
 }  // namespace JuicyEngine
