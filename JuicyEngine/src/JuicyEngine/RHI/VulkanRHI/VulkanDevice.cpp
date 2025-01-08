@@ -26,6 +26,35 @@ void JuicyEngine::VulkanDevice::Init()
     {
         JE_CORE_ASSERT(false, "Couldn't found any  physical device");
     }
+
+    QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
+
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+    queueCreateInfo.queueCount = 1;
+    float queuePriority = 1.0f;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.queueCreateInfoCount = 1;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.pEnabledFeatures = &deviceFeatures;
+
+
+    VkResult result = vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_LogicalDevice);
+
+    JE_ASSERT(result == VK_SUCCESS, "Failed to create logical device!");
+
+    vkGetDeviceQueue(m_LogicalDevice, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
+}
+
+void VulkanDevice::Cleanup() 
+{
+    vkDestroyDevice(m_LogicalDevice, nullptr);
 }
 
 bool VulkanDevice::SelectPhysicalDevice()

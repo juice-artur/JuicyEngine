@@ -47,7 +47,7 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 }
 VulkanContext::~VulkanContext()
 {
-
+    m_Device.Cleanup();  
     DestroyDebugUtilsMessengerEXT(m_Instance, debugMessenger, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
 }

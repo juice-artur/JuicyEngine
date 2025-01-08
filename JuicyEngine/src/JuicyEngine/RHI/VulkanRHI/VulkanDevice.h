@@ -17,6 +17,7 @@ public:
     VulkanDevice() = default;
     VulkanDevice(VkInstance* instance);
     void Init();
+    void Cleanup();
 
 private:
     bool SelectPhysicalDevice();
@@ -26,5 +27,10 @@ private:
 private:
     VkInstance* m_Instance;
     VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
+    VkDevice m_LogicalDevice = VK_NULL_HANDLE;
+
+    // Queues descriptors
+    VkQueue m_GraphicsQueue;
+    //
 };
 }  // namespace JuicyEngine
