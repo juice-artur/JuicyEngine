@@ -146,6 +146,11 @@ void VulkanContext::Init()
     VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
 
     SetupDebugMessenger();
+
+    m_Device = VulkanDevice(&m_Instance);
+    m_Device.Init();
+
+
 }
 void VulkanContext::SwapBuffers()
 {

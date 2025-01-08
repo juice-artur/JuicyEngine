@@ -3,6 +3,7 @@
 #include "JuicyEngine/Renderer/GraphicsContext.h"
 #include "JuicyEngine/Core/Window.h"
 #include "vulkan/vulkan.h"
+#include "VulkanDevice.h"
 
 namespace JuicyEngine
 {
@@ -24,5 +25,7 @@ private:
 
     VkInstance m_Instance;
     VkDebugUtilsMessengerEXT debugMessenger;
+
+    VulkanDevice m_Device;
 };
 }  // namespace JuicyEngine
