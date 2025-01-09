@@ -1,6 +1,9 @@
+#pragma once
+
 #include "jepch.h"
 #include "JuicyEngine/Core/Core.h"
 #include "JuicyEngine/Events/Event.h"
+
 namespace JuicyEngine
 {
 struct WindowProps
@@ -26,6 +29,7 @@ public:
     virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
     virtual void SetVSync(bool enabled) = 0;
     virtual bool IsVSync() const = 0;
+    virtual void* GetNativeWindow() const = 0;
     static Window* Create(const WindowProps& props = WindowProps());
 };
 }  // namespace JuicyEngine

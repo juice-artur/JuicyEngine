@@ -3,6 +3,7 @@
 #include "JuicyEngine/Events/ApplicationEvent.h"
 #include "JuicyEngine/Events/MouseEvent.h"
 #include "JuicyEngine/Events/KeyEvent.h"
+#include "JuicyEngine/RHI/VulkanRHI/VulkanContext.h"
 
 namespace JuicyEngine
 {
@@ -51,11 +52,15 @@ void WindowsWindow::Init(const WindowProps& props)
 
     // Set up the window's user pointer
     SetWindowLongPtr(m_Window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+
+    m_Context = new VulkanContext(this);
+    m_Context->Init();
 }
 
 void WindowsWindow::Shutdown()
 {
     DestroyWindow(m_Window);
+    delete m_Context;
 }
 
 void WindowsWindow::OnUpdate()
@@ -149,6 +154,11 @@ LRESULT CALLBACK WindowsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
     }
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void* WindowsWindow::GetNativeWindow() const
+{
+    return m_Window;
 }
 
 void WindowsWindow::SetVSync(bool enabled)

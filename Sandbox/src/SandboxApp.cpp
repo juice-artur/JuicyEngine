@@ -12,7 +12,7 @@ public:
             JE_TRACE("A is pressed!");
         }
     }
-    void OnEvent(JuicyEngine::Event& event) override { JE_TRACE("{0}", event); }
+    void OnEvent(JuicyEngine::Event& event) override {}
 };
 
 class Sandbox : public JuicyEngine::Application
