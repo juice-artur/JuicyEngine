@@ -4,6 +4,7 @@
 #include "JuicyEngine/Core/Window.h"
 #include "vulkan/vulkan.h"
 #include "VulkanDevice.h"
+#include "VulkanSwapchain.h"
 
 namespace JuicyEngine
 {
@@ -28,5 +29,7 @@ private:
 
     VulkanDevice m_Device;
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+
+    VulkanSwapchain* m_Swapchain;
 };
 }  // namespace JuicyEngine

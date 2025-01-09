@@ -47,6 +47,7 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 }
 VulkanContext::~VulkanContext()
 {
+    m_Swapchain->Destroy();
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     m_Device.Cleanup();
     DestroyDebugUtilsMessengerEXT(m_Instance, debugMessenger, nullptr);
@@ -148,14 +149,17 @@ void VulkanContext::Init()
 
     SetupDebugMessenger();
 
-    m_Device = VulkanDevice(&m_Instance);
-    m_Device.Init();
-
     JE_CORE_TRACE("Creating Vulkan surface for window {0}...", m_Window->GetNativeWindow());
     if (!VulkanPlatformCreateSurface(m_Instance, &m_Surface, *m_Window))
     {
         JE_CORE_FATAL("Failed to create platform surface for window {0}...", m_Window->GetNativeWindow());
     }
+
+    m_Device = VulkanDevice(&m_Instance, m_Surface);
+    m_Device.Init();
+
+    m_Swapchain = new VulkanSwapchain(m_Device, *m_Window, m_Surface);
+    m_Swapchain->Create();
 }
 void VulkanContext::SwapBuffers()
 {
