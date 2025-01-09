@@ -27,5 +27,6 @@ private:
     VkDebugUtilsMessengerEXT debugMessenger;
 
     VulkanDevice m_Device;
+    VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 };
 }  // namespace JuicyEngine

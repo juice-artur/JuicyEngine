@@ -7,8 +7,9 @@ namespace JuicyEngine
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
 
-    bool isComplete() { return graphicsFamily.has_value(); }
+    bool isComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 };
 
 class VulkanDevice
@@ -28,9 +29,11 @@ private:
     VkInstance* m_Instance;
     VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
     VkDevice m_LogicalDevice = VK_NULL_HANDLE;
+    VkSurfaceKHR* m_Surface = VK_NULL_HANDLE;
 
     // Queues descriptors
     VkQueue m_GraphicsQueue;
+    VkQueue m_PresentQueue;
     //
 };
 }  // namespace JuicyEngine

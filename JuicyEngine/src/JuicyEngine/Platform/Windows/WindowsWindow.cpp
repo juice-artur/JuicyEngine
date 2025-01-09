@@ -156,6 +156,11 @@ LRESULT CALLBACK WindowsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+void* WindowsWindow::GetNativeWindow() const
+{
+    return m_Window;
+}
+
 void WindowsWindow::SetVSync(bool enabled)
 {
     // This is a dummy implementation, as WinAPI does not have direct control over V-Sync

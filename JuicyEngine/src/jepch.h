@@ -10,6 +10,7 @@
 #include "JuicyEngine/Core/Log.h"
 #include <utility>
 #include <vector>
+#include <set>
 #ifdef JE_PLATFORM_WINDOWS
 #include <Windows.h>
 #endif
