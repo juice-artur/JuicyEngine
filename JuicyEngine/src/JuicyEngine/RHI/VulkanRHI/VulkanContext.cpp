@@ -1,6 +1,7 @@
 #include "jepch.h"
 #include "VulkanContext.h"
 #include "Platform/VulkanPlatform.h"
+#include "VulkanShaderModule.h"
 
 namespace JuicyEngine
 {
@@ -160,6 +161,16 @@ void VulkanContext::Init()
 
     m_Swapchain = new VulkanSwapchain(m_Device, *m_Window, m_Surface);
     m_Swapchain->Create();
+
+    VulkanShaderModule vertShaderModule(m_Device, "assets/shaders/vert.spv");
+    VulkanShaderModule fragShaderModule(m_Device, "assets/shaders/frag.spv");
+
+     VkPipelineShaderStageCreateInfo vertShaderStageInfo = vertShaderModule.CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT);
+
+
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo = fragShaderModule.CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 }
 void VulkanContext::SwapBuffers()
 {
