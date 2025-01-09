@@ -24,7 +24,7 @@ void VulkanSwapchain::Create()
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface =  *m_Surface;
+    createInfo.surface = *m_Surface;
 
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
@@ -65,8 +65,12 @@ void VulkanSwapchain::Create()
     swapChainExtent = extent;
 }
 
-void VulkanSwapchain::Destroy() 
+void VulkanSwapchain::Destroy()
 {
+    for (auto imageView : swapChainImageViews)
+    {
+        vkDestroyImageView(m_Device.GetLogicalDevice(), imageView, nullptr);
+    }
     vkDestroySwapchainKHR(m_Device.GetLogicalDevice(), m_SwapChain, nullptr);
 }
 
@@ -113,6 +117,32 @@ VkExtent2D VulkanSwapchain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
         actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
         return actualExtent;
+    }
+}
+
+void VulkanSwapchain::CreateSwapchainImageViews()
+{
+    swapChainImageViews.resize(swapChainImages.size());
+    for (size_t i = 0; i < swapChainImages.size(); i++)
+    {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = swapChainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = swapChainImageFormat;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        VkResult result = vkCreateImageView(m_Device.GetLogicalDevice(), &createInfo, nullptr, &swapChainImageViews[i]);
+
+        JE_CORE_ASSERT(result == VK_SUCCESS, "Failed to create image views!");
     }
 }
 
