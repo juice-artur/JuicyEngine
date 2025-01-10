@@ -31,5 +31,8 @@ private:
     VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 
     VulkanSwapchain* m_Swapchain;
+
+
+    VkPipelineLayout pipelineLayout;
 };
 }  // namespace JuicyEngine
