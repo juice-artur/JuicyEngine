@@ -20,6 +20,7 @@ public:
 private:
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     void SetupDebugMessenger();
+    void CreateRenderPass();
 
 private:
     Window* m_Window;
@@ -32,7 +33,7 @@ private:
 
     VulkanSwapchain* m_Swapchain;
 
-
+    VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
 };
 }  // namespace JuicyEngine
