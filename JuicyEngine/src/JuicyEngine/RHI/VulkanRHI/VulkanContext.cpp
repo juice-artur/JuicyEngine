@@ -48,6 +48,7 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 }
 VulkanContext::~VulkanContext()
 {
+    vkDeviceWaitIdle(m_Device.GetLogicalDevice());
     vkDestroySemaphore(m_Device.GetLogicalDevice(), imageAvailableSemaphore, nullptr);
     vkDestroySemaphore(m_Device.GetLogicalDevice(), renderFinishedSemaphore, nullptr);
     vkDestroyFence(m_Device.GetLogicalDevice(), inFlightFence, nullptr);
