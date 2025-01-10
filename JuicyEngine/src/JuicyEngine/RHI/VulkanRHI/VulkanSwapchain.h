@@ -17,6 +17,7 @@ public:
     VkExtent2D swapChainExtent;
     VkFormat swapChainImageFormat;
     std::vector<VkImageView> swapChainImageViews;
+    VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 
 private:
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -28,7 +29,6 @@ private:
     VulkanDevice& m_Device;
     Window& m_WindowHandle;
     VkSurfaceKHR* m_Surface = VK_NULL_HANDLE;
-    VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 
     std::vector<VkImage> swapChainImages;
 };
