@@ -48,6 +48,7 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 }
 VulkanContext::~VulkanContext()
 {
+    vkDestroyPipeline(m_Device.GetLogicalDevice(), graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_Device.GetLogicalDevice(), pipelineLayout, nullptr);
     vkDestroyRenderPass(m_Device.GetLogicalDevice(), renderPass, nullptr);
     m_Swapchain->Destroy();
@@ -266,6 +267,34 @@ void VulkanContext::Init()
     JE_CORE_ASSERT(resultPipeline == VK_SUCCESS, "failed to create pipeline layout!");
 
     CreateRenderPass();
+
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = nullptr;  // Optional
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDynamicState = &dynamicState;
+
+    pipelineInfo.layout = pipelineLayout;
+
+    pipelineInfo.renderPass = renderPass;
+    pipelineInfo.subpass = 0;
+
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
+    pipelineInfo.basePipelineIndex = -1;               // Optional
+
+    VkResult graphicsResult =
+        vkCreateGraphicsPipelines(m_Device.GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
+    JE_CORE_ASSERT(graphicsResult == VK_SUCCESS, "failed to create Graphics Pipelines!");
+
+
 }
 void VulkanContext::SwapBuffers()
 {
