@@ -21,6 +21,7 @@ private:
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     void SetupDebugMessenger();
     void CreateRenderPass();
+    void CreateFramebuffers();
 
 private:
     Window* m_Window;
@@ -36,5 +37,6 @@ private:
     VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
 };
 }  // namespace JuicyEngine

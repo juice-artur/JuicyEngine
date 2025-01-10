@@ -48,6 +48,10 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 }
 VulkanContext::~VulkanContext()
 {
+    for (auto framebuffer : swapChainFramebuffers)
+    {
+        vkDestroyFramebuffer(m_Device.GetLogicalDevice(), framebuffer, nullptr);
+    }
     vkDestroyPipeline(m_Device.GetLogicalDevice(), graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_Device.GetLogicalDevice(), pipelineLayout, nullptr);
     vkDestroyRenderPass(m_Device.GetLogicalDevice(), renderPass, nullptr);
@@ -293,6 +297,8 @@ void VulkanContext::Init()
     VkResult graphicsResult =
         vkCreateGraphicsPipelines(m_Device.GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
     JE_CORE_ASSERT(graphicsResult == VK_SUCCESS, "failed to create Graphics Pipelines!");
+    CreateFramebuffers();
+
 
 
 }
@@ -349,5 +355,27 @@ void VulkanContext::CreateRenderPass()
 
     VkResult result = vkCreateRenderPass(m_Device.GetLogicalDevice(), &renderPassInfo, nullptr, &renderPass);
     JE_CORE_ASSERT(result == VK_SUCCESS, "Failed to create render pass!")
+}
+void VulkanContext::CreateFramebuffers() 
+{
+    swapChainFramebuffers.resize(m_Swapchain->swapChainImageViews.size());
+    for (size_t i = 0; i < m_Swapchain->swapChainImageViews.size(); i++)
+    {
+        VkImageView attachments[] = {m_Swapchain->swapChainImageViews[i]};
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = m_Swapchain->swapChainExtent.width;
+        framebufferInfo.height = m_Swapchain->swapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(m_Device.GetLogicalDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
+    }
 }
 }  // namespace JuicyEngine

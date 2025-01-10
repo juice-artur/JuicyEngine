@@ -16,6 +16,7 @@ public:
 public:
     VkExtent2D swapChainExtent;
     VkFormat swapChainImageFormat;
+    std::vector<VkImageView> swapChainImageViews;
 
 private:
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -30,6 +31,5 @@ private:
     VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 
     std::vector<VkImage> swapChainImages;
-    std::vector<VkImageView> swapChainImageViews;
 };
 }  // namespace JuicyEngine
