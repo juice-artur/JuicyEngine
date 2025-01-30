@@ -35,6 +35,9 @@ public:
 
     SwapChainSupportDetails QuerySwapChainSupport();
     QueueFamilyIndices FindQueueFamilies();
+    // Queues descriptors
+    VkQueue m_GraphicsQueue;
+    VkQueue m_PresentQueue;
 
 private:
     bool SelectPhysicalDevice();
@@ -52,9 +55,6 @@ private:
     PhysicalDeviseRequirements requirements = {
         .Discrete = true, .Graphics = true, .Present = true, .Transfer = true, .RequiredExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME}};
 
-    // Queues descriptors
-    VkQueue m_GraphicsQueue;
-    VkQueue m_PresentQueue;
     //
 };
 }  // namespace JuicyEngine

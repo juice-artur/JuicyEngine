@@ -66,6 +66,7 @@ void WindowsWindow::Shutdown()
 void WindowsWindow::OnUpdate()
 {
     ProcessMessages();
+    m_Context->DrawFrame();
 }
 
 void WindowsWindow::ProcessMessages()

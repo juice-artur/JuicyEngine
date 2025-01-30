@@ -63,6 +63,8 @@ void VulkanSwapchain::Create()
 
     swapChainImageFormat = surfaceFormat.format;
     swapChainExtent = extent;
+
+    CreateSwapchainImageViews();
 }
 
 void VulkanSwapchain::Destroy()
