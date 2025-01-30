@@ -49,14 +49,20 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 VulkanContext::~VulkanContext()
 {
     vkDeviceWaitIdle(m_Device.GetLogicalDevice());
-    vkDestroySemaphore(m_Device.GetLogicalDevice(), imageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(m_Device.GetLogicalDevice(), renderFinishedSemaphore, nullptr);
-    vkDestroyFence(m_Device.GetLogicalDevice(), inFlightFence, nullptr);
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(m_Device.GetLogicalDevice(), renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(m_Device.GetLogicalDevice(), imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(m_Device.GetLogicalDevice(), inFlightFences[i], nullptr);
+    }
+
     vkDestroyCommandPool(m_Device.GetLogicalDevice(), commandPool, nullptr);
+
     for (auto framebuffer : swapChainFramebuffers)
     {
         vkDestroyFramebuffer(m_Device.GetLogicalDevice(), framebuffer, nullptr);
     }
+
     vkDestroyPipeline(m_Device.GetLogicalDevice(), graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_Device.GetLogicalDevice(), pipelineLayout, nullptr);
     vkDestroyRenderPass(m_Device.GetLogicalDevice(), renderPass, nullptr);
@@ -303,8 +309,7 @@ void VulkanContext::Init()
         vkCreateGraphicsPipelines(m_Device.GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
     JE_CORE_ASSERT(graphicsResult == VK_SUCCESS, "failed to create Graphics Pipelines!");
     CreateFramebuffers();
-    CreateCommandBuffer();
-
+    CreateCommandBuffers();
 }
 void VulkanContext::SwapBuffers()
 {
@@ -400,19 +405,20 @@ void VulkanContext::CreateCommandPool()
         JE_CORE_ASSERT(false, "failed to create command pool!");
     }
 }
-void VulkanContext::CreateCommandBuffer()
+void VulkanContext::CreateCommandBuffers()
 {
+    commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
-    VkResult result = vkAllocateCommandBuffers(m_Device.GetLogicalDevice(), &allocInfo, &commandBuffer);
+    VkResult result = vkAllocateCommandBuffers(m_Device.GetLogicalDevice(), &allocInfo, commandBuffers.data());
     JE_CORE_ASSERT(result == VK_SUCCESS, "failed to create command pool!");
-
 }
-void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) 
+void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -460,8 +466,12 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
         throw std::runtime_error("failed to record command buffer!");
     }
 }
-void VulkanContext::CreateSyncObjects() 
+void VulkanContext::CreateSyncObjects()
 {
+    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -469,44 +479,48 @@ void VulkanContext::CreateSyncObjects()
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateSemaphore(m_Device.GetLogicalDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-        vkCreateSemaphore(m_Device.GetLogicalDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
-        vkCreateFence(m_Device.GetLogicalDevice(), &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS)
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        throw std::runtime_error("failed to create synchronization objects for a frame!");
+        if (vkCreateSemaphore(m_Device.GetLogicalDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(m_Device.GetLogicalDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(m_Device.GetLogicalDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+        {
+            JE_CORE_ASSERT(false, "failed to create synchronization objects for a frame!");
+        }
     }
 }
-void VulkanContext::DrawFrame() 
+
+void VulkanContext::DrawFrame()
 {
-    vkWaitForFences(m_Device.GetLogicalDevice(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(m_Device.GetLogicalDevice(), 1, &inFlightFence);
+    vkWaitForFences(m_Device.GetLogicalDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(m_Device.GetLogicalDevice(), 1, &inFlightFences[currentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(
-        m_Device.GetLogicalDevice(), m_Swapchain->m_SwapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(m_Device.GetLogicalDevice(), m_Swapchain->m_SwapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame],
+        VK_NULL_HANDLE, &imageIndex);
 
-    vkResetCommandBuffer(commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
-    RecordCommandBuffer(commandBuffer, imageIndex);
+    vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+    RecordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(m_Device.m_GraphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS)
+    if (vkQueueSubmit(m_Device.m_GraphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to submit draw command buffer!");
+        JE_CORE_ASSERT(false, "failed to submit draw command buffer!");
     }
 
     VkPresentInfoKHR presentInfo{};
@@ -522,5 +536,6 @@ void VulkanContext::DrawFrame()
     presentInfo.pImageIndices = &imageIndex;
 
     vkQueuePresentKHR(m_Device.m_PresentQueue, &presentInfo);
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 }  // namespace JuicyEngine

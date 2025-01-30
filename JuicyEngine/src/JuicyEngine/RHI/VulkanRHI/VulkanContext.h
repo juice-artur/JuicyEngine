@@ -8,6 +8,8 @@
 
 namespace JuicyEngine
 {
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
 class VulkanContext : public GraphicsContext
 {
 public:
@@ -24,7 +26,7 @@ private:
     void CreateRenderPass();
     void CreateFramebuffers();
     void CreateCommandPool();
-    void CreateCommandBuffer();
+    void CreateCommandBuffers();
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void CreateSyncObjects();
 
@@ -45,10 +47,11 @@ private:
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
-    VkCommandBuffer commandBuffer;
+    std::vector<VkFence> inFlightFences;
+    std::vector<VkCommandBuffer> commandBuffers;
 
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
-    VkFence inFlightFence;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    uint32_t currentFrame = 0;
 };
 }  // namespace JuicyEngine
