@@ -1,5 +1,5 @@
 #include <JuicyEngine.h>
-#include <iostream>
+
 
 class ExampleLayer : public JuicyEngine::Layer
 {

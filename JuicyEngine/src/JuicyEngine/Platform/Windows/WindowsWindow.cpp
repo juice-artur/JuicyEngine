@@ -34,11 +34,11 @@ void WindowsWindow::Init(const WindowProps& props)
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.lpfnWndProc = &WindowsWindow::WindowProc;
     wc.hInstance = GetModuleHandle(nullptr);
-    wc.lpszClassName = "JuicyEngineWindowClass";
+    wc.lpszClassName = L"JuicyEngineWindowClass";
     RegisterClassEx(&wc);
 
     // Create window
-    m_Window = CreateWindowEx(0, "JuicyEngineWindowClass", m_Data.Title.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+    m_Window = CreateWindowEx(0, L"JuicyEngineWindowClass", reinterpret_cast<LPCWSTR>(m_Data.Title.c_str()), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
         m_Data.Width, m_Data.Height, nullptr, nullptr, wc.hInstance, nullptr);
 
     if (!m_Window)
