@@ -538,4 +538,14 @@ void VulkanContext::DrawFrame()
     vkQueuePresentKHR(m_Device.m_PresentQueue, &presentInfo);
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
+void VulkanContext::RecreateSwapchain() 
+{
+    vkDeviceWaitIdle(m_Device.GetLogicalDevice());
+    for (auto framebuffer : swapChainFramebuffers)
+    {
+        vkDestroyFramebuffer(m_Device.GetLogicalDevice(), framebuffer, nullptr);
+    }
+    m_Swapchain->RecreateSwapchain();
+    CreateFramebuffers();
+}
 }  // namespace JuicyEngine

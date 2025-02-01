@@ -10,6 +10,8 @@ class VulkanSwapchain
 public:
     VulkanSwapchain() = default;
     VulkanSwapchain(VulkanDevice& device, Window& windowHandle, VkSurfaceKHR& surface);
+    void RecreateSwapchain();
+
     void Create();
     void Destroy();
 

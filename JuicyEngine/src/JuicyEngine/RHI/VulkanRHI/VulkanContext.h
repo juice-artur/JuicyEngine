@@ -19,6 +19,7 @@ public:
     void Init() override;
     void SwapBuffers() override;
     void DrawFrame();
+    void RecreateSwapchain() override;
 
 private:
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);

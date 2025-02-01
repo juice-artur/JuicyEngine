@@ -8,6 +8,13 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice& device, Window& windowHandle, VkS
 {
 }
 
+void VulkanSwapchain::RecreateSwapchain() 
+{
+    Destroy();
+
+    Create();
+}
+
 void VulkanSwapchain::Create()
 {
     SwapChainSupportDetails swapChainSupport = m_Device.QuerySwapChainSupport();

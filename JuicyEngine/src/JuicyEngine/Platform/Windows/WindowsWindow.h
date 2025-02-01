@@ -31,7 +31,7 @@ private:
 private:
     HWND m_Window;
     HINSTANCE m_HInstance;
-    GraphicsContext* m_Context;
+
 
     struct WindowData
     {

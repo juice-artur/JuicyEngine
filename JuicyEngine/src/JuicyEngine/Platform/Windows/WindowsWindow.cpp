@@ -3,7 +3,7 @@
 #include "JuicyEngine/Events/ApplicationEvent.h"
 #include "JuicyEngine/Events/MouseEvent.h"
 #include "JuicyEngine/Events/KeyEvent.h"
-#include "JuicyEngine/RHI/VulkanRHI/VulkanContext.h"
+
 
 namespace JuicyEngine
 {
@@ -39,7 +39,7 @@ void WindowsWindow::Init(const WindowProps& props)
 
     // Create window
     m_Window = CreateWindowEx(0, L"JuicyEngineWindowClass", reinterpret_cast<LPCWSTR>(m_Data.Title.c_str()), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-        m_Data.Width, m_Data.Height, nullptr, nullptr, wc.hInstance, nullptr);
+        m_Data.Width, m_Data.Height, nullptr, nullptr, wc.hInstance, this);
 
     if (!m_Window)
     {
@@ -53,20 +53,16 @@ void WindowsWindow::Init(const WindowProps& props)
     // Set up the window's user pointer
     SetWindowLongPtr(m_Window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-    m_Context = new VulkanContext(this);
-    m_Context->Init();
 }
 
 void WindowsWindow::Shutdown()
 {
     DestroyWindow(m_Window);
-    delete m_Context;
 }
 
 void WindowsWindow::OnUpdate()
 {
     ProcessMessages();
-    m_Context->DrawFrame();
 }
 
 void WindowsWindow::ProcessMessages()

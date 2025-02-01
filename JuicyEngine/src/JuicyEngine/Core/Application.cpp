@@ -3,6 +3,7 @@
 #include "Application.h"
 
 #include "Log.h"
+#include "JuicyEngine/RHI/VulkanRHI/VulkanContext.h"
 
 namespace JuicyEngine
 {
@@ -12,6 +13,9 @@ Application::Application()
 {
     m_Window = std::unique_ptr<Window>(Window::Create());
     m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+
+    m_Context = std::unique_ptr<GraphicsContext>(new VulkanContext(m_Window.get()));
+    m_Context->Init();
 }
 Application::~Application() {}
 
@@ -28,6 +32,7 @@ void Application::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
+    dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(Application::OnWindowResize));
     for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
     {
         (*--it)->OnEvent(e);
@@ -45,12 +50,23 @@ void Application::Run()
         {
             layer->OnUpdate();
         }
+        m_Context->DrawFrame();
         m_Window->OnUpdate();
+
     }
 }
+
 bool Application::OnWindowClose(WindowCloseEvent& e)
 {
     m_Running = false;
     return true;
 }
+
+bool Application::OnWindowResize(WindowResizeEvent& e)
+{
+    JE_CORE_TRACE("WindowResizeEvent: {0}, {1}", e.GetWidth(), e.GetHeight());
+    m_Context->RecreateSwapchain();
+    return false;
+}
+
 }  // namespace JuicyEngine

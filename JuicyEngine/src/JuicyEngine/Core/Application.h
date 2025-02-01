@@ -5,6 +5,7 @@
 #include "JuicyEngine/Core/LayerStack.h"
 #include "JuicyEngine/Events/Event.h"
 #include "JuicyEngine/Events/ApplicationEvent.h"
+#include <JuicyEngine/Renderer/GraphicsContext.h>
 
 namespace JuicyEngine
 {
@@ -20,7 +21,9 @@ public:
 
 private:
     bool OnWindowClose(WindowCloseEvent& e);
+    bool OnWindowResize(WindowResizeEvent& e);
     std::unique_ptr<Window> m_Window;
+    std::unique_ptr<GraphicsContext> m_Context;
     bool m_Running = true;
     LayerStack m_LayerStack;
 };
