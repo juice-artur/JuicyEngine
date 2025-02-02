@@ -32,6 +32,7 @@ public:
     void Cleanup();
 
     VkDevice& GetLogicalDevice();
+    VkPhysicalDevice& GetPhysicalDevice();
 
     SwapChainSupportDetails QuerySwapChainSupport();
     QueueFamilyIndices FindQueueFamilies();

@@ -66,6 +66,11 @@ VkDevice& VulkanDevice::GetLogicalDevice()
     return m_LogicalDevice;
 }
 
+VkPhysicalDevice& VulkanDevice::GetPhysicalDevice()
+{
+    return m_PhysicalDevice;
+}
+
 SwapChainSupportDetails VulkanDevice::QuerySwapChainSupport()
 {
     SwapChainSupportDetails details;
