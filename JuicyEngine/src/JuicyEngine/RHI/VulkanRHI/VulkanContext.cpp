@@ -67,8 +67,11 @@ VulkanContext::~VulkanContext()
     vkDestroyPipelineLayout(m_Device.GetLogicalDevice(), pipelineLayout, nullptr);
     vkDestroyRenderPass(m_Device.GetLogicalDevice(), renderPass, nullptr);
     m_Swapchain->Destroy();
-    vkDestroyBuffer(m_Device.GetLogicalDevice(), vertexBuffer, nullptr);
-    vkFreeMemory(m_Device.GetLogicalDevice(), vertexBufferMemory, nullptr);
+    vkDestroyBuffer(m_Device.GetLogicalDevice(), m_VertexBuffer.Handle, nullptr);
+    vkFreeMemory(m_Device.GetLogicalDevice(), m_VertexBuffer.Memory, nullptr);
+
+    vkDestroyBuffer(m_Device.GetLogicalDevice(), m_IndexBuffer.Handle, nullptr);
+    vkFreeMemory(m_Device.GetLogicalDevice(), m_IndexBuffer.Memory, nullptr);
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     m_Device.Cleanup();
     DestroyDebugUtilsMessengerEXT(m_Instance, debugMessenger, nullptr);
@@ -314,7 +317,8 @@ void VulkanContext::Init()
         vkCreateGraphicsPipelines(m_Device.GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
     JE_CORE_ASSERT(graphicsResult == VK_SUCCESS, "failed to create Graphics Pipelines!");
     CreateFramebuffers();
-    CreateVertexBuffer();
+    InitBuffers();
+
     CreateCommandBuffers();
 }
 void VulkanContext::SwapBuffers()
@@ -412,37 +416,28 @@ void VulkanContext::CreateCommandPool()
     }
 }
 
-void VulkanContext::CreateVertexBuffer() 
+void VulkanContext::CreateBuffer(Buffer& buffer, uint64_t newSize)
 {
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    JE_CORE_ASSERT(vkCreateBuffer(m_Device.GetLogicalDevice(), &bufferInfo, nullptr, &vertexBuffer) == VK_SUCCESS, "failed to create vertex buffer!");
+    VkBufferCreateInfo bufferCI = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    bufferCI.size = newSize;
+    bufferCI.usage = buffer.Usage;
+    bufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    JE_CORE_ASSERT(
+        vkCreateBuffer(m_Device.GetLogicalDevice(), &bufferCI, nullptr, &buffer.Handle) == VK_SUCCESS, "failed to create buffer!");
 
- VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(m_Device.GetLogicalDevice(), vertexBuffer, &memRequirements);
+    VkMemoryRequirements req;
+    vkGetBufferMemoryRequirements(m_Device.GetLogicalDevice(), buffer.Handle, &req);
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = req.size;
+    alloc_info.memoryTypeIndex = FindMemoryType(req.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    JE_CORE_ASSERT(vkAllocateMemory(m_Device.GetLogicalDevice(), &alloc_info, nullptr, &buffer.Memory) == VK_SUCCESS,
+        "failed to create Allocate memmory!");
 
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex =
-        FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    if (vkAllocateMemory(m_Device.GetLogicalDevice(), &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
-    }
-
-    vkBindBufferMemory(m_Device.GetLogicalDevice(), vertexBuffer, vertexBufferMemory, 0);
-
-    void* data;
-    vkMapMemory(m_Device.GetLogicalDevice(), vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-    memcpy(data, vertices.data(), (size_t)bufferInfo.size);
-    vkUnmapMemory(m_Device.GetLogicalDevice(), vertexBufferMemory);
-
+    JE_CORE_ASSERT(
+        vkBindBufferMemory(m_Device.GetLogicalDevice(), buffer.Handle, buffer.Memory, 0) == VK_SUCCESS, "failed to bind vertex buffer!");
+    buffer.Size = req.size;
 }
 
 void VulkanContext::CreateCommandBuffers()
@@ -507,11 +502,12 @@ void VulkanContext::DrawTriangle(VkCommandBuffer commandBuffer)
     scissor.extent = m_Swapchain->swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = {vertexBuffer};
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_VertexBuffer.Handle, offsets);
 
-    vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+    vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer.Handle, 0, VK_INDEX_TYPE_UINT32);
+
+    vkCmdDrawIndexed(commandBuffer, 6, 1, 0, 0, 0);
 }
 void VulkanContext::CreateSyncObjects()
 {
@@ -549,7 +545,42 @@ uint32_t VulkanContext::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlag
         }
     }
     throw std::runtime_error("failed to find suitable memory type!");
+}
 
+void VulkanContext::InitBuffers()
+{
+    m_VertexBuffer.Usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    CreateBuffer(m_VertexBuffer, sizeof(vertexData[0]) * vertexData.size());
+
+    m_IndexBuffer.Usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    CreateBuffer(m_IndexBuffer, sizeof(indices));
+
+    glm::vec3* vbMemory = nullptr;
+    JE_CORE_ASSERT(vkMapMemory(m_Device.GetLogicalDevice(), m_VertexBuffer.Memory, 0, sizeof(vertexData[0]) * vertexData.size(), 0,
+                       (void**)&vbMemory) == VK_SUCCESS,
+        "Failed to map vertex buffer memory");
+
+    if (vbMemory) memcpy(vbMemory, vertexData.data(), sizeof(vertexData[0]) * vertexData.size());
+
+    uint32_t* ibMemory = nullptr;
+    JE_CORE_ASSERT(vkMapMemory(m_Device.GetLogicalDevice(), m_IndexBuffer.Memory, 0, sizeof(indices), 0, (void**)&ibMemory) == VK_SUCCESS,
+        "Failed to map index buffer memory");
+
+    if (ibMemory) memcpy(ibMemory, indices, sizeof(indices));
+
+    VkMappedMemoryRange range[2] = {};
+    range[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    range[0].memory = m_VertexBuffer.Memory;
+    range[0].size = VK_WHOLE_SIZE;
+
+    range[1].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    range[1].memory = m_IndexBuffer.Memory;
+    range[1].size = VK_WHOLE_SIZE;  // або indices.size() * sizeof(uint32_t)
+
+    JE_CORE_ASSERT(vkFlushMappedMemoryRanges(m_Device.GetLogicalDevice(), 2, range) == VK_SUCCESS, "Failed to flush memory");
+
+    vkUnmapMemory(m_Device.GetLogicalDevice(), m_VertexBuffer.Memory);
+    vkUnmapMemory(m_Device.GetLogicalDevice(), m_IndexBuffer.Memory);
 }
 
 void VulkanContext::DrawFrame()

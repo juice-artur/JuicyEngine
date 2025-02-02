@@ -6,9 +6,19 @@
 #include "VulkanDevice.h"
 #include "VulkanSwapchain.h"
 #include <glm/glm.hpp>
+#include <vector>
 
 namespace JuicyEngine
 {
+
+
+struct Buffer
+{
+    VkBuffer Handle = nullptr;
+    VkDeviceMemory Memory = nullptr;
+    VkDeviceSize Size = 0;
+    VkBufferUsageFlagBits Usage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+};
 
 struct Vertex
 {
@@ -43,8 +53,13 @@ struct Vertex
     }
 };
 
-const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+
+  const std::vector<Vertex> vertexData = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, 
+      {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, 
+      {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+    const uint32_t indices[6] = {0, 1, 2, 2, 3, 0};
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -65,12 +80,14 @@ private:
     void CreateRenderPass();
     void CreateFramebuffers();
     void CreateCommandPool();
-    void CreateVertexBuffer(); 
+    void CreateBuffer(Buffer& buffer, uint64_t newSize);
     void CreateCommandBuffers();
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void DrawTriangle(VkCommandBuffer commandBuffer);
     void CreateSyncObjects();
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+    void InitBuffers();
 
 private:
     Window* m_Window;
@@ -84,8 +101,7 @@ private:
     VulkanSwapchain* m_Swapchain;
 
     VkCommandPool commandPool;
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
+    Buffer m_VertexBuffer, m_IndexBuffer;
 
     VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
