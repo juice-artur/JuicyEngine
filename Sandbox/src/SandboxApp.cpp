@@ -1,20 +1,28 @@
 #include <JuicyEngine.h>
-#include <JuicyEngine/Core/EntryPoint.h>
-#include "imgui/imgui.h"
-#include "ExampleLayer.h"
-#include "Sandbox2D.h"
+
+
+class ExampleLayer : public JuicyEngine::Layer
+{
+public:
+    ExampleLayer() : Layer("Example") {}
+    void OnUpdate() override
+    {
+        if (JuicyEngine::Input::IsKeyPressed(JuicyEngine::Key::A))
+        {
+            JE_TRACE("A is pressed!");
+        }
+    }
+    void OnEvent(JuicyEngine::Event& event) override {}
+};
 
 class Sandbox : public JuicyEngine::Application
 {
 public:
-    Sandbox(JuicyEngine::ApplicationCommandLineArgs args)
-    {  // PushLayer(new ExampleLayer());
-        PushLayer(new Sandbox2D());
-    }
+    Sandbox() { PushLayer(new ExampleLayer()); }
     ~Sandbox() {}
 };
 
-JuicyEngine::Application* JuicyEngine::CreateApplication(JuicyEngine::ApplicationCommandLineArgs args)
+JuicyEngine::Application* JuicyEngine::CreateApplication()
 {
-    return new Sandbox(args);
+    return new Sandbox();
 }

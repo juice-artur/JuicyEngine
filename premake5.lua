@@ -17,21 +17,11 @@ workspace "JuicyEngine"
 		".clang-format"
 	}
 
-	flags
-	{
-		"MultiProcessorCompile"
-	}
-
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Dependencies"
 	include "vendor/premake"
-	include "JuicyEngine/vendor/GLFW"
-	include "JuicyEngine/vendor/Glad"
-	include "JuicyEngine/vendor/imgui"
-	include "JuicyEngine/vendor/yaml-cpp"
 group ""
 
 include "JuicyEngine"
 include "Sandbox"
-include "JuicyEditor"

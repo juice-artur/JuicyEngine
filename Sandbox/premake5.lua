@@ -1,8 +1,8 @@
 project "Sandbox"
 	kind "ConsoleApp"
 	language "C++"
-	cppdialect "C++17"
-	staticruntime "on"
+	cppdialect "C++20"
+	staticruntime "off"
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 	files
@@ -16,29 +16,28 @@ project "Sandbox"
 		"%{wks.location}/JuicyEngine/src",
 		"%{wks.location}/JuicyEngine/vendor",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.entt}"
 	}
 	links
 	{
 		"JuicyEngine"
 	}
 
-	postbuildcommands
-	{
-		"{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\""
-	}
-
 	filter "system:windows"
 		systemversion "latest"
+		defines { "JE_PLATFORM_WINDOWS" }
+
 	filter "configurations:Debug"
 		defines "JE_DEBUG"
-		buildoptions "/MD"
-		symbols "on"
+        runtime "Debug"
+        symbols "On"
+
 	filter "configurations:Release"
 		defines "JE_RELEASE"
-		buildoptions "/MD"
-		optimize "on"
+        optimize "On"
+        symbols "On"
+
 	filter "configurations:Dist"
 		defines "JE_DIST"
-		buildoptions "/MD"
-		optimize "on"
+		runtime "Release"
+		optimize "On"
+		symbols "Off"

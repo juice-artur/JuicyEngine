@@ -1,4 +1,5 @@
 #pragma once
+
 namespace JuicyEngine
 {
 class GraphicsContext
@@ -6,6 +7,8 @@ class GraphicsContext
 public:
     virtual void Init() = 0;
     virtual void SwapBuffers() = 0;
-    static Scope<GraphicsContext> Create(void* window);
+    virtual void DrawFrame() = 0;
+    virtual void RecreateSwapchain() = 0;
+    virtual ~GraphicsContext() {};
 };
 }  // namespace JuicyEngine

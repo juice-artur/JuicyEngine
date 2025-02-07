@@ -1,4 +1,4 @@
-# Binaries
+/build# Binaries
 **/bin/
 !vendor/premake/bin/
 bin-int/
@@ -11,6 +11,3 @@ bin-int/
 **.vcxproj
 **.vcxproj.filters
 **.vcxproj.user
-
-# Directories
-JuicyEditor/assets/cache

@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.6 FATAL_ERROR)
-cmake_policy(VERSION 3.6)
+# 3.6 is the actual minimun. 3.14 as the upper policy limit avoids CMake deprecation warnings.
+cmake_minimum_required(VERSION 3.6...3.14 FATAL_ERROR)
+cmake_policy(VERSION 3.6...3.14)
 
 file(READ "glm/detail/setup.hpp" GLM_SETUP_FILE)
 string(REGEX MATCH "#define[ ]+GLM_VERSION_MAJOR[ ]+([0-9]+)" _ ${GLM_SETUP_FILE})

@@ -1,8 +1,7 @@
 #pragma once
-#include <functional>
+
 #include "JuicyEngine/Core/Core.h"
-#include "spdlog/fmt/bundled/format.h"
-#include <format>
+#include "jepch.h"
 
 namespace JuicyEngine
 {
@@ -19,7 +18,6 @@ enum class EventType
     AppRender,
     KeyPressed,
     KeyReleased,
-    KeyTyped,
     MouseButtonPressed,
     MouseButtonReleased,
     MouseMoved,
@@ -74,7 +72,7 @@ public:
     {
         if (m_Event.GetEventType() == T::GetStaticType())
         {
-            m_Event.Handled |= func(static_cast<T&>(m_Event));
+            m_Event.Handled = func(*(T*)&m_Event);
             return true;
         }
         return false;
@@ -83,12 +81,10 @@ public:
 private:
     Event& m_Event;
 };
-
 inline std::ostream& operator<<(std::ostream& os, const Event& e)
 {
     return os << e.ToString();
 }
-
 }  // namespace JuicyEngine
 
 template <typename T>

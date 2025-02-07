@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glm/glm.hpp>
-
 #include "JuicyEngine/Core/KeyCodes.h"
 #include "JuicyEngine/Core/MouseCodes.h"
 
