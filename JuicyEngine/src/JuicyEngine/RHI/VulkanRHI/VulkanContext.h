@@ -8,6 +8,8 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 namespace JuicyEngine
 {
 
@@ -19,11 +21,10 @@ struct Buffer
     VkBufferUsageFlagBits Usage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
 };
 
-struct UniformBufferObject
+struct PushConstants
 {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
+    glm::mat4 ViewProjection;
+    glm::mat4 Transform;
 };
 
 struct Vertex
@@ -60,7 +61,7 @@ struct Vertex
 };
 
 const std::vector<Vertex> vertexData = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+                                        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
 
 const uint32_t indices[6] = {0, 1, 2, 2, 3, 0};
 
@@ -86,18 +87,12 @@ private:
     void CreateBuffer(Buffer& buffer, uint64_t newSize);
     void CreateCommandBuffers();
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-    void DrawTriangle(VkCommandBuffer commandBuffer);
+    void DrawSquare(VkCommandBuffer commandBuffer, glm::vec3 position);
     void CreateSyncObjects();
-    void CreateDescriptorSetLayout();
     void CreateGraphicsPipelines();
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     void InitBuffers();
-    void CreateUniformBuffers();
-    void CreateDescriptorPool();
-    void CreateDescriptorSets();
-
-    void UpdateUniformBuffer(uint32_t currentImage);
 
 private:
     Window* m_Window;
@@ -112,11 +107,8 @@ private:
 
     VkCommandPool commandPool;
     Buffer m_VertexBuffer, m_IndexBuffer;
-    VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
 
     VkRenderPass renderPass;
-    VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -130,5 +122,14 @@ private:
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     uint32_t currentFrame = 0;
+
+    glm::vec3 m_CubePosition{0};
+    glm::vec3 m_CubeRotation{0};
+
+    glm::vec3 m_CameraPosition{0, 0, 0};
+    glm::vec3 m_CameraRotation{0};
+    float m_CubeScale = 10.f;
+
+    PushConstants m_PushConstants;
 };
-}  // namespace JuicyEngine
+} // namespace JuicyEngine

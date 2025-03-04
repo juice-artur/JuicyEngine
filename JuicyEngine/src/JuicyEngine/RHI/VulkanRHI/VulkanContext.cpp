@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "glm/gtx/euler_angles.hpp"
+
 namespace JuicyEngine
 {
 VKAPI_ATTR VkBool32 VKAPI_CALL vkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -14,10 +16,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vkDebugCallback(VkDebugUtilsMessageSeverityFlagBi
     switch (messageSeverity)
     {
         default:
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: JE_ERROR(callbackData->pMessage); break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: JE_WARN(callbackData->pMessage); break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: JE_INFO(callbackData->pMessage); break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: JE_TRACE(callbackData->pMessage); break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: JE_ERROR(callbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: JE_WARN(callbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: JE_INFO(callbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: JE_TRACE(callbackData->pMessage);
+            break;
     }
     return VK_FALSE;
 }
@@ -49,6 +55,7 @@ JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windo
 {
     JE_CORE_ASSERT(windowHandle, "Window handle is null!");
 }
+
 VulkanContext::~VulkanContext()
 {
     vkDeviceWaitIdle(m_Device.GetLogicalDevice());
@@ -76,8 +83,6 @@ VulkanContext::~VulkanContext()
         vkFreeMemory(m_Device.GetLogicalDevice(), uniformBuffers[i].Memory, nullptr);
     }
 
-    vkDestroyDescriptorPool(m_Device.GetLogicalDevice(), descriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(m_Device.GetLogicalDevice(), descriptorSetLayout, nullptr);
     vkDestroyBuffer(m_Device.GetLogicalDevice(), m_VertexBuffer.Handle, nullptr);
     vkFreeMemory(m_Device.GetLogicalDevice(), m_VertexBuffer.Memory, nullptr);
 
@@ -196,21 +201,18 @@ void VulkanContext::Init()
     m_Swapchain = new VulkanSwapchain(m_Device, *m_Window, m_Surface);
     m_Swapchain->Create();
 
-
-    CreateDescriptorSetLayout();
     CreateGraphicsPipelines();
     CreateFramebuffers();
     InitBuffers();
-    CreateUniformBuffers();
-    CreateDescriptorPool();
-    CreateDescriptorSets();
 
     CreateCommandBuffers();
 }
+
 void VulkanContext::SwapBuffers()
 {
     JE_CORE_ASSERT(true, "Implement this!");
 }
+
 void VulkanContext::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo = {};
@@ -221,6 +223,7 @@ void VulkanContext::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreate
                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = vkDebugCallback;
 }
+
 void VulkanContext::SetupDebugMessenger()
 {
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -230,6 +233,7 @@ void VulkanContext::SetupDebugMessenger()
         JE_CORE_FATAL("Failed to set up debug messenger!");
     }
 }
+
 void VulkanContext::CreateRenderPass()
 {
     VkAttachmentDescription colorAttachment{};
@@ -265,6 +269,7 @@ void VulkanContext::CreateRenderPass()
 
     CreateSyncObjects();
 }
+
 void VulkanContext::CreateFramebuffers()
 {
     swapChainFramebuffers.resize(m_Swapchain->swapChainImageViews.size());
@@ -287,6 +292,7 @@ void VulkanContext::CreateFramebuffers()
         }
     }
 }
+
 void VulkanContext::CreateCommandPool()
 {
     QueueFamilyIndices queueFamilyIndices = m_Device.FindQueueFamilies();
@@ -363,16 +369,38 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    DrawTriangle(commandBuffer);
+    glm::vec3 position = glm::vec3(-1.0f, -2.0f, -3.0f);
+    DrawSquare(commandBuffer, position);
+
+    position = glm::vec3(0.0f, 0.0f, 0.0f);
+    DrawSquare(commandBuffer, position);
 
     vkCmdEndRenderPass(commandBuffer);
 
     JE_CORE_ASSERT(vkEndCommandBuffer(commandBuffer) == VK_SUCCESS, "failed to record command buffer!");
 }
 
-void VulkanContext::DrawTriangle(VkCommandBuffer commandBuffer)
+void VulkanContext::DrawSquare(VkCommandBuffer commandBuffer, glm::vec3 position)
 {
+    glm::vec3 translation = position * m_CubeScale;
+    
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+    glm::vec3 camPos = { 0.f,0.f,-2.f };
+
+    glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+
+    glm::mat4 projection = glm::perspective(glm::radians(70.f),  (float)m_Swapchain->swapChainExtent.width/ (float)m_Swapchain->swapChainExtent.height, 0.1f, 200.0f);
+    projection[1][1] *= -1;
+
+    m_PushConstants.ViewProjection = projection * view;
+
+    
+    m_PushConstants.Transform = glm::translate(glm::mat4(1.0f), translation)
+                                * glm::eulerAngleXYZ(glm::radians(m_CubeRotation.x), glm::radians(m_CubeRotation.y),
+                                    glm::radians(m_CubeRotation.z));
+
+    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstants), &m_PushConstants);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -392,10 +420,10 @@ void VulkanContext::DrawTriangle(VkCommandBuffer commandBuffer)
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_VertexBuffer.Handle, offsets);
 
     vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer.Handle, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
     vkCmdDrawIndexed(commandBuffer, 6, 1, 0, 0, 0);
 }
+
 void VulkanContext::CreateSyncObjects()
 {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -418,24 +446,6 @@ void VulkanContext::CreateSyncObjects()
             JE_CORE_ASSERT(false, "failed to create synchronization objects for a frame!");
         }
     }
-}
-
-void VulkanContext::CreateDescriptorSetLayout()
-{
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &uboLayoutBinding;
-
-    JE_CORE_ASSERT(vkCreateDescriptorSetLayout(m_Device.GetLogicalDevice(), &layoutInfo, nullptr, &descriptorSetLayout) == VK_SUCCESS,
-        "failed to create descriptor set layout!");
 }
 
 void VulkanContext::CreateGraphicsPipelines()
@@ -500,47 +510,49 @@ void VulkanContext::CreateGraphicsPipelines()
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 0.0f;  // Optional
-    rasterizer.depthBiasClamp = 0.0f;           // Optional
-    rasterizer.depthBiasSlopeFactor = 0.0f;     // Optional
+    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+    rasterizer.depthBiasClamp = 0.0f; // Optional
+    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisampling.minSampleShading = 1.0f;           // Optional
-    multisampling.pSampleMask = nullptr;             // Optional
-    multisampling.alphaToCoverageEnable = VK_FALSE;  // Optional
-    multisampling.alphaToOneEnable = VK_FALSE;       // Optional
+    multisampling.minSampleShading = 1.0f; // Optional
+    multisampling.pSampleMask = nullptr; // Optional
+    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
+    multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;              // Optional
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;              // Optional
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;  // Optional
+    colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;  // Optional
-    colorBlending.blendConstants[1] = 0.0f;  // Optional
-    colorBlending.blendConstants[2] = 0.0f;  // Optional
-    colorBlending.blendConstants[3] = 0.0f;  // Optional
+    colorBlending.blendConstants[0] = 0.0f; // Optional
+    colorBlending.blendConstants[1] = 0.0f; // Optional
+    colorBlending.blendConstants[2] = 0.0f; // Optional
+    colorBlending.blendConstants[3] = 0.0f; // Optional
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;             // Optional
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;  // Optional
-    pipelineLayoutInfo.pushConstantRangeCount = 0;     // Optional
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;  // Optional
+    std::array<VkPushConstantRange, 1> pushConstantRanges;
+    pushConstantRanges[0].offset = 0;
+    pushConstantRanges[0].size = sizeof(glm::mat4) * 2;
+    pushConstantRanges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+    pipelineLayoutInfo.pushConstantRangeCount = (uint32_t)pushConstantRanges.size();
 
     VkResult resultPipeline = vkCreatePipelineLayout(m_Device.GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout);
     JE_CORE_ASSERT(resultPipeline == VK_SUCCESS, "failed to create pipeline layout!");
@@ -557,7 +569,7 @@ void VulkanContext::CreateGraphicsPipelines()
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = nullptr;  // Optional
+    pipelineInfo.pDepthStencilState = nullptr; // Optional
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
 
@@ -566,8 +578,8 @@ void VulkanContext::CreateGraphicsPipelines()
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
-    pipelineInfo.basePipelineIndex = -1;               // Optional
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+    pipelineInfo.basePipelineIndex = -1; // Optional
 
     VkResult graphicsResult =
         vkCreateGraphicsPipelines(m_Device.GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
@@ -598,7 +610,7 @@ void VulkanContext::InitBuffers()
 
     glm::vec3* vbMemory = nullptr;
     JE_CORE_ASSERT(vkMapMemory(m_Device.GetLogicalDevice(), m_VertexBuffer.Memory, 0, sizeof(vertexData[0]) * vertexData.size(), 0,
-                       (void**)&vbMemory) == VK_SUCCESS,
+            (void**)&vbMemory) == VK_SUCCESS,
         "Failed to map vertex buffer memory");
 
     if (vbMemory) memcpy(vbMemory, vertexData.data(), sizeof(vertexData[0]) * vertexData.size());
@@ -616,7 +628,7 @@ void VulkanContext::InitBuffers()
 
     range[1].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     range[1].memory = m_IndexBuffer.Memory;
-    range[1].size = VK_WHOLE_SIZE;  // або indices.size() * sizeof(uint32_t)
+    range[1].size = VK_WHOLE_SIZE; // пїЅпїЅпїЅ indices.size() * sizeof(uint32_t)
 
     JE_CORE_ASSERT(vkFlushMappedMemoryRanges(m_Device.GetLogicalDevice(), 2, range) == VK_SUCCESS, "Failed to flush memory");
 
@@ -624,96 +636,9 @@ void VulkanContext::InitBuffers()
     vkUnmapMemory(m_Device.GetLogicalDevice(), m_IndexBuffer.Memory);
 }
 
-void VulkanContext::CreateUniformBuffers()
-{
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        uniformBuffers[i].Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        CreateBuffer(uniformBuffers[i], bufferSize);
-
-        vkMapMemory(m_Device.GetLogicalDevice(), uniformBuffers[i].Memory, 0, bufferSize, 0, &uniformBuffersMapped[i]);
-    }
-}
-
-void VulkanContext::CreateDescriptorPool()
-{
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-    JE_CORE_ASSERT(vkCreateDescriptorPool(m_Device.GetLogicalDevice(), &poolInfo, nullptr, &descriptorPool) == VK_SUCCESS,
-        "failed to create descriptor pool!");
-}
-
-void VulkanContext::CreateDescriptorSets()
-{
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-
-    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    JE_CORE_ASSERT(vkAllocateDescriptorSets(m_Device.GetLogicalDevice(), &allocInfo, descriptorSets.data()) == VK_SUCCESS,
-        "failed to allocate descriptor sets!")
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i].Handle;
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
-
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-
-        vkUpdateDescriptorSets(m_Device.GetLogicalDevice(), 1, &descriptorWrite, 0, nullptr);
-    }
-}
-
-void VulkanContext::UpdateUniformBuffer(uint32_t currentImage)
-{
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-    UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    ubo.proj =
-        glm::perspective(glm::radians(45.0f), m_Swapchain->swapChainExtent.width / (float)m_Swapchain->swapChainExtent.height, 0.1f, 10.0f);
-
-    ubo.proj[1][1] *= -1;
-
-    memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-}
-
 void VulkanContext::DrawFrame()
 {
     vkWaitForFences(m_Device.GetLogicalDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    UpdateUniformBuffer(currentFrame);
     vkResetFences(m_Device.GetLogicalDevice(), 1, &inFlightFences[currentFrame]);
 
     uint32_t imageIndex;
@@ -759,6 +684,7 @@ void VulkanContext::DrawFrame()
     vkQueuePresentKHR(m_Device.m_PresentQueue, &presentInfo);
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
+
 void VulkanContext::RecreateSwapchain()
 {
     vkDeviceWaitIdle(m_Device.GetLogicalDevice());
@@ -769,4 +695,4 @@ void VulkanContext::RecreateSwapchain()
     m_Swapchain->RecreateSwapchain();
     CreateFramebuffers();
 }
-}  // namespace JuicyEngine
+} // namespace JuicyEngine
