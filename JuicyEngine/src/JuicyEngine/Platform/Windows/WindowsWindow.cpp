@@ -4,7 +4,6 @@
 #include "JuicyEngine/Events/MouseEvent.h"
 #include "JuicyEngine/Events/KeyEvent.h"
 
-
 namespace JuicyEngine
 {
 
@@ -38,8 +37,8 @@ void WindowsWindow::Init(const WindowProps& props)
     RegisterClassEx(&wc);
     std::wstring wTitle(m_Data.Title.begin(), m_Data.Title.end());
     // Create window
-    m_Window = CreateWindowEx(0, L"JuicyEngineWindowClass", wTitle.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-        m_Data.Width, m_Data.Height, nullptr, nullptr, wc.hInstance, this);
+    m_Window = CreateWindowEx(0, L"JuicyEngineWindowClass", wTitle.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, m_Data.Width,
+        m_Data.Height, nullptr, nullptr, wc.hInstance, this);
 
     if (!m_Window)
     {
@@ -52,7 +51,6 @@ void WindowsWindow::Init(const WindowProps& props)
 
     // Set up the window's user pointer
     SetWindowLongPtr(m_Window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-
 }
 
 void WindowsWindow::Shutdown()

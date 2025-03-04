@@ -4,11 +4,10 @@
 #include <JuicyEngine/Core/Core.h>
 #include "Platform/VulkanPlatform.h"
 
-
 namespace JuicyEngine
 {
 
-VulkanDevice::VulkanDevice(VkInstance* instance, VkSurfaceKHR& surface) 
+VulkanDevice::VulkanDevice(VkInstance* instance, VkSurfaceKHR& surface)
 {
     m_Surface = surface;
     m_Instance = instance;

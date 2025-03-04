@@ -19,7 +19,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanDevice& device, const std::string& 
     JE_CORE_ASSERT(result == VK_SUCCESS, "Failde create shader module");
 }
 
-VulkanShaderModule::~VulkanShaderModule() 
+VulkanShaderModule::~VulkanShaderModule()
 {
     vkDestroyShaderModule(m_Device.GetLogicalDevice(), m_ShaderModule, nullptr);
 }

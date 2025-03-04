@@ -52,7 +52,6 @@ void Application::Run()
         }
         m_Context->DrawFrame();
         m_Window->OnUpdate();
-
     }
 }
 

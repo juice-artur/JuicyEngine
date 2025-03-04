@@ -16,14 +16,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vkDebugCallback(VkDebugUtilsMessageSeverityFlagBi
     switch (messageSeverity)
     {
         default:
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: JE_ERROR(callbackData->pMessage);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: JE_WARN(callbackData->pMessage);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: JE_INFO(callbackData->pMessage);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: JE_TRACE(callbackData->pMessage);
-            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: JE_ERROR(callbackData->pMessage); break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: JE_WARN(callbackData->pMessage); break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: JE_INFO(callbackData->pMessage); break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: JE_TRACE(callbackData->pMessage); break;
     }
     return VK_FALSE;
 }
@@ -383,22 +379,22 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 void VulkanContext::DrawSquare(VkCommandBuffer commandBuffer, glm::vec3 position)
 {
     glm::vec3 translation = position * m_CubeScale;
-    
+
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-    glm::vec3 camPos = { 0.f,0.f,-2.f };
+    glm::vec3 camPos = {0.f, 0.f, -2.f};
 
     glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
 
-    glm::mat4 projection = glm::perspective(glm::radians(70.f),  (float)m_Swapchain->swapChainExtent.width/ (float)m_Swapchain->swapChainExtent.height, 0.1f, 200.0f);
+    glm::mat4 projection = glm::perspective(
+        glm::radians(70.f), (float)m_Swapchain->swapChainExtent.width / (float)m_Swapchain->swapChainExtent.height, 0.1f, 200.0f);
     projection[1][1] *= -1;
 
     m_PushConstants.ViewProjection = projection * view;
 
-    
-    m_PushConstants.Transform = glm::translate(glm::mat4(1.0f), translation)
-                                * glm::eulerAngleXYZ(glm::radians(m_CubeRotation.x), glm::radians(m_CubeRotation.y),
-                                    glm::radians(m_CubeRotation.z));
+    m_PushConstants.Transform =
+        glm::translate(glm::mat4(1.0f), translation) *
+        glm::eulerAngleXYZ(glm::radians(m_CubeRotation.x), glm::radians(m_CubeRotation.y), glm::radians(m_CubeRotation.z));
 
     vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstants), &m_PushConstants);
 
@@ -510,40 +506,40 @@ void VulkanContext::CreateGraphicsPipelines()
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-    rasterizer.depthBiasClamp = 0.0f; // Optional
-    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+    rasterizer.depthBiasConstantFactor = 0.0f;  // Optional
+    rasterizer.depthBiasClamp = 0.0f;           // Optional
+    rasterizer.depthBiasSlopeFactor = 0.0f;     // Optional
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisampling.minSampleShading = 1.0f; // Optional
-    multisampling.pSampleMask = nullptr; // Optional
-    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-    multisampling.alphaToOneEnable = VK_FALSE; // Optional
+    multisampling.minSampleShading = 1.0f;           // Optional
+    multisampling.pSampleMask = nullptr;             // Optional
+    multisampling.alphaToCoverageEnable = VK_FALSE;  // Optional
+    multisampling.alphaToOneEnable = VK_FALSE;       // Optional
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;              // Optional
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;              // Optional
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+    colorBlending.logicOp = VK_LOGIC_OP_COPY;  // Optional
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f; // Optional
-    colorBlending.blendConstants[1] = 0.0f; // Optional
-    colorBlending.blendConstants[2] = 0.0f; // Optional
-    colorBlending.blendConstants[3] = 0.0f; // Optional
+    colorBlending.blendConstants[0] = 0.0f;  // Optional
+    colorBlending.blendConstants[1] = 0.0f;  // Optional
+    colorBlending.blendConstants[2] = 0.0f;  // Optional
+    colorBlending.blendConstants[3] = 0.0f;  // Optional
 
     std::array<VkPushConstantRange, 1> pushConstantRanges;
     pushConstantRanges[0].offset = 0;
@@ -569,7 +565,7 @@ void VulkanContext::CreateGraphicsPipelines()
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = nullptr; // Optional
+    pipelineInfo.pDepthStencilState = nullptr;  // Optional
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
 
@@ -578,8 +574,8 @@ void VulkanContext::CreateGraphicsPipelines()
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-    pipelineInfo.basePipelineIndex = -1; // Optional
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
+    pipelineInfo.basePipelineIndex = -1;               // Optional
 
     VkResult graphicsResult =
         vkCreateGraphicsPipelines(m_Device.GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
@@ -610,7 +606,7 @@ void VulkanContext::InitBuffers()
 
     glm::vec3* vbMemory = nullptr;
     JE_CORE_ASSERT(vkMapMemory(m_Device.GetLogicalDevice(), m_VertexBuffer.Memory, 0, sizeof(vertexData[0]) * vertexData.size(), 0,
-            (void**)&vbMemory) == VK_SUCCESS,
+                       (void**)&vbMemory) == VK_SUCCESS,
         "Failed to map vertex buffer memory");
 
     if (vbMemory) memcpy(vbMemory, vertexData.data(), sizeof(vertexData[0]) * vertexData.size());
@@ -628,7 +624,7 @@ void VulkanContext::InitBuffers()
 
     range[1].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     range[1].memory = m_IndexBuffer.Memory;
-    range[1].size = VK_WHOLE_SIZE; // ��� indices.size() * sizeof(uint32_t)
+    range[1].size = VK_WHOLE_SIZE;  // ��� indices.size() * sizeof(uint32_t)
 
     JE_CORE_ASSERT(vkFlushMappedMemoryRanges(m_Device.GetLogicalDevice(), 2, range) == VK_SUCCESS, "Failed to flush memory");
 
@@ -695,4 +691,4 @@ void VulkanContext::RecreateSwapchain()
     m_Swapchain->RecreateSwapchain();
     CreateFramebuffers();
 }
-} // namespace JuicyEngine
+}  // namespace JuicyEngine

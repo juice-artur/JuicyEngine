@@ -3,7 +3,6 @@
 #include "Log.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-
 namespace JuicyEngine
 {
 std::shared_ptr<spdlog::logger> Log::s_CoreLogger;

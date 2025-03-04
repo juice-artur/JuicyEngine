@@ -61,7 +61,7 @@ struct Vertex
 };
 
 const std::vector<Vertex> vertexData = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-                                        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
 
 const uint32_t indices[6] = {0, 1, 2, 2, 3, 0};
 
@@ -118,7 +118,6 @@ private:
     std::vector<Buffer> uniformBuffers;
     std::vector<void*> uniformBuffersMapped;
 
-
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     uint32_t currentFrame = 0;
@@ -132,4 +131,4 @@ private:
 
     PushConstants m_PushConstants;
 };
-} // namespace JuicyEngine
+}  // namespace JuicyEngine

@@ -32,7 +32,6 @@ private:
     HWND m_Window;
     HINSTANCE m_HInstance;
 
-
     struct WindowData
     {
         std::string Title;

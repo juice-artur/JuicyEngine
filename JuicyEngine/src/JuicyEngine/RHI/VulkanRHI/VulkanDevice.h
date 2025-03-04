@@ -55,6 +55,5 @@ private:
 
     PhysicalDeviseRequirements requirements = {
         .Discrete = true, .Graphics = true, .Present = true, .Transfer = true, .RequiredExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME}};
-
 };
 }  // namespace JuicyEngine

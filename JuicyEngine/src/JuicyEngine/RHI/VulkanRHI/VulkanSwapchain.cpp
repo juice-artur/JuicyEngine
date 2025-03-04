@@ -8,7 +8,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice& device, Window& windowHandle, VkS
 {
 }
 
-void VulkanSwapchain::RecreateSwapchain() 
+void VulkanSwapchain::RecreateSwapchain()
 {
     Destroy();
 
