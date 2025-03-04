@@ -36,9 +36,9 @@ void WindowsWindow::Init(const WindowProps& props)
     wc.hInstance = GetModuleHandle(nullptr);
     wc.lpszClassName = L"JuicyEngineWindowClass";
     RegisterClassEx(&wc);
-
+    std::wstring wTitle(m_Data.Title.begin(), m_Data.Title.end());
     // Create window
-    m_Window = CreateWindowEx(0, L"JuicyEngineWindowClass", reinterpret_cast<LPCWSTR>(m_Data.Title.c_str()), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+    m_Window = CreateWindowEx(0, L"JuicyEngineWindowClass", wTitle.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
         m_Data.Width, m_Data.Height, nullptr, nullptr, wc.hInstance, this);
 
     if (!m_Window)
