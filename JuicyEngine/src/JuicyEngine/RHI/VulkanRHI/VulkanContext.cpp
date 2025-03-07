@@ -2,7 +2,6 @@
 #include "VulkanContext.h"
 #include "Platform/VulkanPlatform.h"
 #include "VulkanShaderModule.h"
-#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -15,11 +14,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vkDebugCallback(VkDebugUtilsMessageSeverityFlagBi
 {
     switch (messageSeverity)
     {
-        default:
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: JE_ERROR(callbackData->pMessage); break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: JE_WARN(callbackData->pMessage); break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: JE_INFO(callbackData->pMessage); break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: JE_TRACE(callbackData->pMessage); break;
+
     }
     return VK_FALSE;
 }
@@ -47,7 +47,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 }
 
-JuicyEngine::VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windowHandle)
+VulkanContext::VulkanContext(Window* windowHandle) : m_Window(windowHandle)
 {
     JE_CORE_ASSERT(windowHandle, "Window handle is null!");
 }
@@ -73,11 +73,6 @@ VulkanContext::~VulkanContext()
     vkDestroyPipelineLayout(m_Device.GetLogicalDevice(), pipelineLayout, nullptr);
     vkDestroyRenderPass(m_Device.GetLogicalDevice(), renderPass, nullptr);
     m_Swapchain->Destroy();
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroyBuffer(m_Device.GetLogicalDevice(), uniformBuffers[i].Handle, nullptr);
-        vkFreeMemory(m_Device.GetLogicalDevice(), uniformBuffers[i].Memory, nullptr);
-    }
 
     vkDestroyBuffer(m_Device.GetLogicalDevice(), m_VertexBuffer.Handle, nullptr);
     vkFreeMemory(m_Device.GetLogicalDevice(), m_VertexBuffer.Memory, nullptr);
@@ -179,9 +174,10 @@ void VulkanContext::Init()
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     PopulateDebugMessengerCreateInfo(debugCreateInfo);
-    createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+    createInfo.pNext = &debugCreateInfo;
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
+    JE_CORE_ASSERT("Failed to create Instance", result != VK_SUCCESS)
 
     SetupDebugMessenger();
 
@@ -242,7 +238,7 @@ void VulkanContext::CreateRenderPass()
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    VkAttachmentReference colorAttachmentRef{};
+    VkAttachmentReference colorAttachmentRef;
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
@@ -349,7 +345,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to begin recording command buffer!");
+        JE_CORE_ASSERT(false, "failed to begin recording command buffer!");
     }
 
     VkRenderPassBeginInfo renderPassInfo{};
@@ -456,7 +452,7 @@ void VulkanContext::CreateGraphicsPipelines()
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
-    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    std::vector dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -481,8 +477,8 @@ void VulkanContext::CreateGraphicsPipelines()
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)m_Swapchain->swapChainExtent.width;
-    viewport.height = (float)m_Swapchain->swapChainExtent.height;
+    viewport.width = static_cast<float>(m_Swapchain->swapChainExtent.width);
+    viewport.height = static_cast<float>(m_Swapchain->swapChainExtent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -565,7 +561,7 @@ void VulkanContext::CreateGraphicsPipelines()
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = nullptr;  // Optional
+    pipelineInfo.pDepthStencilState = nullptr;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
 
@@ -574,8 +570,8 @@ void VulkanContext::CreateGraphicsPipelines()
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
-    pipelineInfo.basePipelineIndex = -1;               // Optional
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.basePipelineIndex = -1;
 
     VkResult graphicsResult =
         vkCreateGraphicsPipelines(m_Device.GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
@@ -607,13 +603,13 @@ void VulkanContext::InitBuffers()
     glm::vec3* vbMemory = nullptr;
     JE_CORE_ASSERT(vkMapMemory(m_Device.GetLogicalDevice(), m_VertexBuffer.Memory, 0, sizeof(vertexData[0]) * vertexData.size(), 0,
                        (void**)&vbMemory) == VK_SUCCESS,
-        "Failed to map vertex buffer memory");
+        "Failed to map vertex buffer memory")
 
     if (vbMemory) memcpy(vbMemory, vertexData.data(), sizeof(vertexData[0]) * vertexData.size());
 
     uint32_t* ibMemory = nullptr;
     JE_CORE_ASSERT(vkMapMemory(m_Device.GetLogicalDevice(), m_IndexBuffer.Memory, 0, sizeof(indices), 0, (void**)&ibMemory) == VK_SUCCESS,
-        "Failed to map index buffer memory");
+        "Failed to map index buffer memory")
 
     if (ibMemory) memcpy(ibMemory, indices, sizeof(indices));
 
@@ -662,7 +658,7 @@ void VulkanContext::DrawFrame()
 
     if (vkQueueSubmit(m_Device.m_GraphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
     {
-        JE_CORE_ASSERT(false, "failed to submit draw command buffer!");
+        JE_CORE_ASSERT(false, "failed to submit draw command buffer!")
     }
 
     VkPresentInfoKHR presentInfo{};

@@ -115,9 +115,6 @@ private:
     std::vector<VkFence> inFlightFences;
     std::vector<VkCommandBuffer> commandBuffers;
 
-    std::vector<Buffer> uniformBuffers;
-    std::vector<void*> uniformBuffersMapped;
-
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     uint32_t currentFrame = 0;
