@@ -7,9 +7,14 @@
 - C++ is the main programming language
 - Vulkan as primary graphics API
 ---
+
+## Before Started
+ - Install Conan
+ - Install Vulkan SDK
+
 # Project setup
 - Cloning
     ```bash
-    git clone https://github.com/juice-artur/JuicyEngine.git --recursive
+    git clone https://github.com/juice-artur/JuicyEngine.git 
     ```
-- Run the ```GenerateProjects.bat``` file found in scripts folder. Which will then generate a Visual Studio solution file 
+- Run the ```prepare_conan.bat```

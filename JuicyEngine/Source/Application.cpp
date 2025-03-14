@@ -3,6 +3,7 @@
 #include <iostream>
 #include <ostream>
 
+#include "Window.h"
 
 namespace JuicyEngine
 {
@@ -10,25 +11,15 @@ Application* Application::AppInstance = nullptr;
 
 Application::Application()
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Learn", nullptr, nullptr);
-    if (window == nullptr)
+    Window GameWindow;
+    while (!glfwWindowShouldClose(static_cast<GLFWwindow*>(GameWindow.GetNativeWindow())))
     {
-        std::cout << "Failed to create GLFW window\n";
-        glfwTerminate();
-    }
-    glfwMakeContextCurrent(window);
-
-    while (!glfwWindowShouldClose(window))
-    {
-        if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, true);
-        glfwSwapBuffers(window);
+        if(glfwGetKey(static_cast<GLFWwindow*>(GameWindow.GetNativeWindow()), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(static_cast<GLFWwindow*>(GameWindow.GetNativeWindow()), true);
+        glfwSwapBuffers(static_cast<GLFWwindow*>(GameWindow.GetNativeWindow()));
         glfwPollEvents();
     }
-
-    glfwTerminate();
+    
     
     std::cout << "Application created\n";
     AppInstance = this;
