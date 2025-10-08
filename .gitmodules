@@ -1,0 +1,3 @@
+[submodule "JuicyEngine/vendor/SDL"]
+	path = JuicyEngine/vendor/SDL
+	url = https://github.com/juice-artur/SDL
