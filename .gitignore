@@ -1,9 +1,5 @@
-# Binaries
-**/bin/
-!vendor/premake/bin/
-bin-int/
-
-*.log
+# CMake directory
+build/
 
 # Visual Studio files and folder
 .vs/
@@ -11,6 +7,3 @@ bin-int/
 **.vcxproj
 **.vcxproj.filters
 **.vcxproj.user
-
-# Directories
-JuicyEditor/assets/cache
