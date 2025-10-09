@@ -1,6 +1,18 @@
 set(SOURCES
+    Source/JuicyEngine.h
+    Source/Core/EntryPoint.h
     Source/Core/Application.h
     Source/Core/Application.cpp
+    Source/Core/Log.h
+    Source/Core/Log.cpp
+    Source/Core/Window.h
+    Source/Core/Window.cpp
+    Source/Events/ApplicationEvent.h
+    Source/Events/Event.h
+    Source/Events/KeyEvent.h
+    Source/Events/MouseEvent.h
+    Source/Platform/Windows/WindowsWindow.cpp
+    Source/Platform/Windows/WindowsWindow.h
 )
 
 add_subdirectory(vendor)

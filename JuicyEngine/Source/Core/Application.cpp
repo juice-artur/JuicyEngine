@@ -1,17 +1,43 @@
-#include <print>
-#include "SDL3/SDL.h"
+#include "Application.h"
 
-void SayHello()
+#include "Log.h"
+
+
+namespace JuicyEngine
 {
-    if (!SDL_Init(SDL_INIT_VIDEO))
-    {
-        std::print("Failed init SDL");
-    }
 
-    SDL_Window* Window = SDL_CreateWindow("JuicyEngine",
-        320, 240, SDL_WINDOW_RESIZABLE | SDL_WINDOW_BORDERLESS);
-    
-    SDL_Delay(5000);
-    SDL_Quit();
-    std::print("{2} {1}{0}!\n", 23, "C++", "Hello");
+#define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
+
+Application::Application()
+{
+    m_Window = std::unique_ptr<Window>(Window::Create());
+    m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+}
+
+Application::~Application()
+{
+}
+
+void Application::OnEvent(Event& e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
+
+    JE_CORE_TRACE("{0}", e);
+}
+
+void Application::Run()
+{
+    while (m_Running)
+    {
+        m_Window->OnUpdate();
+    }
+}
+
+bool Application::OnWindowClose(WindowCloseEvent& e)
+{
+    m_Running = false;
+    return true;
+}
+
 }

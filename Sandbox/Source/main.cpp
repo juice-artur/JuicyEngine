@@ -1,6 +1,21 @@
-#include "Core/Application.h"
+#include "JuicyEngine.h"
 
-int main()
+class Sandbox : public JuicyEngine::Application
 {
-    SayHello();
+public:
+    Sandbox()
+    {
+
+    }
+
+    ~Sandbox()
+    {
+
+    }
+
+};
+
+JuicyEngine::Application* JuicyEngine::CreateApplication()
+{
+    return new Sandbox();
 }
