@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <sstream>
 
 #include "Events/Event.h"
 

@@ -1,4 +1,5 @@
 set(SOURCES
+    Source/jepch.h
     Source/JuicyEngine.h
     Source/Core/EntryPoint.h
     Source/Core/Application.h
@@ -7,17 +8,27 @@ set(SOURCES
     Source/Core/Log.cpp
     Source/Core/Window.h
     Source/Core/Window.cpp
+    Source/Core/Layer.h
+    Source/Core/Layer.cpp
+    Source/Core/LayerStack.h
+    Source/Core/LayerStack.cpp
+    Source/Core/Input.h
     Source/Events/ApplicationEvent.h
     Source/Events/Event.h
     Source/Events/KeyEvent.h
     Source/Events/MouseEvent.h
     Source/Platform/Windows/WindowsWindow.cpp
     Source/Platform/Windows/WindowsWindow.h
+    Source/Platform/Windows/WindowsInput.h
+    Source/Platform/Windows/WindowsInput.cpp
 )
+
 
 add_subdirectory(vendor)
 
 add_library(JuicyEngine STATIC)
+
+target_precompile_headers(JuicyEngine PRIVATE Source/jepch.h)
 
 target_sources(JuicyEngine PRIVATE ${SOURCES})
 

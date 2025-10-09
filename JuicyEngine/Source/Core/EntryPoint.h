@@ -1,9 +1,5 @@
 #pragma once
 
-#include "Application.h"
-#include "Log.h"
-
-
 extern JuicyEngine::Application* JuicyEngine::CreateApplication();
 
 int main(int argc, char** argv)
