@@ -5,6 +5,8 @@
 #include "Events/MouseEvent.h"
 #include <SDL3/SDL.h>
 
+#include "Platform/Vulkan/VulkanContext.h"
+
 namespace JuicyEngine
 {
 static bool s_SDLInitialized = false;
@@ -28,13 +30,7 @@ void WindowsWindow::Init(const WindowProps& props)
 
     if (!s_SDLInitialized)
     {
-        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
-        {
-            JE_CORE_CRITICAL("Could not initialize SDL3: {0}", SDL_GetError());
-            assert(false);
-
-            return;
-        }
+        JE_CORE_ASSERT(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS), "Could not initialize SDL3: {0}", SDL_GetError());
         s_SDLInitialized = true;
     }
 
@@ -42,15 +38,18 @@ void WindowsWindow::Init(const WindowProps& props)
     m_Window = SDL_CreateWindow(m_Data.Title.c_str(), m_Data.Width, m_Data.Height, flags);
     if (!m_Window)
     {
-        JE_CORE_CRITICAL("Failed to create SDL window: {0}", SDL_GetError());
-        assert(m_Window);
+        JE_CORE_ASSERT(m_Window, "Failed to create SDL window: {0}", SDL_GetError());
     }
 
+    m_Context = new VulkanContext();
+    m_Context->Init();
+    
     SetVSync(true);
 }
 
 void WindowsWindow::Shutdown()
 {
+    m_Context->Shutdown();
     SDL_DestroyWindow(m_Window);
     SDL_Quit();
 }
@@ -121,6 +120,8 @@ void WindowsWindow::OnUpdate()
             }
         }
     }
+
+    m_Context->SwapBuffers();
 }
 
 void WindowsWindow::SetVSync(bool enabled)

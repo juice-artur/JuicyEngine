@@ -20,7 +20,7 @@ public:
 
     void OnEvent(JuicyEngine::Event& event) override
     {
-        JE_TRACE("{0}", event.Handled);
+     //   JE_TRACE("{0}", event.Handled);
     }
 
 };

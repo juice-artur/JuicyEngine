@@ -1,6 +1,7 @@
 set(SOURCES
     Source/jepch.h
     Source/JuicyEngine.h
+    Source/Core/Core.h
     Source/Core/EntryPoint.h
     Source/Core/Application.h
     Source/Core/Application.cpp
@@ -21,6 +22,9 @@ set(SOURCES
     Source/Platform/Windows/WindowsWindow.h
     Source/Platform/Windows/WindowsInput.h
     Source/Platform/Windows/WindowsInput.cpp
+    Source/Renderer/GraphicsContext.h
+    Source/Platform/Vulkan/VulkanContext.h
+    Source/Platform/Vulkan/VulkanContext.cpp
 )
 
 
