@@ -18,6 +18,7 @@ WindowsWindow::WindowsWindow(const WindowProps& props)
 
 WindowsWindow::~WindowsWindow()
 {
+    m_Context->Shutdown();
 }
 
 void WindowsWindow::Init(const WindowProps& props)
@@ -126,7 +127,6 @@ void WindowsWindow::OnUpdate()
 
 void WindowsWindow::SetVSync(bool enabled)
 {
-    SDL_GL_SetSwapInterval(enabled ? 1 : 0);
     m_Data.VSync = enabled;
 }
 

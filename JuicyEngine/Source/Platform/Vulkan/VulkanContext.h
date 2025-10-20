@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VulkanDevice.h"
 #include "Renderer/GraphicsContext.h"
 #include "vulkan/vulkan.h"
 
@@ -18,6 +19,8 @@ public:
 private:
     bool InitInstance();
     void SetupDebugMessenger();
+    bool CheckValidationLayerSupport(const std::vector<const char*>& ValidationLayers);
+    
     VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
     void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
     
@@ -28,5 +31,7 @@ private:
 private:
     VkInstance Instance;
     VkDebugUtilsMessengerEXT DebugMessenger;
+
+    VulkanDevice* Device;
 };
 }

@@ -6,7 +6,7 @@
 
 namespace JuicyEngine
 {
-VulkanContext::VulkanContext()
+VulkanContext::VulkanContext() : Instance(nullptr), DebugMessenger(nullptr)
 {
 }
 
@@ -14,6 +14,7 @@ void VulkanContext::Init()
 {
     InitInstance();
     SetupDebugMessenger();
+    Device = new VulkanDevice(Instance);
 }
 
 void VulkanContext::SwapBuffers()
@@ -22,6 +23,8 @@ void VulkanContext::SwapBuffers()
 
 void VulkanContext::Shutdown()
 {
+    delete Device;
+    
     DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
     vkDestroyInstance(Instance, nullptr);
 }
@@ -54,8 +57,10 @@ bool VulkanContext::InitInstance()
     PopulateDebugMessengerCreateInfo(DebugCreateInfo);
 
     std::vector InstanceLayers = {
-        "VK_LAYER_KHRONOS_validation"
+        "VK_LAYER_KHRONOS_validation",
     };
+
+    JE_ASSERT(CheckValidationLayerSupport(InstanceLayers), "Validation layers requested, but not available!");
 
     std::vector InstanceExtensions = {
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -84,8 +89,34 @@ void VulkanContext::SetupDebugMessenger()
     PopulateDebugMessengerCreateInfo(CreateInfo);
     if (CreateDebugUtilsMessengerEXT(Instance, &CreateInfo, nullptr, &DebugMessenger) != VK_SUCCESS)
     {
-        JE_CORE_ASSERT(false, "failed to set up debug messenger!");
+        JE_CORE_ASSERT(false, "Failed to set up debug messenger!");
     }
+}
+
+bool VulkanContext::CheckValidationLayerSupport(const std::vector<const char*>& ValidationLayers)
+{
+    uint32_t LayerCount;
+    vkEnumerateInstanceLayerProperties(&LayerCount, nullptr);
+
+    std::vector<VkLayerProperties> AvailableLayers(LayerCount);
+    vkEnumerateInstanceLayerProperties(&LayerCount, AvailableLayers.data());
+
+    for (const char* LayerName : ValidationLayers) {
+        bool bFound = false;
+
+        for (const auto& LayerProperties : AvailableLayers) {
+            if (strcmp(LayerName, LayerProperties.layerName) == 0) {
+                bFound = true;
+                break;
+            }
+        }
+
+        if (!bFound) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 VkResult VulkanContext::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,

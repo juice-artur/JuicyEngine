@@ -25,6 +25,8 @@ set(SOURCES
     Source/Renderer/GraphicsContext.h
     Source/Platform/Vulkan/VulkanContext.h
     Source/Platform/Vulkan/VulkanContext.cpp
+    Source/Platform/Vulkan/VulkanDevice.h
+    Source/Platform/Vulkan/VulkanDevice.cpp
 )
 
 
