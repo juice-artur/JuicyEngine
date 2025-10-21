@@ -43,8 +43,8 @@ void WindowsWindow::Init(const WindowProps& props)
     }
 
     m_Context = new VulkanContext();
-    m_Context->Init();
-    
+    m_Context->Init(GetNativeWindow());
+
     SetVSync(true);
 }
 
@@ -133,5 +133,11 @@ void WindowsWindow::SetVSync(bool enabled)
 bool WindowsWindow::IsVSync() const
 {
     return m_Data.VSync;
+}
+
+void* WindowsWindow::GetNativeWindow() const
+{
+    void* hwnd = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_Window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    return hwnd;
 }
 }

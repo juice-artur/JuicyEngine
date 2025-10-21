@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanDevice.h"
+#include "VulkanSurface.h"
 #include "Renderer/GraphicsContext.h"
 #include "vulkan/vulkan.h"
 
@@ -11,7 +12,7 @@ class VulkanContext : public GraphicsContext
 public:
     VulkanContext();
     
-    virtual void Init() override;
+    virtual void Init(void* Window) override;
     virtual void SwapBuffers() override;
     virtual void Shutdown() override;
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& DebugCreateInfo);
@@ -33,5 +34,6 @@ private:
     VkDebugUtilsMessengerEXT DebugMessenger;
 
     VulkanDevice* Device;
+    VulkanSurface* Surface;
 };
 }

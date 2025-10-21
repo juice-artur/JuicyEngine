@@ -1,14 +1,23 @@
 #include "VulkanDevice.h"
+
+#include <set>
+
 #include "jepch.h"
 #include "Core/Core.h"
 
-VulkanDevice::VulkanDevice(const VkInstance& Instance) : PhysicalDevice(VK_NULL_HANDLE)
+namespace JuicyEngine
+{
+VulkanDevice::VulkanDevice(const VkInstance& Instance, const VkSurfaceKHR& Surface) :
+    PhysicalDevice(VK_NULL_HANDLE),
+    Surface(Surface)
 {
     PickPhysicalDevice(Instance);
     
+    QueueIndices = FindQueueFamilies(PhysicalDevice);
     CreateLogicalDevice();
-
+    
     vkGetDeviceQueue(LogicalDevice, QueueIndices.GraphicsFamily.value(), 0, &GraphicsQueue);
+    vkGetDeviceQueue(LogicalDevice, QueueIndices.PresentFamily.value(), 0, &PresentQueue);
 }
 
 VulkanDevice::~VulkanDevice()
@@ -35,11 +44,6 @@ void VulkanDevice::PickPhysicalDevice(const VkInstance& Instance)
     }
     
     JE_CORE_ASSERT(PhysicalDevice, "Failed to find a suitable GPU!");
-
-    QueueIndices = FindQueueFamilies(PhysicalDevice);
-    
-    JE_INFO("Device meets queue requirements.");
-    JE_TRACE("Graphics Family Index: {0}", QueueIndices.GraphicsFamily.value());
 }
 
 bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice Device)
@@ -51,19 +55,25 @@ bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice Device)
 
 void VulkanDevice::CreateLogicalDevice()
 {
-    VkDeviceQueueCreateInfo QueueCreateInfo{};
-    QueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    QueueCreateInfo.queueFamilyIndex = QueueIndices.GraphicsFamily.value();
-    QueueCreateInfo.queueCount = 1;
+    std::vector<VkDeviceQueueCreateInfo> QueueCreateInfos;
+    std::set<uint32_t> UniqueQueueFamilies = {QueueIndices.GraphicsFamily.value(), QueueIndices.PresentFamily.value()};
+    
     float QueuePriority = 1.0f;
-    QueueCreateInfo.pQueuePriorities = &QueuePriority;
+    for (uint32_t QueueFamily : UniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo QueueCreateInfo{};
+        QueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        QueueCreateInfo.queueFamilyIndex = QueueFamily;
+        QueueCreateInfo.queueCount = 1;
+        QueueCreateInfo.pQueuePriorities = &QueuePriority;
+        QueueCreateInfos.push_back(QueueCreateInfo);
+    }
 
     VkPhysicalDeviceFeatures DeviceFeatures{};
     
     VkDeviceCreateInfo DeviceCreateInfo{};
     DeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    DeviceCreateInfo.queueCreateInfoCount = 1;
-    DeviceCreateInfo.pQueueCreateInfos = &QueueCreateInfo;
+    DeviceCreateInfo.queueCreateInfoCount = QueueCreateInfos.size();
+    DeviceCreateInfo.pQueueCreateInfos = QueueCreateInfos.data();
     DeviceCreateInfo.pEnabledFeatures = &DeviceFeatures;
     
     VkResult Result = vkCreateDevice(PhysicalDevice, &DeviceCreateInfo, nullptr, &LogicalDevice);
@@ -86,9 +96,21 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice Device)
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             Indices.GraphicsFamily = i;
         }
-        
+
+        VkBool32 bPresentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(Device, i, Surface, &bPresentSupport);
+
+        if (bPresentSupport) {
+            Indices.PresentFamily = i;
+        }
+
+        if (Indices.IsComplete()) {
+            break;
+        }
+
         i++;
     }
 
     return Indices;
+}
 }

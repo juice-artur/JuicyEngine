@@ -10,11 +10,13 @@ VulkanContext::VulkanContext() : Instance(nullptr), DebugMessenger(nullptr)
 {
 }
 
-void VulkanContext::Init()
+void VulkanContext::Init(void* Window)
 {
     InitInstance();
     SetupDebugMessenger();
-    Device = new VulkanDevice(Instance);
+    Surface = new VulkanSurface(Instance);
+    Surface->Init(Window);
+    Device = new VulkanDevice(Instance, Surface->GetSurface());
 }
 
 void VulkanContext::SwapBuffers()
@@ -26,6 +28,9 @@ void VulkanContext::Shutdown()
     delete Device;
     
     DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
+    Surface->Shutdown();
+    delete Surface;
+    
     vkDestroyInstance(Instance, nullptr);
 }
 
@@ -63,7 +68,9 @@ bool VulkanContext::InitInstance()
     JE_ASSERT(CheckValidationLayerSupport(InstanceLayers), "Validation layers requested, but not available!");
 
     std::vector InstanceExtensions = {
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        "VK_KHR_win32_surface"
     };
 
     VkInstanceCreateInfo InstanceCreateInfo = {};
