@@ -2,6 +2,7 @@
 
 #include "VulkanDevice.h"
 #include "VulkanSurface.h"
+#include "VulkanSwapChain.h"
 #include "Renderer/GraphicsContext.h"
 #include "vulkan/vulkan.h"
 
@@ -35,5 +36,6 @@ private:
 
     VulkanDevice* Device;
     VulkanSurface* Surface;
+    VulkanSwapChain SwapChain;;
 };
 }

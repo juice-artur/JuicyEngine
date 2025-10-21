@@ -29,6 +29,8 @@ set(SOURCES
     Source/Platform/Vulkan/VulkanDevice.cpp
     Source/Platform/Vulkan/VulkanSurface.h
     Source/Platform/Vulkan/VulkanSurface.cpp
+    Source/Platform/Vulkan/VulkanSwapChain.h
+    Source/Platform/Vulkan/VulkanSwapChain.cpp
 )
 
 

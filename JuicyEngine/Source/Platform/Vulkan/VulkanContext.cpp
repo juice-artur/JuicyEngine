@@ -17,6 +17,8 @@ void VulkanContext::Init(void* Window)
     Surface = new VulkanSurface(Instance);
     Surface->Init(Window);
     Device = new VulkanDevice(Instance, Surface->GetSurface());
+
+    SwapChain.Init(Device->GetPhysicalDevice(), Device->GetLogicalDevice(), Surface->GetSurface(), Window);
 }
 
 void VulkanContext::SwapBuffers()
@@ -25,6 +27,7 @@ void VulkanContext::SwapBuffers()
 
 void VulkanContext::Shutdown()
 {
+    SwapChain.Shutdown(Device->GetLogicalDevice());
     delete Device;
     
     DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);

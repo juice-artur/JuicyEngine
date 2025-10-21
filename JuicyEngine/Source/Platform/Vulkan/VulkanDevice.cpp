@@ -3,6 +3,7 @@
 #include <set>
 
 #include "jepch.h"
+#include "VulkanSwapChain.h"
 #include "Core/Core.h"
 
 namespace JuicyEngine
@@ -13,7 +14,8 @@ VulkanDevice::VulkanDevice(const VkInstance& Instance, const VkSurfaceKHR& Surfa
 {
     PickPhysicalDevice(Instance);
     
-    QueueIndices = FindQueueFamilies(PhysicalDevice);
+    QueueIndices = FindQueueFamilies(PhysicalDevice, Surface);
+    JE_CORE_ASSERT(QueueIndices.IsComplete(), "Could not find Queue indices")
     CreateLogicalDevice();
     
     vkGetDeviceQueue(LogicalDevice, QueueIndices.GraphicsFamily.value(), 0, &GraphicsQueue);
@@ -48,16 +50,40 @@ void VulkanDevice::PickPhysicalDevice(const VkInstance& Instance)
 
 bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice Device)
 {
-    QueueFamilyIndices Indices = FindQueueFamilies(Device);
+    QueueFamilyIndices Indices = FindQueueFamilies(Device, Surface);
+    bool bExtensionsSupported = IsDeviceExtensionSupport(Device);
 
-    return Indices.IsComplete();
+    bool bSwapChainAdequate = false;
+    if (bExtensionsSupported) {
+        SwapChainSupportDetails SwapChainSupport = VulkanSwapChain::QuerySwapChainSupport(Device, Surface);
+        bSwapChainAdequate = !SwapChainSupport.Formats.empty() && !SwapChainSupport.PresentModes.empty();
+    }
+
+    return Indices.IsComplete() && bExtensionsSupported && bSwapChainAdequate;
+}
+
+bool VulkanDevice::IsDeviceExtensionSupport(VkPhysicalDevice Device)
+{
+    uint32_t ExtensionCount;
+    vkEnumerateDeviceExtensionProperties(Device, nullptr, &ExtensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> AvailableExtensions(ExtensionCount);
+    vkEnumerateDeviceExtensionProperties(Device, nullptr, &ExtensionCount, AvailableExtensions.data());
+
+    std::set<std::string> RequiredExtensions(DeviceExtensions.begin(), DeviceExtensions.end());
+
+    for (const auto& extension : AvailableExtensions) {
+        RequiredExtensions.erase(extension.extensionName);
+    }
+
+    return RequiredExtensions.empty();
 }
 
 void VulkanDevice::CreateLogicalDevice()
 {
     std::vector<VkDeviceQueueCreateInfo> QueueCreateInfos;
     std::set<uint32_t> UniqueQueueFamilies = {QueueIndices.GraphicsFamily.value(), QueueIndices.PresentFamily.value()};
-    
+
     float QueuePriority = 1.0f;
     for (uint32_t QueueFamily : UniqueQueueFamilies) {
         VkDeviceQueueCreateInfo QueueCreateInfo{};
@@ -72,6 +98,8 @@ void VulkanDevice::CreateLogicalDevice()
     
     VkDeviceCreateInfo DeviceCreateInfo{};
     DeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    DeviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(DeviceExtensions.size());
+    DeviceCreateInfo.ppEnabledExtensionNames = DeviceExtensions.data();
     DeviceCreateInfo.queueCreateInfoCount = QueueCreateInfos.size();
     DeviceCreateInfo.pQueueCreateInfos = QueueCreateInfos.data();
     DeviceCreateInfo.pEnabledFeatures = &DeviceFeatures;
@@ -81,7 +109,7 @@ void VulkanDevice::CreateLogicalDevice()
     JE_ASSERT(Result == VK_SUCCESS, "Failed to create logical device!");
 }
 
-QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice Device)
+QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice Device, VkSurfaceKHR Surface)
 {
     QueueFamilyIndices Indices;
     
@@ -112,5 +140,15 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice Device)
     }
 
     return Indices;
+}
+
+VkPhysicalDevice VulkanDevice::GetPhysicalDevice() const
+{
+    return PhysicalDevice;
+}
+
+VkDevice VulkanDevice::GetLogicalDevice() const
+{
+    return LogicalDevice;
 }
 }

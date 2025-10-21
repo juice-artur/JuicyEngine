@@ -21,12 +21,16 @@ public:
     VulkanDevice(const VkInstance& Instance, const VkSurfaceKHR& Surface);
     ~VulkanDevice();
 
+    static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice Device, VkSurfaceKHR Surface);
+
+    VkPhysicalDevice GetPhysicalDevice() const;
+    VkDevice GetLogicalDevice() const;
+
 private:
     void PickPhysicalDevice(const VkInstance& Instance);
     bool IsDeviceSuitable(VkPhysicalDevice Device);
+    bool IsDeviceExtensionSupport(VkPhysicalDevice Device);
     void CreateLogicalDevice();
-
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice Device);
 
 private:
     VkPhysicalDevice PhysicalDevice;
@@ -35,5 +39,9 @@ private:
     VkQueue GraphicsQueue;
     VkQueue PresentQueue;
     const VkSurfaceKHR& Surface;
+
+    const std::vector<const char*> DeviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
 };
 }
