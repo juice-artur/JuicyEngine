@@ -2,6 +2,7 @@
 #include "vulkan/vulkan.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "jepch.h"
+#include "VulkanShader.h"
 #include "Core/Core.h"
 
 namespace JuicyEngine
@@ -19,6 +20,8 @@ void VulkanContext::Init(void* Window)
     Device = new VulkanDevice(Instance, Surface->GetSurface());
 
     SwapChain.Init(Device->GetPhysicalDevice(), Device->GetLogicalDevice(), Surface->GetSurface(), Window);
+
+    CreateGraphicsPipeline();
 }
 
 void VulkanContext::SwapBuffers()
@@ -151,6 +154,32 @@ void VulkanContext::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUt
     {
         Func(instance, debugMessenger, pAllocator);
     }
+}
+
+void VulkanContext::CreateGraphicsPipeline()
+{
+    auto VertShaderCode = VulkanShader::ReadFile("Assets/Shaders/vert.spv");
+    auto FragShaderCode = VulkanShader::ReadFile("Assets/Shaders/frag.spv");
+    
+    VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), VertShaderCode);
+    VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), FragShaderCode);
+    
+    VkPipelineShaderStageCreateInfo VertShaderStageInfo{};
+    VertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    VertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    VertShaderStageInfo.module = VertShaderModule;
+    VertShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = FragShaderModule;
+    fragShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo ShaderStages[] = {VertShaderStageInfo, fragShaderStageInfo};
+    
+    vkDestroyShaderModule(Device->GetLogicalDevice(), FragShaderModule, nullptr);
+    vkDestroyShaderModule(Device->GetLogicalDevice(), VertShaderModule, nullptr);
 }
 
 VkBool32 VulkanContext::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,

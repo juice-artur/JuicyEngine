@@ -31,6 +31,8 @@ set(SOURCES
     Source/Platform/Vulkan/VulkanSurface.cpp
     Source/Platform/Vulkan/VulkanSwapChain.h
     Source/Platform/Vulkan/VulkanSwapChain.cpp
+    Source/Platform/Vulkan/VulkanShader.h
+     Source/Platform/Vulkan/VulkanShader.cpp
 )
 
 
