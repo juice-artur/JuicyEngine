@@ -109,6 +109,16 @@ void VulkanDevice::CreateLogicalDevice()
     JE_ASSERT(Result == VK_SUCCESS, "Failed to create logical device!");
 }
 
+VkQueue& VulkanDevice::GetGraphicsQueue()
+{
+    return GraphicsQueue;
+}
+
+VkQueue& VulkanDevice::GetPresentQueue()
+{
+    return PresentQueue;
+}
+
 QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice Device, VkSurfaceKHR Surface)
 {
     QueueFamilyIndices Indices;
@@ -150,5 +160,10 @@ VkPhysicalDevice VulkanDevice::GetPhysicalDevice() const
 VkDevice VulkanDevice::GetLogicalDevice() const
 {
     return LogicalDevice;
+}
+
+QueueFamilyIndices VulkanDevice::GetQueueFamilyIndices()
+{
+    return QueueIndices;
 }
 }

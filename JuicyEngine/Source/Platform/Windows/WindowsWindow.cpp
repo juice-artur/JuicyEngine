@@ -51,6 +51,7 @@ void WindowsWindow::Init(const WindowProps& props)
 void WindowsWindow::Shutdown()
 {
     m_Context->Shutdown();
+    delete m_Context;
     SDL_DestroyWindow(m_Window);
     SDL_Quit();
 }
@@ -121,7 +122,7 @@ void WindowsWindow::OnUpdate()
             }
         }
     }
-
+    m_Context->Draw();
     m_Context->SwapBuffers();
 }
 

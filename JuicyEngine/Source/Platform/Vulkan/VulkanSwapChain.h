@@ -22,9 +22,14 @@ public:
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& AvailableFormats);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& AvailablePresentModes);
     VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& Capabilities, void* Window);
+    VkFormat GetFormat() const;
+    VkExtent2D GetExtent() const;
+    std::vector<VkImageView>& GetSwapChainImageViews();
+    VkSwapchainKHR GetSwapChain() const;
 
 private:
     void CreateImageViews(const VkDevice Device);
+    
 private:
     VkSwapchainKHR SwapChain;
     uint32_t ImageCount;

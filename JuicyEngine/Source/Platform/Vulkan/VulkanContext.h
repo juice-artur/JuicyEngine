@@ -1,6 +1,9 @@
 #pragma once
 
+#include "VulkanCommandBuffer.h"
 #include "VulkanDevice.h"
+#include "VulkanPipeline.h"
+#include "VulkanRenderPass.h"
 #include "VulkanSurface.h"
 #include "VulkanSwapChain.h"
 #include "Renderer/GraphicsContext.h"
@@ -17,6 +20,7 @@ public:
     virtual void SwapBuffers() override;
     virtual void Shutdown() override;
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& DebugCreateInfo);
+    virtual void Draw() override;
 
 private:
     bool InitInstance();
@@ -27,6 +31,10 @@ private:
     void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
     void CreateGraphicsPipeline();
+
+    void RecordCommandBuffer();
+
+    void CreateSyncObjects();
     
     static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(   VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -38,6 +46,15 @@ private:
 
     VulkanDevice* Device;
     VulkanSurface* Surface;
-    VulkanSwapChain SwapChain;;
+    VulkanSwapChain SwapChain;
+    VulkanPipeline GraphicsPipeline;
+    std::shared_ptr<VulkanRenderPass> RenderPass = std::make_shared<VulkanRenderPass>();
+    VkCommandPool CommandPool = VK_NULL_HANDLE;
+
+    VulkanRenderCommandBuffer CommandBuffer;
+
+    VkSemaphore ImageAvailableSemaphore;
+    VkSemaphore RenderFinishedSemaphore;
+    VkFence InFlightFence;
 };
 }

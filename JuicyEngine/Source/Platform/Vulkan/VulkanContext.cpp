@@ -1,9 +1,12 @@
 #include "VulkanContext.h"
+
+
 #include "vulkan/vulkan.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "jepch.h"
 #include "VulkanShader.h"
 #include "Core/Core.h"
+#include "Renderer/Pipeline.h"
 
 namespace JuicyEngine
 {
@@ -19,9 +22,22 @@ void VulkanContext::Init(void* Window)
     Surface->Init(Window);
     Device = new VulkanDevice(Instance, Surface->GetSurface());
 
-    SwapChain.Init(Device->GetPhysicalDevice(), Device->GetLogicalDevice(), Surface->GetSurface(), Window);
+    VkCommandPoolCreateInfo PoolInfo{};
+    PoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    PoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    PoolInfo.queueFamilyIndex = Device->GetQueueFamilyIndices().GraphicsFamily.value();
 
+    auto CreateCommandPoolResult = vkCreateCommandPool(Device->GetLogicalDevice(), &PoolInfo, nullptr, &CommandPool);
+
+    JE_CORE_ASSERT(CreateCommandPoolResult == VK_SUCCESS, "Failed to create vulkan Instance: {0}",
+        string_VkResult(CreateCommandPoolResult));
+
+    SwapChain.Init(Device->GetPhysicalDevice(), Device->GetLogicalDevice(), Surface->GetSurface(), Window);
+    RenderPass->CreateRenderPass(Device->GetLogicalDevice(), SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(),
+        SwapChain.GetExtent());
+    CommandBuffer.Init(Device->GetLogicalDevice(), CommandPool);
     CreateGraphicsPipeline();
+    CreateSyncObjects();
 }
 
 void VulkanContext::SwapBuffers()
@@ -30,13 +46,21 @@ void VulkanContext::SwapBuffers()
 
 void VulkanContext::Shutdown()
 {
+    vkDeviceWaitIdle(Device->GetLogicalDevice());
+    vkDestroySemaphore(Device->GetLogicalDevice(), ImageAvailableSemaphore, nullptr);
+    vkDestroySemaphore(Device->GetLogicalDevice(), RenderFinishedSemaphore, nullptr);
+    vkDestroyFence(Device->GetLogicalDevice(), InFlightFence, nullptr);
+    vkDestroyCommandPool(Device->GetLogicalDevice(), CommandPool, nullptr);
+    GraphicsPipeline.Shutdown(Device->GetLogicalDevice());
+    RenderPass->Shutdown(Device->GetLogicalDevice());
+    RenderPass.reset();
     SwapChain.Shutdown(Device->GetLogicalDevice());
     delete Device;
-    
+
     DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
     Surface->Shutdown();
     delete Surface;
-    
+
     vkDestroyInstance(Instance, nullptr);
 }
 
@@ -53,6 +77,53 @@ void VulkanContext::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreate
     DebugCreateInfo.flags = 0;
 }
 
+void VulkanContext::Draw()
+{
+    vkWaitForFences(Device->GetLogicalDevice(), 1, &InFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFence);
+    VkResult Result = vkAcquireNextImageKHR(Device->GetLogicalDevice(), SwapChain.GetSwapChain(), UINT64_MAX, ImageAvailableSemaphore,
+        VK_NULL_HANDLE, &RenderPass->SwapChainImageIndex);
+    if (Result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        // TODO: Recreate swap chain
+        return;
+    }
+    RecordCommandBuffer();
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = {ImageAvailableSemaphore};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &CommandBuffer.GetCommandBuffer();
+
+    VkSemaphore signalSemaphores[] = {RenderFinishedSemaphore};
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    auto QueueSubmitResult = vkQueueSubmit(Device->GetGraphicsQueue(), 1, &submitInfo, InFlightFence);
+    JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!");
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapChains[] = {SwapChain.GetSwapChain()};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+
+    presentInfo.pImageIndices = &RenderPass->SwapChainImageIndex;
+
+    vkQueuePresentKHR(Device->GetPresentQueue(), &presentInfo);
+}
+
 bool VulkanContext::InitInstance()
 {
     VkApplicationInfo AppInfo{};
@@ -67,13 +138,13 @@ bool VulkanContext::InitInstance()
     VkDebugUtilsMessengerCreateInfoEXT DebugCreateInfo{};
     PopulateDebugMessengerCreateInfo(DebugCreateInfo);
 
-    std::vector InstanceLayers = {
+    std::vector<const char*> InstanceLayers = {
         "VK_LAYER_KHRONOS_validation",
     };
 
     JE_ASSERT(CheckValidationLayerSupport(InstanceLayers), "Validation layers requested, but not available!");
 
-    std::vector InstanceExtensions = {
+    std::vector<const char*> InstanceExtensions = {
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
         VK_KHR_SURFACE_EXTENSION_NAME,
         "VK_KHR_win32_surface"
@@ -114,17 +185,21 @@ bool VulkanContext::CheckValidationLayerSupport(const std::vector<const char*>& 
     std::vector<VkLayerProperties> AvailableLayers(LayerCount);
     vkEnumerateInstanceLayerProperties(&LayerCount, AvailableLayers.data());
 
-    for (const char* LayerName : ValidationLayers) {
+    for (const char* LayerName : ValidationLayers)
+    {
         bool bFound = false;
 
-        for (const auto& LayerProperties : AvailableLayers) {
-            if (strcmp(LayerName, LayerProperties.layerName) == 0) {
+        for (const auto& LayerProperties : AvailableLayers)
+        {
+            if (strcmp(LayerName, LayerProperties.layerName) == 0)
+            {
                 bFound = true;
                 break;
             }
         }
 
-        if (!bFound) {
+        if (!bFound)
+        {
             return false;
         }
     }
@@ -160,10 +235,10 @@ void VulkanContext::CreateGraphicsPipeline()
 {
     auto VertShaderCode = VulkanShader::ReadFile("Assets/Shaders/vert.spv");
     auto FragShaderCode = VulkanShader::ReadFile("Assets/Shaders/frag.spv");
-    
+
     VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), VertShaderCode);
     VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), FragShaderCode);
-    
+
     VkPipelineShaderStageCreateInfo VertShaderStageInfo{};
     VertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     VertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -176,10 +251,55 @@ void VulkanContext::CreateGraphicsPipeline()
     fragShaderStageInfo.module = FragShaderModule;
     fragShaderStageInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo ShaderStages[] = {VertShaderStageInfo, fragShaderStageInfo};
-    
+    PipelineCreateInfo Info = {};
+    Info.RenderPass = RenderPass;
+    Info.VulkanShaderModules = std::vector{VertShaderStageInfo, fragShaderStageInfo};
+    GraphicsPipeline.Create(Device->GetLogicalDevice(), Info);
+
     vkDestroyShaderModule(Device->GetLogicalDevice(), FragShaderModule, nullptr);
     vkDestroyShaderModule(Device->GetLogicalDevice(), VertShaderModule, nullptr);
+}
+
+void VulkanContext::RecordCommandBuffer()
+{
+    CommandBuffer.Begin();
+    RenderPass->Begin(CommandBuffer.GetCommandBuffer(), SwapChain.GetExtent());
+    GraphicsPipeline.Bind(CommandBuffer.GetCommandBuffer());
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(SwapChain.GetExtent().width);
+    viewport.height = static_cast<float>(SwapChain.GetExtent().height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(CommandBuffer.GetCommandBuffer(), 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = SwapChain.GetExtent();
+    vkCmdSetScissor(CommandBuffer.GetCommandBuffer(), 0, 1, &scissor);
+
+    vkCmdDraw(CommandBuffer.GetCommandBuffer(), 3, 1, 0, 0);
+    RenderPass->End(CommandBuffer.GetCommandBuffer());
+    CommandBuffer.End();
+}
+
+void VulkanContext::CreateSyncObjects()
+{
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    if (vkCreateSemaphore(Device->GetLogicalDevice(), &semaphoreInfo, nullptr, &ImageAvailableSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(Device->GetLogicalDevice(), &semaphoreInfo, nullptr, &RenderFinishedSemaphore) != VK_SUCCESS ||
+        vkCreateFence(Device->GetLogicalDevice(), &fenceInfo, nullptr, &InFlightFence) != VK_SUCCESS)
+    {
+        JE_CORE_ASSERT(false, "failed to create synchronization objects for a frame!");
+    }
 }
 
 VkBool32 VulkanContext::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -201,7 +321,7 @@ VkBool32 VulkanContext::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT mes
             break;
         default: JE_CORE_ASSERT(false, "Incorrect enum value");
     }
-    
+
     return VK_FALSE;
 }
 }

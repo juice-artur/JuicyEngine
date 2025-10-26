@@ -25,6 +25,9 @@ public:
 
     VkPhysicalDevice GetPhysicalDevice() const;
     VkDevice GetLogicalDevice() const;
+    QueueFamilyIndices GetQueueFamilyIndices();
+    VkQueue& GetGraphicsQueue();
+    VkQueue& GetPresentQueue();
 
 private:
     void PickPhysicalDevice(const VkInstance& Instance);

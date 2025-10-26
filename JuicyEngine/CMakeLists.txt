@@ -23,6 +23,7 @@ set(SOURCES
     Source/Platform/Windows/WindowsInput.h
     Source/Platform/Windows/WindowsInput.cpp
     Source/Renderer/GraphicsContext.h
+    Source/Renderer/Pipeline.h
     Source/Platform/Vulkan/VulkanContext.h
     Source/Platform/Vulkan/VulkanContext.cpp
     Source/Platform/Vulkan/VulkanDevice.h
@@ -32,7 +33,13 @@ set(SOURCES
     Source/Platform/Vulkan/VulkanSwapChain.h
     Source/Platform/Vulkan/VulkanSwapChain.cpp
     Source/Platform/Vulkan/VulkanShader.h
-     Source/Platform/Vulkan/VulkanShader.cpp
+    Source/Platform/Vulkan/VulkanShader.cpp
+    Source/Platform/Vulkan/VulkanPipeline.h
+    Source/Platform/Vulkan/VulkanPipeline.cpp
+    Source/Platform/Vulkan/VulkanRenderPass.h
+    Source/Platform/Vulkan/VulkanRenderPass.cpp
+    Source/Platform/Vulkan/VulkanCommandBuffer.h
+    Source/Platform/Vulkan/VulkanCommandBuffer.cpp
 )
 
 

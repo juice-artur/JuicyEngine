@@ -107,6 +107,7 @@ SwapChainSupportDetails VulkanSwapChain::QuerySwapChainSupport(VkPhysicalDevice 
 
 VkSurfaceFormatKHR VulkanSwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& AvailableFormats)
 {
+    JE_CORE_ASSERT(!AvailableFormats.empty(), "No surface formats available");
     for (const auto& AvailableFormat : AvailableFormats)
     {
         if (AvailableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && AvailableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
@@ -152,6 +153,26 @@ VkExtent2D VulkanSwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& Cap
 
         return ActualExtent;
     }
+}
+
+VkFormat VulkanSwapChain::GetFormat() const
+{
+    return SwapChainImageFormat;
+}
+
+VkExtent2D VulkanSwapChain::GetExtent() const
+{
+    return SwapChainExtent;
+}
+
+std::vector<VkImageView>& VulkanSwapChain::GetSwapChainImageViews()
+{
+    return SwapChainImageViews;
+}
+
+VkSwapchainKHR VulkanSwapChain::GetSwapChain() const
+{
+    return SwapChain;
 }
 
 void VulkanSwapChain::CreateImageViews(const VkDevice Device)
