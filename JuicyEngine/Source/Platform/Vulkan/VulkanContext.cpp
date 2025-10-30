@@ -42,6 +42,38 @@ void VulkanContext::Init(void* Window)
 
 void VulkanContext::SwapBuffers()
 {
+    VkSubmitInfo SubmitInfo{};
+    SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = {ImageAvailableSemaphore};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    SubmitInfo.waitSemaphoreCount = 1;
+    SubmitInfo.pWaitSemaphores = waitSemaphores;
+    SubmitInfo.pWaitDstStageMask = waitStages;
+
+    SubmitInfo.commandBufferCount = 1;
+    SubmitInfo.pCommandBuffers = &CommandBuffer.GetCommandBuffer();
+
+    VkSemaphore signalSemaphores[] = {RenderFinishedSemaphore};
+    SubmitInfo.signalSemaphoreCount = 1;
+    SubmitInfo.pSignalSemaphores = signalSemaphores;
+
+    auto QueueSubmitResult = vkQueueSubmit(Device->GetGraphicsQueue(), 1, &SubmitInfo, InFlightFence);
+    JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!");
+
+    VkPresentInfoKHR PresentInfo{};
+    PresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    PresentInfo.waitSemaphoreCount = 1;
+    PresentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapChains[] = {SwapChain.GetSwapChain()};
+    PresentInfo.swapchainCount = 1;
+    PresentInfo.pSwapchains = swapChains;
+
+    PresentInfo.pImageIndices = &RenderPass->SwapChainImageIndex;
+
+    vkQueuePresentKHR(Device->GetPresentQueue(), &PresentInfo);
 }
 
 void VulkanContext::Shutdown()
@@ -81,47 +113,16 @@ void VulkanContext::Draw()
 {
     vkWaitForFences(Device->GetLogicalDevice(), 1, &InFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFence);
+
     VkResult Result = vkAcquireNextImageKHR(Device->GetLogicalDevice(), SwapChain.GetSwapChain(), UINT64_MAX, ImageAvailableSemaphore,
-        VK_NULL_HANDLE, &RenderPass->SwapChainImageIndex);
+    VK_NULL_HANDLE, &RenderPass->SwapChainImageIndex);
     if (Result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         // TODO: Recreate swap chain
         return;
     }
+    
     RecordCommandBuffer();
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {ImageAvailableSemaphore};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &CommandBuffer.GetCommandBuffer();
-
-    VkSemaphore signalSemaphores[] = {RenderFinishedSemaphore};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    auto QueueSubmitResult = vkQueueSubmit(Device->GetGraphicsQueue(), 1, &submitInfo, InFlightFence);
-    JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!");
-
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
-
-    VkSwapchainKHR swapChains[] = {SwapChain.GetSwapChain()};
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
-
-    presentInfo.pImageIndices = &RenderPass->SwapChainImageIndex;
-
-    vkQueuePresentKHR(Device->GetPresentQueue(), &presentInfo);
 }
 
 bool VulkanContext::InitInstance()
