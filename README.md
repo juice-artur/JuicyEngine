@@ -8,8 +8,13 @@
 - Vulkan as primary graphics API
 ---
 # Project setup
-- Cloning
-    ```bash
-    git clone https://github.com/juice-artur/JuicyEngine.git --recursive
-    ```
-- Run the ```GenerateProjects.bat``` file found in scripts folder. Which will then generate a Visual Studio solution file 
+
+## Cloning
+```bash
+git clone https://github.com/juice-artur/JuicyEngine.git --recursive
+```
+
+## Build
+1. Create a build directory in the project root: ```mkdir build && cd build```
+2. Generate project files with CMake: ```cmake ..```
+

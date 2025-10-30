@@ -1,4 +1,6 @@
+[submodule "JuicyEngine/vendor/SDL"]
+	path = JuicyEngine/vendor/SDL
+	url = https://github.com/juice-artur/SDL
 [submodule "JuicyEngine/vendor/spdlog"]
 	path = JuicyEngine/vendor/spdlog
-	url = https://github.com/gabime/spdlog
-	branch = v1.x
+	url = https://github.com/juice-artur/spdlog.git
