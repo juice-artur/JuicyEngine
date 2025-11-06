@@ -6,11 +6,14 @@ namespace JuicyEngine
 {
 	void VulkanRenderCommandBuffer::Init(VkDevice Device, VkCommandPool CommandPool)
 	{
-		VkCommandBufferAllocateInfo AllocInfo {};
-		AllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		AllocInfo.commandPool = CommandPool;
-		AllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		AllocInfo.commandBufferCount = 1;
+		VkCommandBufferAllocateInfo AllocInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			.pNext = VK_NULL_HANDLE,
+			.commandPool = CommandPool,
+			.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+			.commandBufferCount = 1
+		};
 
 		auto Result = vkAllocateCommandBuffers(Device, &AllocInfo, &CommandBuffer);
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to allocate command buffers!");

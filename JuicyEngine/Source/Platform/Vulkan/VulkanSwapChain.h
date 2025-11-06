@@ -16,7 +16,7 @@ namespace JuicyEngine
 	{
 	public:
 		VulkanSwapChain();
-		void Shutdown(VkDevice Device);
+		void Shutdown(VkDevice Device) const;
 
 		void Init(VkPhysicalDevice PhysicalDevice, VkDevice Device, VkSurfaceKHR Surface, void* Window);
 		static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice Device, VkSurfaceKHR Surface);

@@ -10,7 +10,7 @@ namespace JuicyEngine
 {
 	VulkanSwapChain::VulkanSwapChain() {}
 
-	void VulkanSwapChain::Shutdown(VkDevice Device)
+	void VulkanSwapChain::Shutdown(VkDevice Device) const
 	{
 		for (auto ImageView : SwapChainImageViews)
 		{
