@@ -13,6 +13,7 @@ namespace JuicyEngine
 
 	void VulkanContext::Init(void* Window)
 	{
+		WindowPtr = Window;
 		InitInstance();
 		SetupDebugMessenger();
 		Surface = new VulkanSurface(Instance);
@@ -29,7 +30,7 @@ namespace JuicyEngine
 
 		JE_CORE_ASSERT(CreateCommandPoolResult == VK_SUCCESS,
 		               "Failed to create vulkan Instance: {0}",
-		               string_VkResult(CreateCommandPoolResult));
+		               string_VkResult(CreateCommandPoolResult))
 
 		SwapChain.Init(Device->GetPhysicalDevice(), Device->GetLogicalDevice(), Surface->GetSurface(), Window);
 		RenderPass->CreateRenderPass(Device->GetLogicalDevice(),
@@ -43,6 +44,12 @@ namespace JuicyEngine
 
 	void VulkanContext::SwapBuffers()
 	{
+		if (Skip)
+		{
+			Skip = false;
+			return;
+		}
+		
 		VkSubmitInfo SubmitInfo {};
 		SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -60,7 +67,7 @@ namespace JuicyEngine
 		SubmitInfo.pSignalSemaphores = signalSemaphores;
 
 		auto QueueSubmitResult = vkQueueSubmit(Device->GetGraphicsQueue(), 1, &SubmitInfo, InFlightFence);
-		JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!");
+		JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!")
 
 		VkPresentInfoKHR PresentInfo {};
 		PresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -115,7 +122,6 @@ namespace JuicyEngine
 	void VulkanContext::Draw()
 	{
 		vkWaitForFences(Device->GetLogicalDevice(), 1, &InFlightFence, VK_TRUE, UINT64_MAX);
-		vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFence);
 
 		VkResult Result = vkAcquireNextImageKHR(Device->GetLogicalDevice(),
 		                                        SwapChain.GetSwapChain(),
@@ -123,25 +129,40 @@ namespace JuicyEngine
 		                                        ImageAvailableSemaphore,
 		                                        VK_NULL_HANDLE,
 		                                        &RenderPass->SwapChainImageIndex);
-		if (Result == VK_ERROR_OUT_OF_DATE_KHR)
+		
+		if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
 		{
-			// TODO: Recreate swap chain
+			vkDeviceWaitIdle(Device->GetLogicalDevice());
+			RenderPass->Shutdown(Device->GetLogicalDevice());
+			SwapChain.Shutdown(Device->GetLogicalDevice());
+
+			SwapChain.Init(Device->GetPhysicalDevice(), Device->GetLogicalDevice(), Surface->GetSurface(), WindowPtr);
+			RenderPass->CreateRenderPass(Device->GetLogicalDevice(),
+										 SwapChain.GetFormat(),
+										 SwapChain.GetSwapChainImageViews(),
+										 SwapChain.GetExtent());
+			
+			Skip = true;
 			return;
 		}
-
+		
+		vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFence);
 		RecordCommandBuffer();
 	}
 
 	bool VulkanContext::InitInstance()
 	{
-		VkApplicationInfo AppInfo {};
-		AppInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		//TODO: Set properly app name
-		AppInfo.pApplicationName = "TODO";
-		AppInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		AppInfo.pEngineName = "JuicyEngine";
-		AppInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		AppInfo.apiVersion = VK_API_VERSION_1_3;
+		VkApplicationInfo AppInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			.pNext = nullptr,
+			//TODO: Set properly app name
+			.pApplicationName = "TODO",
+			.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+			.pEngineName = "JuicyEngine",
+			.engineVersion = VK_MAKE_VERSION(1, 0, 0),
+			.apiVersion = VK_API_VERSION_1_3
+		};
 
 		VkDebugUtilsMessengerCreateInfoEXT DebugCreateInfo {};
 		PopulateDebugMessengerCreateInfo(DebugCreateInfo);
@@ -150,26 +171,28 @@ namespace JuicyEngine
 			"VK_LAYER_KHRONOS_validation",
 		};
 
-		JE_ASSERT(CheckValidationLayerSupport(InstanceLayers), "Validation layers requested, but not available!");
+		JE_ASSERT(CheckValidationLayerSupport(InstanceLayers), "Validation layers requested, but not available!")
 
 		std::vector<const char*> InstanceExtensions
 		    = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "VK_KHR_win32_surface" };
 
-		VkInstanceCreateInfo InstanceCreateInfo = {};
-		InstanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		InstanceCreateInfo.pNext = &DebugCreateInfo;
-		InstanceCreateInfo.flags = 0;
-		InstanceCreateInfo.pApplicationInfo = &AppInfo;
-		InstanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(InstanceLayers.size());
-		InstanceCreateInfo.ppEnabledLayerNames = InstanceLayers.data();
-		InstanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(InstanceExtensions.size());
-		InstanceCreateInfo.ppEnabledExtensionNames = InstanceExtensions.data();
-
+		VkInstanceCreateInfo InstanceCreateInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+			.pNext = &DebugCreateInfo,
+			.flags = 0,
+			.pApplicationInfo = &AppInfo,
+			.enabledLayerCount = static_cast<uint32_t>(InstanceLayers.size()),
+			.ppEnabledLayerNames = InstanceLayers.data(),
+			.enabledExtensionCount = static_cast<uint32_t>(InstanceExtensions.size()),
+			.ppEnabledExtensionNames = InstanceExtensions.data()
+		};
+		
 		VkResult CreateInstanceResult = vkCreateInstance(&InstanceCreateInfo, nullptr, &Instance);
 
 		JE_CORE_ASSERT(CreateInstanceResult == VK_SUCCESS,
 		               "Failed to create vulkan Instance: {0}",
-		               string_VkResult(CreateInstanceResult));
+		               string_VkResult(CreateInstanceResult))
 
 		return true;
 	}
@@ -180,7 +203,7 @@ namespace JuicyEngine
 		PopulateDebugMessengerCreateInfo(CreateInfo);
 		if (CreateDebugUtilsMessengerEXT(Instance, &CreateInfo, nullptr, &DebugMessenger) != VK_SUCCESS)
 		{
-			JE_CORE_ASSERT(false, "Failed to set up debug messenger!");
+			JE_CORE_ASSERT(false, "Failed to set up debug messenger!")
 		}
 	}
 
@@ -219,8 +242,8 @@ namespace JuicyEngine
 	                                                     const VkAllocationCallbacks* pAllocator,
 	                                                     VkDebugUtilsMessengerEXT* pDebugMessenger)
 	{
-		auto Func
-		    = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+		PFN_vkCreateDebugUtilsMessengerEXT Func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+		    vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
 		if (Func != nullptr)
 		{
 			return Func(instance, pCreateInfo, pAllocator, pDebugMessenger);
@@ -235,8 +258,9 @@ namespace JuicyEngine
 	                                                  VkDebugUtilsMessengerEXT debugMessenger,
 	                                                  const VkAllocationCallbacks* pAllocator)
 	{
-		auto Func
-		    = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+		PFN_vkDestroyDebugUtilsMessengerEXT Func;
+		Func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+		    vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
 		if (Func != nullptr)
 		{
 			Func(instance, debugMessenger, pAllocator);
@@ -277,20 +301,25 @@ namespace JuicyEngine
 		CommandBuffer.Begin();
 		RenderPass->Begin(CommandBuffer.GetCommandBuffer(), SwapChain.GetExtent());
 		GraphicsPipeline.Bind(CommandBuffer.GetCommandBuffer());
+		
+		VkViewport Viewport
+		{
+			.x = 0.0f,
+			.y = 0.0f,
+			.width = static_cast<float>(SwapChain.GetExtent().width),
+			.height = static_cast<float>(SwapChain.GetExtent().height),
+			.minDepth = 0.0f,
+			.maxDepth = 1.0f
+		};
+		vkCmdSetViewport(CommandBuffer.GetCommandBuffer(), 0, 1, &Viewport);
 
-		VkViewport viewport {};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(SwapChain.GetExtent().width);
-		viewport.height = static_cast<float>(SwapChain.GetExtent().height);
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(CommandBuffer.GetCommandBuffer(), 0, 1, &viewport);
-
-		VkRect2D scissor {};
-		scissor.offset = { 0, 0 };
-		scissor.extent = SwapChain.GetExtent();
-		vkCmdSetScissor(CommandBuffer.GetCommandBuffer(), 0, 1, &scissor);
+		VkRect2D Scissor
+		{
+			.offset = { 0, 0 },
+			.extent = SwapChain.GetExtent()
+		};
+		
+		vkCmdSetScissor(CommandBuffer.GetCommandBuffer(), 0, 1, &Scissor);
 
 		vkCmdDraw(CommandBuffer.GetCommandBuffer(), 3, 1, 0, 0);
 		RenderPass->End(CommandBuffer.GetCommandBuffer());
@@ -312,7 +341,7 @@ namespace JuicyEngine
 		           != VK_SUCCESS
 		    || vkCreateFence(Device->GetLogicalDevice(), &fenceInfo, nullptr, &InFlightFence) != VK_SUCCESS)
 		{
-			JE_CORE_ASSERT(false, "failed to create synchronization objects for a frame!");
+			JE_CORE_ASSERT(false, "failed to create synchronization objects for a frame!")
 		}
 	}
 
@@ -336,7 +365,7 @@ namespace JuicyEngine
 				JE_CORE_ERROR("[VULKAN] {0}", pCallbackData->pMessage);
 				break;
 			default:
-				JE_CORE_ASSERT(false, "Incorrect enum value");
+				JE_CORE_ASSERT(false, "Incorrect enum value")
 		}
 
 		return VK_FALSE;

@@ -62,5 +62,9 @@ namespace JuicyEngine
 		VkSemaphore ImageAvailableSemaphore;
 		VkSemaphore RenderFinishedSemaphore;
 		VkFence InFlightFence;
+
+		void* WindowPtr = nullptr;
+
+		bool Skip = false;
 	};
 } // namespace JuicyEngine
