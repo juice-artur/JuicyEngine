@@ -4,47 +4,45 @@
 
 namespace JuicyEngine
 {
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> GraphicsFamily;
-    std::optional<uint32_t> PresentFamily;
-    
-    bool IsComplete() const
-    {
-        return GraphicsFamily.has_value() && PresentFamily.has_value();
-    }
-};
+	struct QueueFamilyIndices
+	{
+		std::optional<uint32_t> GraphicsFamily;
+		std::optional<uint32_t> PresentFamily;
 
-class VulkanDevice
-{
-public:
-    VulkanDevice(const VkInstance& Instance, const VkSurfaceKHR& Surface);
-    ~VulkanDevice();
+		bool IsComplete() const
+		{
+			return GraphicsFamily.has_value() && PresentFamily.has_value();
+		}
+	};
 
-    static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice Device, VkSurfaceKHR Surface);
+	class VulkanDevice
+	{
+	public:
+		VulkanDevice(const VkInstance& Instance, const VkSurfaceKHR& Surface);
+		~VulkanDevice();
 
-    VkPhysicalDevice GetPhysicalDevice() const;
-    VkDevice GetLogicalDevice() const;
-    QueueFamilyIndices GetQueueFamilyIndices();
-    VkQueue& GetGraphicsQueue();
-    VkQueue& GetPresentQueue();
+		static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice Device, VkSurfaceKHR Surface);
 
-private:
-    void PickPhysicalDevice(const VkInstance& Instance);
-    bool IsDeviceSuitable(VkPhysicalDevice Device);
-    bool IsDeviceExtensionSupport(VkPhysicalDevice Device);
-    void CreateLogicalDevice();
+		VkPhysicalDevice GetPhysicalDevice() const;
+		VkDevice GetLogicalDevice() const;
+		QueueFamilyIndices GetQueueFamilyIndices();
+		VkQueue& GetGraphicsQueue();
+		VkQueue& GetPresentQueue();
 
-private:
-    VkPhysicalDevice PhysicalDevice;
-    VkDevice LogicalDevice;
-    QueueFamilyIndices QueueIndices;
-    VkQueue GraphicsQueue;
-    VkQueue PresentQueue;
-    const VkSurfaceKHR& Surface;
+	private:
+		void PickPhysicalDevice(const VkInstance& Instance);
+		bool IsDeviceSuitable(VkPhysicalDevice Device);
+		bool IsDeviceExtensionSupport(VkPhysicalDevice Device);
+		void CreateLogicalDevice();
 
-    const std::vector<const char*> DeviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-};
-}
+	private:
+		VkPhysicalDevice PhysicalDevice;
+		VkDevice LogicalDevice;
+		QueueFamilyIndices QueueIndices;
+		VkQueue GraphicsQueue;
+		VkQueue PresentQueue;
+		const VkSurfaceKHR& Surface;
+
+		const std::vector<const char*> DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	};
+} // namespace JuicyEngine

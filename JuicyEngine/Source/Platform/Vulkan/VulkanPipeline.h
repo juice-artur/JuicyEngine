@@ -4,19 +4,19 @@
 
 namespace JuicyEngine
 {
-struct PipelineCreateInfo;
+	struct PipelineCreateInfo;
 
-class VulkanPipeline
-{
-public:
-    void Create(const VkDevice Device, const PipelineCreateInfo& Info);
+	class VulkanPipeline
+	{
+	public:
+		void Create(const VkDevice Device, const PipelineCreateInfo& Info);
 
-    void Shutdown(const VkDevice Device);
+		void Shutdown(const VkDevice Device);
 
-    void Bind(VkCommandBuffer CommandBuffer);
+		void Bind(VkCommandBuffer CommandBuffer);
 
-private:
-    VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
-    VkPipeline Pipeline = VK_NULL_HANDLE;
-};
-}
+	private:
+		VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
+		VkPipeline Pipeline = VK_NULL_HANDLE;
+	};
+} // namespace JuicyEngine

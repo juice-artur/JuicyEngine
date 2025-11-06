@@ -8,28 +8,28 @@
 namespace JuicyEngine
 {
 
-class Application
-{
-public:
-    Application();
-    virtual ~Application();
+	class Application
+	{
+	public:
+		Application();
+		virtual ~Application();
 
-    void Run();
+		void Run();
 
-    void OnEvent(Event& e);
+		void OnEvent(Event& e);
 
-    void PushLayer(Layer* layer);
-    void PushOverlay(Layer* layer);
+		void PushLayer(Layer* layer);
+		void PushOverlay(Layer* layer);
 
-private:
-    bool OnWindowClose(WindowCloseEvent& e);
+	private:
+		bool OnWindowClose(WindowCloseEvent& e);
 
-    std::unique_ptr<Window> m_Window;
-    bool m_Running = true;
-    LayerStack m_LayerStack;
-};
+		std::unique_ptr<Window> m_Window;
+		bool m_Running = true;
+		LayerStack m_LayerStack;
+	};
 
-// To be defined in CLIENT
-Application* CreateApplication();
+	// To be defined in CLIENT
+	Application* CreateApplication();
 
-}
+} // namespace JuicyEngine

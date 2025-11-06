@@ -8,162 +8,170 @@
 
 namespace JuicyEngine
 {
-VulkanDevice::VulkanDevice(const VkInstance& Instance, const VkSurfaceKHR& Surface) :
-    PhysicalDevice(VK_NULL_HANDLE),
-    Surface(Surface)
-{
-    PickPhysicalDevice(Instance);
-    
-    QueueIndices = FindQueueFamilies(PhysicalDevice, Surface);
-    JE_CORE_ASSERT(QueueIndices.IsComplete(), "Could not find Queue indices")
-    CreateLogicalDevice();
-    
-    vkGetDeviceQueue(LogicalDevice, QueueIndices.GraphicsFamily.value(), 0, &GraphicsQueue);
-    vkGetDeviceQueue(LogicalDevice, QueueIndices.PresentFamily.value(), 0, &PresentQueue);
-}
+	VulkanDevice::VulkanDevice(const VkInstance& Instance, const VkSurfaceKHR& Surface) :
+	    PhysicalDevice(VK_NULL_HANDLE), Surface(Surface)
+	{
+		PickPhysicalDevice(Instance);
 
-VulkanDevice::~VulkanDevice()
-{
-    vkDestroyDevice(LogicalDevice, nullptr);
-}
+		QueueIndices = FindQueueFamilies(PhysicalDevice, Surface);
+		JE_CORE_ASSERT(QueueIndices.IsComplete(), "Could not find Queue indices")
+		CreateLogicalDevice();
 
-void VulkanDevice::PickPhysicalDevice(const VkInstance& Instance)
-{
-    uint32_t DeviceCount = 0;
-    vkEnumeratePhysicalDevices(Instance, &DeviceCount, nullptr);
+		vkGetDeviceQueue(LogicalDevice, QueueIndices.GraphicsFamily.value(), 0, &GraphicsQueue);
+		vkGetDeviceQueue(LogicalDevice, QueueIndices.PresentFamily.value(), 0, &PresentQueue);
+	}
 
-    JE_CORE_ASSERT(DeviceCount, "Failed to find GPUs with Vulkan support!");
-    
-    std::vector<VkPhysicalDevice> Devices(DeviceCount);
-    vkEnumeratePhysicalDevices(Instance, &DeviceCount, Devices.data());
+	VulkanDevice::~VulkanDevice()
+	{
+		vkDestroyDevice(LogicalDevice, nullptr);
+	}
 
-    for (const auto& CurrentDevice : Devices)
-    {
-        if (IsDeviceSuitable(CurrentDevice)) {
-            PhysicalDevice = CurrentDevice;
-            break;
-        }
-    }
-    
-    JE_CORE_ASSERT(PhysicalDevice, "Failed to find a suitable GPU!");
-}
+	void VulkanDevice::PickPhysicalDevice(const VkInstance& Instance)
+	{
+		uint32_t DeviceCount = 0;
+		vkEnumeratePhysicalDevices(Instance, &DeviceCount, nullptr);
 
-bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice Device)
-{
-    QueueFamilyIndices Indices = FindQueueFamilies(Device, Surface);
-    bool bExtensionsSupported = IsDeviceExtensionSupport(Device);
+		JE_CORE_ASSERT(DeviceCount, "Failed to find GPUs with Vulkan support!");
 
-    bool bSwapChainAdequate = false;
-    if (bExtensionsSupported) {
-        SwapChainSupportDetails SwapChainSupport = VulkanSwapChain::QuerySwapChainSupport(Device, Surface);
-        bSwapChainAdequate = !SwapChainSupport.Formats.empty() && !SwapChainSupport.PresentModes.empty();
-    }
+		std::vector<VkPhysicalDevice> Devices(DeviceCount);
+		vkEnumeratePhysicalDevices(Instance, &DeviceCount, Devices.data());
 
-    return Indices.IsComplete() && bExtensionsSupported && bSwapChainAdequate;
-}
+		for (const auto& CurrentDevice : Devices)
+		{
+			if (IsDeviceSuitable(CurrentDevice))
+			{
+				PhysicalDevice = CurrentDevice;
+				break;
+			}
+		}
 
-bool VulkanDevice::IsDeviceExtensionSupport(VkPhysicalDevice Device)
-{
-    uint32_t ExtensionCount;
-    vkEnumerateDeviceExtensionProperties(Device, nullptr, &ExtensionCount, nullptr);
+		JE_CORE_ASSERT(PhysicalDevice, "Failed to find a suitable GPU!");
+	}
 
-    std::vector<VkExtensionProperties> AvailableExtensions(ExtensionCount);
-    vkEnumerateDeviceExtensionProperties(Device, nullptr, &ExtensionCount, AvailableExtensions.data());
+	bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice Device)
+	{
+		QueueFamilyIndices Indices = FindQueueFamilies(Device, Surface);
+		bool bExtensionsSupported = IsDeviceExtensionSupport(Device);
 
-    std::set<std::string> RequiredExtensions(DeviceExtensions.begin(), DeviceExtensions.end());
+		bool bSwapChainAdequate = false;
+		if (bExtensionsSupported)
+		{
+			SwapChainSupportDetails SwapChainSupport = VulkanSwapChain::QuerySwapChainSupport(Device, Surface);
+			bSwapChainAdequate = !SwapChainSupport.Formats.empty() && !SwapChainSupport.PresentModes.empty();
+		}
 
-    for (const auto& extension : AvailableExtensions) {
-        RequiredExtensions.erase(extension.extensionName);
-    }
+		return Indices.IsComplete() && bExtensionsSupported && bSwapChainAdequate;
+	}
 
-    return RequiredExtensions.empty();
-}
+	bool VulkanDevice::IsDeviceExtensionSupport(VkPhysicalDevice Device)
+	{
+		uint32_t ExtensionCount;
+		vkEnumerateDeviceExtensionProperties(Device, nullptr, &ExtensionCount, nullptr);
 
-void VulkanDevice::CreateLogicalDevice()
-{
-    std::vector<VkDeviceQueueCreateInfo> QueueCreateInfos;
-    std::set<uint32_t> UniqueQueueFamilies = {QueueIndices.GraphicsFamily.value(), QueueIndices.PresentFamily.value()};
+		std::vector<VkExtensionProperties> AvailableExtensions(ExtensionCount);
+		vkEnumerateDeviceExtensionProperties(Device, nullptr, &ExtensionCount, AvailableExtensions.data());
 
-    float QueuePriority = 1.0f;
-    for (uint32_t QueueFamily : UniqueQueueFamilies) {
-        VkDeviceQueueCreateInfo QueueCreateInfo{};
-        QueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        QueueCreateInfo.queueFamilyIndex = QueueFamily;
-        QueueCreateInfo.queueCount = 1;
-        QueueCreateInfo.pQueuePriorities = &QueuePriority;
-        QueueCreateInfos.push_back(QueueCreateInfo);
-    }
+		std::set<std::string> RequiredExtensions(DeviceExtensions.begin(), DeviceExtensions.end());
 
-    VkPhysicalDeviceFeatures DeviceFeatures{};
-    
-    VkDeviceCreateInfo DeviceCreateInfo{};
-    DeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    DeviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(DeviceExtensions.size());
-    DeviceCreateInfo.ppEnabledExtensionNames = DeviceExtensions.data();
-    DeviceCreateInfo.queueCreateInfoCount = QueueCreateInfos.size();
-    DeviceCreateInfo.pQueueCreateInfos = QueueCreateInfos.data();
-    DeviceCreateInfo.pEnabledFeatures = &DeviceFeatures;
-    
-    VkResult Result = vkCreateDevice(PhysicalDevice, &DeviceCreateInfo, nullptr, &LogicalDevice);
+		for (const auto& extension : AvailableExtensions)
+		{
+			RequiredExtensions.erase(extension.extensionName);
+		}
 
-    JE_ASSERT(Result == VK_SUCCESS, "Failed to create logical device!");
-}
+		return RequiredExtensions.empty();
+	}
 
-VkQueue& VulkanDevice::GetGraphicsQueue()
-{
-    return GraphicsQueue;
-}
+	void VulkanDevice::CreateLogicalDevice()
+	{
+		std::vector<VkDeviceQueueCreateInfo> QueueCreateInfos;
+		std::set<uint32_t> UniqueQueueFamilies
+		    = { QueueIndices.GraphicsFamily.value(), QueueIndices.PresentFamily.value() };
 
-VkQueue& VulkanDevice::GetPresentQueue()
-{
-    return PresentQueue;
-}
+		float QueuePriority = 1.0f;
+		for (uint32_t QueueFamily : UniqueQueueFamilies)
+		{
+			VkDeviceQueueCreateInfo QueueCreateInfo {};
+			QueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			QueueCreateInfo.queueFamilyIndex = QueueFamily;
+			QueueCreateInfo.queueCount = 1;
+			QueueCreateInfo.pQueuePriorities = &QueuePriority;
+			QueueCreateInfos.push_back(QueueCreateInfo);
+		}
 
-QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice Device, VkSurfaceKHR Surface)
-{
-    QueueFamilyIndices Indices;
-    
-    uint32_t QueueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(Device, &QueueFamilyCount, nullptr);
+		VkPhysicalDeviceFeatures DeviceFeatures {};
 
-    std::vector<VkQueueFamilyProperties> QueueFamilies(QueueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(Device, &QueueFamilyCount, QueueFamilies.data());
+		VkDeviceCreateInfo DeviceCreateInfo {};
+		DeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		DeviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(DeviceExtensions.size());
+		DeviceCreateInfo.ppEnabledExtensionNames = DeviceExtensions.data();
+		DeviceCreateInfo.queueCreateInfoCount = QueueCreateInfos.size();
+		DeviceCreateInfo.pQueueCreateInfos = QueueCreateInfos.data();
+		DeviceCreateInfo.pEnabledFeatures = &DeviceFeatures;
 
-    int i = 0;
-    for (const auto& queueFamily : QueueFamilies) {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            Indices.GraphicsFamily = i;
-        }
+		VkResult Result = vkCreateDevice(PhysicalDevice, &DeviceCreateInfo, nullptr, &LogicalDevice);
 
-        VkBool32 bPresentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(Device, i, Surface, &bPresentSupport);
+		JE_ASSERT(Result == VK_SUCCESS, "Failed to create logical device!");
+	}
 
-        if (bPresentSupport) {
-            Indices.PresentFamily = i;
-        }
+	VkQueue& VulkanDevice::GetGraphicsQueue()
+	{
+		return GraphicsQueue;
+	}
 
-        if (Indices.IsComplete()) {
-            break;
-        }
+	VkQueue& VulkanDevice::GetPresentQueue()
+	{
+		return PresentQueue;
+	}
 
-        i++;
-    }
+	QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice Device, VkSurfaceKHR Surface)
+	{
+		QueueFamilyIndices Indices;
 
-    return Indices;
-}
+		uint32_t QueueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(Device, &QueueFamilyCount, nullptr);
 
-VkPhysicalDevice VulkanDevice::GetPhysicalDevice() const
-{
-    return PhysicalDevice;
-}
+		std::vector<VkQueueFamilyProperties> QueueFamilies(QueueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(Device, &QueueFamilyCount, QueueFamilies.data());
 
-VkDevice VulkanDevice::GetLogicalDevice() const
-{
-    return LogicalDevice;
-}
+		int i = 0;
+		for (const auto& queueFamily : QueueFamilies)
+		{
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			{
+				Indices.GraphicsFamily = i;
+			}
 
-QueueFamilyIndices VulkanDevice::GetQueueFamilyIndices()
-{
-    return QueueIndices;
-}
-}
+			VkBool32 bPresentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(Device, i, Surface, &bPresentSupport);
+
+			if (bPresentSupport)
+			{
+				Indices.PresentFamily = i;
+			}
+
+			if (Indices.IsComplete())
+			{
+				break;
+			}
+
+			i++;
+		}
+
+		return Indices;
+	}
+
+	VkPhysicalDevice VulkanDevice::GetPhysicalDevice() const
+	{
+		return PhysicalDevice;
+	}
+
+	VkDevice VulkanDevice::GetLogicalDevice() const
+	{
+		return LogicalDevice;
+	}
+
+	QueueFamilyIndices VulkanDevice::GetQueueFamilyIndices()
+	{
+		return QueueIndices;
+	}
+} // namespace JuicyEngine

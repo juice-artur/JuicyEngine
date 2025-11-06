@@ -4,18 +4,18 @@
 
 namespace JuicyEngine
 {
-class VulkanSurface
-{
-public:
-    VulkanSurface(const VkInstance& Instance);
+	class VulkanSurface
+	{
+	public:
+		VulkanSurface(const VkInstance& Instance);
 
-    void Init(void* Window);
-    void Shutdown();
-    const VkSurfaceKHR& GetSurface();
-    
-private:
-    VkSurfaceKHR Surface;
+		void Init(void* Window);
+		void Shutdown();
+		const VkSurfaceKHR& GetSurface();
 
-    const VkInstance& Instance;
-};
-}
+	private:
+		VkSurfaceKHR Surface;
+
+		const VkInstance& Instance;
+	};
+} // namespace JuicyEngine
