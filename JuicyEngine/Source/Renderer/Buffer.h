@@ -8,6 +8,6 @@ namespace JuicyEngine
 	public:
 		virtual ~VertexBuffer() {}
 		
-		static VertexBuffer* Create(std::vector<Vertex> Vertex);
+		static std::unique_ptr<VertexBuffer> Create(std::vector<Vertex> Vertex);
 	};
 }

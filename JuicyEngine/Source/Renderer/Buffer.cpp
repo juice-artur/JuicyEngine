@@ -4,9 +4,9 @@
 
 namespace JuicyEngine
 {
-	VertexBuffer* VertexBuffer::Create(std::vector<Vertex> Vertexes)
+	std::unique_ptr<VertexBuffer> VertexBuffer::Create(std::vector<Vertex> Vertexes)
 	{
-		return new VulkanVertexBuffer(Vertexes);
+		return std::make_unique<VulkanVertexBuffer>(Vertexes);
 	}
 }
 

@@ -11,6 +11,8 @@ namespace JuicyEngine
 {
 	void VulkanPipeline::Create(const PipelineCreateInfo& Info)
 	{
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+		
 		VkVertexInputBindingDescription BindingDescriptions
 		{
 			.binding = 0,
@@ -94,7 +96,6 @@ namespace JuicyEngine
 		PipelineLayoutInfo.setLayoutCount = 0;
 		PipelineLayoutInfo.pushConstantRangeCount = 0;
 
-		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
 		auto PipelineLayoutResult = vkCreatePipelineLayout(Context->GetDevice()->GetLogicalDevice(), &PipelineLayoutInfo, nullptr, &PipelineLayout);
 
 		JE_CORE_ASSERT(PipelineLayoutResult == VK_SUCCESS, "Failed to create pipeline layout!")

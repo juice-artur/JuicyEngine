@@ -45,7 +45,7 @@ namespace JuicyEngine
 		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, nullptr);
 	}
 
-	VulkanVertexBuffer::VulkanVertexBuffer(std::vector<Vertex> Vertexes)
+	VulkanVertexBuffer::VulkanVertexBuffer(const std::vector<Vertex>& Vertexes)
 	{
 		VkBufferCreateInfo BufferInfo { .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 			                            .pNext = nullptr,

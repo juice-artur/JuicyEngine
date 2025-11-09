@@ -20,7 +20,7 @@ namespace  JuicyEngine
 	class VulkanVertexBuffer : public VertexBuffer, public VulkanBuffer
 	{
 	public:
-		VulkanVertexBuffer (std::vector<Vertex> Vertexes);
+		VulkanVertexBuffer (const std::vector<Vertex>& Vertexes);
 		
 		~VulkanVertexBuffer() override;
 	};

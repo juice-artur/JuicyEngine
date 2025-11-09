@@ -52,9 +52,9 @@ namespace JuicyEngine
 		SwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 		QueueFamilyIndices Indices = VulkanDevice::FindQueueFamilies(Context->GetDevice()->GetPhysicalDevice(), Surface);
-		uint32_t queueFamilyIndices[] = { Indices.GraphicsFamily.value(), Indices.GraphicsFamily.value() };
+		uint32_t queueFamilyIndices[] = { Indices.GraphicsFamily.value(), Indices.PresentFamily.value() };
 
-		if (Indices.GraphicsFamily != Indices.GraphicsFamily)
+		if (Indices.GraphicsFamily != Indices.PresentFamily)
 		{
 			SwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			SwapchainCreateInfo.queueFamilyIndexCount = 2;
