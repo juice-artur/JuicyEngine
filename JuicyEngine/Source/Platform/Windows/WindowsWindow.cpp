@@ -18,7 +18,7 @@ namespace JuicyEngine
 
 	WindowsWindow::~WindowsWindow()
 	{
-		m_Context->Shutdown();
+		VulkanContext::Get()->Shutdown();
 	}
 
 	void WindowsWindow::Init(const WindowProps& props)
@@ -43,16 +43,14 @@ namespace JuicyEngine
 			JE_CORE_ASSERT(m_Window, "Failed to create SDL window: {0}", SDL_GetError());
 		}
 
-		m_Context = new VulkanContext();
-		m_Context->Init(GetNativeWindow());
+		VulkanContext::Get()->Init(GetNativeWindow());
 
 		SetVSync(true);
 	}
 
 	void WindowsWindow::Shutdown()
 	{
-		m_Context->Shutdown();
-		delete m_Context;
+		VulkanContext::Get()->Shutdown();
 		SDL_DestroyWindow(m_Window);
 		SDL_Quit();
 	}
@@ -123,8 +121,9 @@ namespace JuicyEngine
 				}
 			}
 		}
-		m_Context->Draw();
-		m_Context->SwapBuffers();
+		
+		VulkanContext::Get()->Draw();
+		VulkanContext::Get()->SwapBuffers();
 	}
 
 	void WindowsWindow::SetVSync(bool enabled)

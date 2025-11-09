@@ -1,8 +1,9 @@
 #include "VulkanContext.h"
 
+#include "VulkanBuffer.h"
+#include "jepch.h"
 #include "vulkan/vulkan.h"
 #include <vulkan/vk_enum_string_helper.h>
-#include "jepch.h"
 #include "VulkanShader.h"
 #include "Core/Core.h"
 #include "Renderer/Pipeline.h"
@@ -32,14 +33,15 @@ namespace JuicyEngine
 		               "Failed to create vulkan Instance: {0}",
 		               string_VkResult(CreateCommandPoolResult))
 
-		SwapChain.Init(Device->GetPhysicalDevice(), Device->GetLogicalDevice(), Surface->GetSurface(), Window);
-		RenderPass->CreateRenderPass(Device->GetLogicalDevice(),
-		                             SwapChain.GetFormat(),
+		SwapChain.Init(Surface->GetSurface(), Window);
+		RenderPass->CreateRenderPass(SwapChain.GetFormat(),
 		                             SwapChain.GetSwapChainImageViews(),
 		                             SwapChain.GetExtent());
 		CommandBuffer.Init(Device->GetLogicalDevice(), CommandPool);
 		CreateGraphicsPipeline();
 		CreateSyncObjects();
+
+		VertexBuffer = std::make_unique<VulkanVertexBuffer>(Vertices) ;
 	}
 
 	void VulkanContext::SwapBuffers()
@@ -91,10 +93,11 @@ namespace JuicyEngine
 		vkDestroySemaphore(Device->GetLogicalDevice(), RenderFinishedSemaphore, nullptr);
 		vkDestroyFence(Device->GetLogicalDevice(), InFlightFence, nullptr);
 		vkDestroyCommandPool(Device->GetLogicalDevice(), CommandPool, nullptr);
-		GraphicsPipeline.Shutdown(Device->GetLogicalDevice());
-		RenderPass->Shutdown(Device->GetLogicalDevice());
+		GraphicsPipeline.Shutdown();
+		RenderPass->Shutdown();
 		RenderPass.reset();
-		SwapChain.Shutdown(Device->GetLogicalDevice());
+		VertexBuffer.reset();
+		SwapChain.Shutdown();
 		delete Device;
 
 		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
@@ -133,12 +136,11 @@ namespace JuicyEngine
 		if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
 		{
 			vkDeviceWaitIdle(Device->GetLogicalDevice());
-			RenderPass->Shutdown(Device->GetLogicalDevice());
-			SwapChain.Shutdown(Device->GetLogicalDevice());
+			RenderPass->Shutdown();
+			SwapChain.Shutdown();
 
-			SwapChain.Init(Device->GetPhysicalDevice(), Device->GetLogicalDevice(), Surface->GetSurface(), WindowPtr);
-			RenderPass->CreateRenderPass(Device->GetLogicalDevice(),
-										 SwapChain.GetFormat(),
+			SwapChain.Init(Surface->GetSurface(), WindowPtr);
+			RenderPass->CreateRenderPass(SwapChain.GetFormat(),
 										 SwapChain.GetSwapChainImageViews(),
 										 SwapChain.GetExtent());
 			
@@ -148,6 +150,10 @@ namespace JuicyEngine
 		
 		vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFence);
 		RecordCommandBuffer();
+	}
+	VulkanDevice* VulkanContext::GetDevice() const
+	{
+		return Device;
 	}
 
 	bool VulkanContext::InitInstance()
@@ -258,8 +264,7 @@ namespace JuicyEngine
 	                                                  VkDebugUtilsMessengerEXT debugMessenger,
 	                                                  const VkAllocationCallbacks* pAllocator)
 	{
-		PFN_vkDestroyDebugUtilsMessengerEXT Func;
-		Func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+		PFN_vkDestroyDebugUtilsMessengerEXT Func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
 		    vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
 		if (Func != nullptr)
 		{
@@ -290,7 +295,7 @@ namespace JuicyEngine
 		PipelineCreateInfo Info = {};
 		Info.RenderPass = RenderPass;
 		Info.VulkanShaderModules = std::vector { VertShaderStageInfo, fragShaderStageInfo };
-		GraphicsPipeline.Create(Device->GetLogicalDevice(), Info);
+		GraphicsPipeline.Create(Info);
 
 		vkDestroyShaderModule(Device->GetLogicalDevice(), FragShaderModule, nullptr);
 		vkDestroyShaderModule(Device->GetLogicalDevice(), VertShaderModule, nullptr);
@@ -320,7 +325,11 @@ namespace JuicyEngine
 		};
 		
 		vkCmdSetScissor(CommandBuffer.GetCommandBuffer(), 0, 1, &Scissor);
-
+		
+		VkDeviceSize Offsets[] = {0};
+		
+		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
+		
 		vkCmdDraw(CommandBuffer.GetCommandBuffer(), 3, 1, 0, 0);
 		RenderPass->End(CommandBuffer.GetCommandBuffer());
 		CommandBuffer.End();

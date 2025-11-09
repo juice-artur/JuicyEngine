@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/Window.h"
-#include "Renderer/GraphicsContext.h"
 
 struct SDL_Window;
 
@@ -36,8 +35,7 @@ namespace JuicyEngine
 
 	private:
 		SDL_Window* m_Window;
-		GraphicsContext* m_Context;
-
+		
 		struct WindowData
 		{
 			std::string Title;

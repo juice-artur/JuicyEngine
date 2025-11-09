@@ -1,5 +1,7 @@
 #include "VulkanSwapChain.h"
 #define NOMINMAX
+#include "VulkanContext.h"
+
 #include <windows.h>
 #include <limits>
 
@@ -10,18 +12,22 @@ namespace JuicyEngine
 {
 	VulkanSwapChain::VulkanSwapChain() {}
 
-	void VulkanSwapChain::Shutdown(VkDevice Device) const
+	void VulkanSwapChain::Shutdown() const
 	{
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+		
 		for (auto ImageView : SwapChainImageViews)
 		{
-			vkDestroyImageView(Device, ImageView, nullptr);
+			vkDestroyImageView(Context->GetDevice()->GetLogicalDevice(), ImageView, nullptr);
 		}
-		vkDestroySwapchainKHR(Device, SwapChain, nullptr);
+		vkDestroySwapchainKHR(Context->GetDevice()->GetLogicalDevice(), SwapChain, nullptr);
 	}
 
-	void VulkanSwapChain::Init(VkPhysicalDevice PhysicalDevice, VkDevice Device, VkSurfaceKHR Surface, void* Window)
+	void VulkanSwapChain::Init(VkSurfaceKHR Surface, void* Window)
 	{
-		SwapChainSupportDetails SwapChainSupport = QuerySwapChainSupport(PhysicalDevice, Surface);
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+		
+		SwapChainSupportDetails SwapChainSupport = QuerySwapChainSupport(Context->GetDevice()->GetPhysicalDevice(), Surface);
 
 		VkSurfaceFormatKHR SurfaceFormat = ChooseSwapSurfaceFormat(SwapChainSupport.Formats);
 		VkPresentModeKHR PresentMode = ChooseSwapPresentMode(SwapChainSupport.PresentModes);
@@ -45,10 +51,10 @@ namespace JuicyEngine
 		SwapchainCreateInfo.imageArrayLayers = 1;
 		SwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		QueueFamilyIndices Indices = VulkanDevice::FindQueueFamilies(PhysicalDevice, Surface);
-		uint32_t queueFamilyIndices[] = { Indices.GraphicsFamily.value(), Indices.GraphicsFamily.value() };
+		QueueFamilyIndices Indices = VulkanDevice::FindQueueFamilies(Context->GetDevice()->GetPhysicalDevice(), Surface);
+		uint32_t queueFamilyIndices[] = { Indices.GraphicsFamily.value(), Indices.PresentFamily.value() };
 
-		if (Indices.GraphicsFamily != Indices.GraphicsFamily)
+		if (Indices.GraphicsFamily != Indices.PresentFamily)
 		{
 			SwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			SwapchainCreateInfo.queueFamilyIndexCount = 2;
@@ -66,17 +72,17 @@ namespace JuicyEngine
 
 		SwapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		VkResult Result = vkCreateSwapchainKHR(Device, &SwapchainCreateInfo, nullptr, &SwapChain);
+		VkResult Result = vkCreateSwapchainKHR(Context->GetDevice()->GetLogicalDevice(), &SwapchainCreateInfo, nullptr, &SwapChain);
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create Swap Chain!");
 
-		vkGetSwapchainImagesKHR(Device, SwapChain, &ImageCount, nullptr);
+		vkGetSwapchainImagesKHR(Context->GetDevice()->GetLogicalDevice(), SwapChain, &ImageCount, nullptr);
 		SwapChainImages.resize(ImageCount);
-		vkGetSwapchainImagesKHR(Device, SwapChain, &ImageCount, SwapChainImages.data());
+		vkGetSwapchainImagesKHR(Context->GetDevice()->GetLogicalDevice(), SwapChain, &ImageCount, SwapChainImages.data());
 
 		SwapChainImageFormat = SurfaceFormat.format;
 		SwapChainExtent = Extent;
 
-		CreateImageViews(Device);
+		CreateImageViews(Context->GetDevice()->GetLogicalDevice());
 	}
 
 	SwapChainSupportDetails VulkanSwapChain::QuerySwapChainSupport(VkPhysicalDevice Device, VkSurfaceKHR Surface)

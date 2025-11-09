@@ -1,12 +1,12 @@
 #include "VulkanRenderPass.h"
 
+#include "VulkanContext.h"
 #include "Core/Core.h"
 
 namespace JuicyEngine
 {
 
-	void VulkanRenderPass::CreateRenderPass(const VkDevice Device,
-	                                        VkFormat SwapChainImageFormat,
+	void VulkanRenderPass::CreateRenderPass(VkFormat SwapChainImageFormat,
 	                                        std::vector<VkImageView>& SwapChainImageViews,
 	                                        VkExtent2D SwapChainExtent)
 	{
@@ -45,8 +45,9 @@ namespace JuicyEngine
 		RenderPassInfo.pSubpasses = &Subpass;
 		RenderPassInfo.pDependencies = &Dependency;
 		RenderPassInfo.dependencyCount = 1;
-
-		auto Result = vkCreateRenderPass(Device, &RenderPassInfo, nullptr, &RenderPass);
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+		
+		auto Result = vkCreateRenderPass(Context->GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &RenderPass);
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create render pass!")
 
 		SwapChainFramebuffers.resize(SwapChainImageViews.size());
@@ -64,18 +65,19 @@ namespace JuicyEngine
 			FramebufferInfo.height = SwapChainExtent.height;
 			FramebufferInfo.layers = 1;
 
-			auto FramebufferResult = vkCreateFramebuffer(Device, &FramebufferInfo, nullptr, &SwapChainFramebuffers[i]);
+			auto FramebufferResult = vkCreateFramebuffer(Context->GetDevice()->GetLogicalDevice(), &FramebufferInfo, nullptr, &SwapChainFramebuffers[i]);
 			JE_CORE_ASSERT(FramebufferResult == VK_SUCCESS, "Failed to create framebuffer!")
 		}
 	}
 
-	void VulkanRenderPass::Shutdown(const VkDevice Device)
+	void VulkanRenderPass::Shutdown()
 	{
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
 		for (auto Framebuffer : SwapChainFramebuffers)
 		{
-			vkDestroyFramebuffer(Device, Framebuffer, nullptr);
+			vkDestroyFramebuffer(Context->GetDevice()->GetLogicalDevice(), Framebuffer, nullptr);
 		}
-		vkDestroyRenderPass(Device, RenderPass, nullptr);
+		vkDestroyRenderPass(Context->GetDevice()->GetLogicalDevice(), RenderPass, nullptr);
 	}
 
 	VkRenderPass VulkanRenderPass::GetVulkanRenderPass() const
