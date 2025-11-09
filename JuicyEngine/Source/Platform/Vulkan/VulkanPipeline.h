@@ -9,9 +9,9 @@ namespace JuicyEngine
 	class VulkanPipeline
 	{
 	public:
-		void Create(const VkDevice Device, const PipelineCreateInfo& Info);
+		void Create(const PipelineCreateInfo& Info);
 
-		void Shutdown(const VkDevice Device);
+		void Shutdown();
 
 		void Bind(VkCommandBuffer CommandBuffer);
 

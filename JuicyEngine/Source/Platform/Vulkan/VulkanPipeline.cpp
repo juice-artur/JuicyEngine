@@ -1,20 +1,47 @@
 #include "VulkanPipeline.h"
 
+#include "VulkanContext.h"
 #include "Core/Core.h"
+#include "Renderer/Mesh.h"
 #include "Renderer/Pipeline.h"
+
+#include <array>
 
 namespace JuicyEngine
 {
-
-	void VulkanPipeline::Create(const VkDevice Device, const PipelineCreateInfo& Info)
+	void VulkanPipeline::Create(const PipelineCreateInfo& Info)
 	{
-		VkPipelineVertexInputStateCreateInfo VertexInputInfo {};
-		VertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		VertexInputInfo.vertexBindingDescriptionCount = 0;
-		VertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-		VertexInputInfo.vertexAttributeDescriptionCount = 0;
-		VertexInputInfo.pVertexAttributeDescriptions = nullptr; //
+		VkVertexInputBindingDescription BindingDescriptions
+		{
+			.binding = 0,
+			.stride = sizeof(Vertex),
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+		};
 
+		std::array<VkVertexInputAttributeDescription, 2> AttributeDescriptions{};
+
+		AttributeDescriptions[0].binding = 0;
+		AttributeDescriptions[0].location = 0;
+		AttributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		AttributeDescriptions[0].offset = offsetof(Vertex, Position);
+		
+		AttributeDescriptions[1].binding = 0;
+		AttributeDescriptions[1].location = 1;
+		AttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		AttributeDescriptions[1].offset = offsetof(Vertex, Color);
+
+		
+		VkPipelineVertexInputStateCreateInfo VertexInputInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.vertexBindingDescriptionCount = 1,
+			.pVertexBindingDescriptions = &BindingDescriptions,
+			.vertexAttributeDescriptionCount = 2,
+			.pVertexAttributeDescriptions = AttributeDescriptions.data(),
+		};
+		
 		VkPipelineInputAssemblyStateCreateInfo InputAssembly {};
 		InputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		InputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -55,19 +82,20 @@ namespace JuicyEngine
 		ColorBlending.blendConstants[2] = 0.0f;
 		ColorBlending.blendConstants[3] = 0.0f;
 
-		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+		std::vector<VkDynamicState> DynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
 		VkPipelineDynamicStateCreateInfo DynamicState {};
 		DynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		DynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-		DynamicState.pDynamicStates = dynamicStates.data();
+		DynamicState.dynamicStateCount = static_cast<uint32_t>(DynamicStates.size());
+		DynamicState.pDynamicStates = DynamicStates.data();
 
 		VkPipelineLayoutCreateInfo PipelineLayoutInfo {};
 		PipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		PipelineLayoutInfo.setLayoutCount = 0;
 		PipelineLayoutInfo.pushConstantRangeCount = 0;
 
-		auto PipelineLayoutResult = vkCreatePipelineLayout(Device, &PipelineLayoutInfo, nullptr, &PipelineLayout);
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+		auto PipelineLayoutResult = vkCreatePipelineLayout(Context->GetDevice()->GetLogicalDevice(), &PipelineLayoutInfo, nullptr, &PipelineLayout);
 
 		JE_CORE_ASSERT(PipelineLayoutResult == VK_SUCCESS, "Failed to create pipeline layout!")
 
@@ -86,15 +114,16 @@ namespace JuicyEngine
 		PipelineInfo.renderPass = Info.RenderPass->GetVulkanRenderPass();
 		PipelineInfo.subpass = 0;
 		PipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-		auto Result = vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline);
+		auto Result = vkCreateGraphicsPipelines(Context->GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline);
 
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create graphics pipeline!");
 	}
 
-	void VulkanPipeline::Shutdown(const VkDevice Device)
+	void VulkanPipeline::Shutdown()
 	{
-		vkDestroyPipeline(Device, Pipeline, nullptr);
-		vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+		vkDestroyPipeline(Context->GetDevice()->GetLogicalDevice(), Pipeline, nullptr);
+		vkDestroyPipelineLayout(Context->GetDevice()->GetLogicalDevice(), PipelineLayout, nullptr);
 	}
 
 	void VulkanPipeline::Bind(VkCommandBuffer CommandBuffer)

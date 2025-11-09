@@ -7,11 +7,10 @@ namespace JuicyEngine
 	class VulkanRenderPass
 	{
 	public:
-		void CreateRenderPass(const VkDevice Device,
-		                      VkFormat SwapChainImageFormat,
+		void CreateRenderPass(VkFormat SwapChainImageFormat,
 		                      std::vector<VkImageView>& SwapChainImageViews,
 		                      VkExtent2D SwapChainExtent);
-		void Shutdown(const VkDevice Device);
+		void Shutdown();
 		VkRenderPass GetVulkanRenderPass() const;
 		void Begin(VkCommandBuffer CommandBuffer, VkExtent2D SwapChainExtent);
 		void End(VkCommandBuffer CommandBuffer);
