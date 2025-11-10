@@ -2,21 +2,14 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
 UseTab: ForIndentation
+
+# ---- Brace & Block Style ----
 BreakBeforeBraces: Allman
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakTemplateDeclarations: Yes
-AccessModifierOffset: -4
-AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
-AlignEscapedNewlines: Left
-AlignOperands: true
-AlignTrailingComments: true
-AllowAllParametersOfDeclarationOnNextLine: false
-BinPackArguments: false
-BinPackParameters: false
+
 BraceWrapping:
   AfterClass: true
   AfterControlStatement: true
@@ -28,14 +21,33 @@ BraceWrapping:
   BeforeCatch: true
   BeforeElse: true
   IndentBraces: false
+
+# ---- Alignment ----
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+
+# ---- Function & Template Parameters ----
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
+
+# ---- Line Breaking ----
 BreakBeforeBinaryOperators: All
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
-ColumnLimit: 120
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ColumnLimit: 120
+
+# ---- Formatting Style ----
 Cpp11BracedListStyle: false
 DerivePointerAlignment: false
 PointerAlignment: Left
+
+# ---- Spacing ----
 SpaceAfterCStyleCast: true
 SpaceAfterTemplateKeyword: true
 SpaceBeforeAssignmentOperators: true
@@ -50,10 +62,19 @@ SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
+
+# ---- Includes ----
 IncludeBlocks: Regroup
 SortIncludes: false
+
+# ---- Indentation ----
 NamespaceIndentation: All
 IndentCaseLabels: true
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
+
+# ---- Comments ----
 ReflowComments: false
+
+# ---- Misc ----
+AccessModifierOffset: -4

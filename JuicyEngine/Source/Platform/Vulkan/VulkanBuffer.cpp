@@ -22,22 +22,22 @@ namespace JuicyEngine
 
 		JE_CORE_ASSERT(false, "Failed to find suitable memory type!")
 	}
-	
+
 	void VulkanBuffer::UploadData(const void* Data, VkDeviceSize Size)
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-		
+
 		void* Mapped;
 		vkMapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, 0, Size, 0, &Mapped);
 		std::memcpy(Mapped, Data, static_cast<size_t>(Size));
 		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory);
 	}
-	
+
 	VkBuffer& VulkanBuffer::GetBuffer()
 	{
 		return Buffer;
 	}
-	
+
 	VulkanBuffer::~VulkanBuffer()
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
@@ -82,7 +82,5 @@ namespace JuicyEngine
 		UploadData(Vertexes.data(), Vertexes.size() * sizeof(Vertex));
 	}
 
-	VulkanVertexBuffer::~VulkanVertexBuffer()
-	{
-	}
+	VulkanVertexBuffer::~VulkanVertexBuffer() {}
 } // namespace JuicyEngine

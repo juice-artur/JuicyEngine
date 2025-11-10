@@ -15,7 +15,7 @@ namespace JuicyEngine
 	void VulkanSwapChain::Shutdown() const
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-		
+
 		for (auto ImageView : SwapChainImageViews)
 		{
 			vkDestroyImageView(Context->GetDevice()->GetLogicalDevice(), ImageView, nullptr);
@@ -26,8 +26,9 @@ namespace JuicyEngine
 	void VulkanSwapChain::Init(VkSurfaceKHR Surface, void* Window)
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-		
-		SwapChainSupportDetails SwapChainSupport = QuerySwapChainSupport(Context->GetDevice()->GetPhysicalDevice(), Surface);
+
+		SwapChainSupportDetails SwapChainSupport
+		    = QuerySwapChainSupport(Context->GetDevice()->GetPhysicalDevice(), Surface);
 
 		VkSurfaceFormatKHR SurfaceFormat = ChooseSwapSurfaceFormat(SwapChainSupport.Formats);
 		VkPresentModeKHR PresentMode = ChooseSwapPresentMode(SwapChainSupport.PresentModes);
@@ -51,7 +52,8 @@ namespace JuicyEngine
 		SwapchainCreateInfo.imageArrayLayers = 1;
 		SwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		QueueFamilyIndices Indices = VulkanDevice::FindQueueFamilies(Context->GetDevice()->GetPhysicalDevice(), Surface);
+		QueueFamilyIndices Indices
+		    = VulkanDevice::FindQueueFamilies(Context->GetDevice()->GetPhysicalDevice(), Surface);
 		uint32_t queueFamilyIndices[] = { Indices.GraphicsFamily.value(), Indices.PresentFamily.value() };
 
 		if (Indices.GraphicsFamily != Indices.PresentFamily)
@@ -72,12 +74,14 @@ namespace JuicyEngine
 
 		SwapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		VkResult Result = vkCreateSwapchainKHR(Context->GetDevice()->GetLogicalDevice(), &SwapchainCreateInfo, nullptr, &SwapChain);
+		VkResult Result
+		    = vkCreateSwapchainKHR(Context->GetDevice()->GetLogicalDevice(), &SwapchainCreateInfo, nullptr, &SwapChain);
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create Swap Chain!");
 
 		vkGetSwapchainImagesKHR(Context->GetDevice()->GetLogicalDevice(), SwapChain, &ImageCount, nullptr);
 		SwapChainImages.resize(ImageCount);
-		vkGetSwapchainImagesKHR(Context->GetDevice()->GetLogicalDevice(), SwapChain, &ImageCount, SwapChainImages.data());
+		vkGetSwapchainImagesKHR(
+		    Context->GetDevice()->GetLogicalDevice(), SwapChain, &ImageCount, SwapChainImages.data());
 
 		SwapChainImageFormat = SurfaceFormat.format;
 		SwapChainExtent = Extent;

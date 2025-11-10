@@ -23,7 +23,7 @@ namespace JuicyEngine
 		virtual void Shutdown() override;
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& DebugCreateInfo);
 		virtual void Draw() override;
-		
+
 		VulkanDevice* GetDevice() const;
 
 		// Disable copy/move
@@ -31,6 +31,7 @@ namespace JuicyEngine
 		VulkanContext& operator=(const VulkanContext&) = delete;
 		VulkanContext(VulkanContext&&) = delete;
 		VulkanContext& operator=(VulkanContext&&) = delete;
+
 	private:
 		bool InitInstance();
 		void SetupDebugMessenger();
@@ -76,11 +77,9 @@ namespace JuicyEngine
 
 		bool Skip = false;
 
-		const std::vector<Vertex> Vertices = {
-			{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-			{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-		};
+		const std::vector<Vertex> Vertices = { { { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+			                                   { { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
+			                                   { { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } } };
 
 		std::unique_ptr<VulkanVertexBuffer> VertexBuffer;
 	};

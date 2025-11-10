@@ -6,7 +6,7 @@ namespace JuicyEngine
 	{
 	public:
 		static GraphicsContext* Get();
-		
+
 		virtual void Init(void* Window) = 0;
 		virtual void SwapBuffers() = 0;
 		virtual void Shutdown() = 0;

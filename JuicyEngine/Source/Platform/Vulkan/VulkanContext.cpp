@@ -34,14 +34,12 @@ namespace JuicyEngine
 		               string_VkResult(CreateCommandPoolResult))
 
 		SwapChain.Init(Surface->GetSurface(), Window);
-		RenderPass->CreateRenderPass(SwapChain.GetFormat(),
-		                             SwapChain.GetSwapChainImageViews(),
-		                             SwapChain.GetExtent());
+		RenderPass->CreateRenderPass(SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
 		CommandBuffer.Init(Device->GetLogicalDevice(), CommandPool);
 		CreateGraphicsPipeline();
 		CreateSyncObjects();
 
-		VertexBuffer = std::make_unique<VulkanVertexBuffer>(Vertices) ;
+		VertexBuffer = std::make_unique<VulkanVertexBuffer>(Vertices);
 	}
 
 	void VulkanContext::SwapBuffers()
@@ -51,7 +49,7 @@ namespace JuicyEngine
 			Skip = false;
 			return;
 		}
-		
+
 		VkSubmitInfo SubmitInfo {};
 		SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -132,7 +130,7 @@ namespace JuicyEngine
 		                                        ImageAvailableSemaphore,
 		                                        VK_NULL_HANDLE,
 		                                        &RenderPass->SwapChainImageIndex);
-		
+
 		if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
 		{
 			vkDeviceWaitIdle(Device->GetLogicalDevice());
@@ -140,14 +138,13 @@ namespace JuicyEngine
 			SwapChain.Shutdown();
 
 			SwapChain.Init(Surface->GetSurface(), WindowPtr);
-			RenderPass->CreateRenderPass(SwapChain.GetFormat(),
-										 SwapChain.GetSwapChainImageViews(),
-										 SwapChain.GetExtent());
-			
+			RenderPass->CreateRenderPass(
+			    SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
+
 			Skip = true;
 			return;
 		}
-		
+
 		vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFence);
 		RecordCommandBuffer();
 	}
@@ -158,17 +155,13 @@ namespace JuicyEngine
 
 	bool VulkanContext::InitInstance()
 	{
-		VkApplicationInfo AppInfo
-		{
-			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-			.pNext = nullptr,
-			//TODO: Set properly app name
-			.pApplicationName = "TODO",
-			.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-			.pEngineName = "JuicyEngine",
-			.engineVersion = VK_MAKE_VERSION(1, 0, 0),
-			.apiVersion = VK_API_VERSION_1_3
-		};
+		VkApplicationInfo AppInfo = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			                          .pNext = nullptr,
+			                          .pApplicationName = "JuicyEngine",
+			                          .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+			                          .pEngineName = "JuicyEngine",
+			                          .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+			                          .apiVersion = VK_API_VERSION_1_3 };
 
 		VkDebugUtilsMessengerCreateInfoEXT DebugCreateInfo {};
 		PopulateDebugMessengerCreateInfo(DebugCreateInfo);
@@ -183,17 +176,15 @@ namespace JuicyEngine
 		    = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "VK_KHR_win32_surface" };
 
 		VkInstanceCreateInfo InstanceCreateInfo
-		{
-			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-			.pNext = &DebugCreateInfo,
-			.flags = 0,
-			.pApplicationInfo = &AppInfo,
-			.enabledLayerCount = static_cast<uint32_t>(InstanceLayers.size()),
-			.ppEnabledLayerNames = InstanceLayers.data(),
-			.enabledExtensionCount = static_cast<uint32_t>(InstanceExtensions.size()),
-			.ppEnabledExtensionNames = InstanceExtensions.data()
-		};
-		
+		    = { .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+			    .pNext = &DebugCreateInfo,
+			    .flags = 0,
+			    .pApplicationInfo = &AppInfo,
+			    .enabledLayerCount = static_cast<uint32_t>(InstanceLayers.size()),
+			    .ppEnabledLayerNames = InstanceLayers.data(),
+			    .enabledExtensionCount = static_cast<uint32_t>(InstanceExtensions.size()),
+			    .ppEnabledExtensionNames = InstanceExtensions.data() };
+
 		VkResult CreateInstanceResult = vkCreateInstance(&InstanceCreateInfo, nullptr, &Instance);
 
 		JE_CORE_ASSERT(CreateInstanceResult == VK_SUCCESS,
@@ -306,30 +297,23 @@ namespace JuicyEngine
 		CommandBuffer.Begin();
 		RenderPass->Begin(CommandBuffer.GetCommandBuffer(), SwapChain.GetExtent());
 		GraphicsPipeline.Bind(CommandBuffer.GetCommandBuffer());
-		
-		VkViewport Viewport
-		{
-			.x = 0.0f,
-			.y = 0.0f,
-			.width = static_cast<float>(SwapChain.GetExtent().width),
-			.height = static_cast<float>(SwapChain.GetExtent().height),
-			.minDepth = 0.0f,
-			.maxDepth = 1.0f
-		};
+
+		VkViewport Viewport { .x = 0.0f,
+			                  .y = 0.0f,
+			                  .width = static_cast<float>(SwapChain.GetExtent().width),
+			                  .height = static_cast<float>(SwapChain.GetExtent().height),
+			                  .minDepth = 0.0f,
+			                  .maxDepth = 1.0f };
 		vkCmdSetViewport(CommandBuffer.GetCommandBuffer(), 0, 1, &Viewport);
 
-		VkRect2D Scissor
-		{
-			.offset = { 0, 0 },
-			.extent = SwapChain.GetExtent()
-		};
-		
+		VkRect2D Scissor { .offset = { 0, 0 }, .extent = SwapChain.GetExtent() };
+
 		vkCmdSetScissor(CommandBuffer.GetCommandBuffer(), 0, 1, &Scissor);
-		
-		VkDeviceSize Offsets[] = {0};
-		
+
+		VkDeviceSize Offsets[] = { 0 };
+
 		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
-		
+
 		vkCmdDraw(CommandBuffer.GetCommandBuffer(), 3, 1, 0, 0);
 		RenderPass->End(CommandBuffer.GetCommandBuffer());
 		CommandBuffer.End();

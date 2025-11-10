@@ -12,29 +12,26 @@ namespace JuicyEngine
 	void VulkanPipeline::Create(const PipelineCreateInfo& Info)
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-		
-		VkVertexInputBindingDescription BindingDescriptions
-		{
+
+		VkVertexInputBindingDescription BindingDescriptions {
 			.binding = 0,
 			.stride = sizeof(Vertex),
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
 		};
 
-		std::array<VkVertexInputAttributeDescription, 2> AttributeDescriptions{};
+		std::array<VkVertexInputAttributeDescription, 2> AttributeDescriptions {};
 
 		AttributeDescriptions[0].binding = 0;
 		AttributeDescriptions[0].location = 0;
 		AttributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
 		AttributeDescriptions[0].offset = offsetof(Vertex, Position);
-		
+
 		AttributeDescriptions[1].binding = 0;
 		AttributeDescriptions[1].location = 1;
 		AttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		AttributeDescriptions[1].offset = offsetof(Vertex, Color);
 
-		
-		VkPipelineVertexInputStateCreateInfo VertexInputInfo
-		{
+		VkPipelineVertexInputStateCreateInfo VertexInputInfo {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
@@ -43,7 +40,7 @@ namespace JuicyEngine
 			.vertexAttributeDescriptionCount = 2,
 			.pVertexAttributeDescriptions = AttributeDescriptions.data(),
 		};
-		
+
 		VkPipelineInputAssemblyStateCreateInfo InputAssembly {};
 		InputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		InputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -96,7 +93,8 @@ namespace JuicyEngine
 		PipelineLayoutInfo.setLayoutCount = 0;
 		PipelineLayoutInfo.pushConstantRangeCount = 0;
 
-		auto PipelineLayoutResult = vkCreatePipelineLayout(Context->GetDevice()->GetLogicalDevice(), &PipelineLayoutInfo, nullptr, &PipelineLayout);
+		auto PipelineLayoutResult = vkCreatePipelineLayout(
+		    Context->GetDevice()->GetLogicalDevice(), &PipelineLayoutInfo, nullptr, &PipelineLayout);
 
 		JE_CORE_ASSERT(PipelineLayoutResult == VK_SUCCESS, "Failed to create pipeline layout!")
 
@@ -115,7 +113,8 @@ namespace JuicyEngine
 		PipelineInfo.renderPass = Info.RenderPass->GetVulkanRenderPass();
 		PipelineInfo.subpass = 0;
 		PipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-		auto Result = vkCreateGraphicsPipelines(Context->GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline);
+		auto Result = vkCreateGraphicsPipelines(
+		    Context->GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline);
 
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create graphics pipeline!");
 	}

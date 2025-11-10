@@ -46,8 +46,9 @@ namespace JuicyEngine
 		RenderPassInfo.pDependencies = &Dependency;
 		RenderPassInfo.dependencyCount = 1;
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-		
-		auto Result = vkCreateRenderPass(Context->GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &RenderPass);
+
+		auto Result
+		    = vkCreateRenderPass(Context->GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &RenderPass);
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create render pass!")
 
 		SwapChainFramebuffers.resize(SwapChainImageViews.size());
@@ -65,7 +66,8 @@ namespace JuicyEngine
 			FramebufferInfo.height = SwapChainExtent.height;
 			FramebufferInfo.layers = 1;
 
-			auto FramebufferResult = vkCreateFramebuffer(Context->GetDevice()->GetLogicalDevice(), &FramebufferInfo, nullptr, &SwapChainFramebuffers[i]);
+			auto FramebufferResult = vkCreateFramebuffer(
+			    Context->GetDevice()->GetLogicalDevice(), &FramebufferInfo, nullptr, &SwapChainFramebuffers[i]);
 			JE_CORE_ASSERT(FramebufferResult == VK_SUCCESS, "Failed to create framebuffer!")
 		}
 	}

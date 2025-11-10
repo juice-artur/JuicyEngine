@@ -9,4 +9,4 @@ namespace JuicyEngine
 		glm::vec2 Position;
 		glm::vec3 Color;
 	};
-}
+} // namespace JuicyEngine

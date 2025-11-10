@@ -7,7 +7,7 @@ namespace JuicyEngine
 	{
 	public:
 		virtual ~VertexBuffer() {}
-		
+
 		static std::unique_ptr<VertexBuffer> Create(std::vector<Vertex> Vertex);
 	};
-}
+} // namespace JuicyEngine

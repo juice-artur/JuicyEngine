@@ -8,5 +8,4 @@ namespace JuicyEngine
 	{
 		return std::make_unique<VulkanVertexBuffer>(Vertexes);
 	}
-}
-
+} // namespace JuicyEngine

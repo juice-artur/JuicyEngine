@@ -35,7 +35,7 @@ namespace JuicyEngine
 
 	private:
 		SDL_Window* m_Window;
-		
+
 		struct WindowData
 		{
 			std::string Title;

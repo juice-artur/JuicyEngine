@@ -121,7 +121,7 @@ namespace JuicyEngine
 				}
 			}
 		}
-		
+
 		VulkanContext::Get()->Draw();
 		VulkanContext::Get()->SwapBuffers();
 	}

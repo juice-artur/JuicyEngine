@@ -5,7 +5,7 @@ REM Path to clang-format (edit if not in PATH)
 set CLANG_FORMAT=clang-format
 
 REM Root folder where .clang-format is located
-set ROOT_DIR=D:\JuicyEngine
+set "ROOT_DIR=%~dp0.."
 
 REM Source directories
 set ENGINE_SRC=%ROOT_DIR%\JuicyEngine\Source
