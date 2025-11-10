@@ -122,6 +122,16 @@ namespace JuicyEngine
 		vkFreeCommandBuffers(Context->GetDevice()->GetLogicalDevice(), Context->GetCommandPool(), 1, &CommandBuffer);
 	}
 
+	/**
+	 * @brief Creates a GPU-resident vertex buffer and uploads the provided vertices.
+	 *
+	 * Allocates a device-local Vulkan buffer sized to hold all vertices and transfers the
+	 * vertex data from host-visible staging memory into that buffer.
+	 *
+	 * @param Vertexes Vector of vertex data to upload into the created vertex buffer.
+	 *
+	 * @note Asserts if `Vertexes` is empty.
+	 */
 	VulkanVertexBuffer::VulkanVertexBuffer(const std::vector<Vertex>& Vertexes)
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
@@ -150,8 +160,20 @@ namespace JuicyEngine
 		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
 	}
 
-	VulkanVertexBuffer::~VulkanVertexBuffer() {}
+	/**
+ * @brief Destructor for VulkanVertexBuffer.
+ */
+VulkanVertexBuffer::~VulkanVertexBuffer() {}
 	
+	/**
+	 * @brief Creates a Vulkan index buffer and uploads the provided indices to device-local memory.
+	 *
+	 * Allocates a host-visible staging buffer, copies the supplied index data into it, creates a device-local
+	 * index buffer of the same size, copies the data from the staging buffer into the device-local buffer,
+	 * and then destroys and frees the staging resources.
+	 *
+	 * @param Indexes Sequence of 16-bit indices to upload into the GPU index buffer.
+	 */
 	VulkanIndexBuffer::VulkanIndexBuffer(const std::vector<uint16_t>& Indexes)
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
@@ -174,5 +196,10 @@ namespace JuicyEngine
 		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
 	}
 	
-	VulkanIndexBuffer::~VulkanIndexBuffer() {}
+	/**
+ * @brief Destroys the VulkanIndexBuffer.
+ *
+ * No custom cleanup is performed by this destructor; buffer resources are managed and released by the base VulkanBuffer and RAII-managed Vulkan objects.
+ */
+VulkanIndexBuffer::~VulkanIndexBuffer() {}
 } // namespace JuicyEngine
