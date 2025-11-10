@@ -9,13 +9,16 @@ namespace JuicyEngine
 	{
 	public:
 		uint32_t FindMemoryType(uint32_t TypeFilter, VkMemoryPropertyFlags Properties);
-		void UploadData(const void* Data, VkDeviceSize Size);
 		VkBuffer& GetBuffer();
 		virtual ~VulkanBuffer();
 
 	protected:
-		VkBuffer Buffer;
-		VkDeviceMemory BufferMemory;
+		void CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, VkBuffer& InBuffer, VkDeviceMemory& InBufferMemory);
+		void CopyBuffer(VkBuffer SrcBuffer, VkBuffer DstBuffer, VkDeviceSize Size);
+		
+	protected:
+		VkBuffer Buffer = VK_NULL_HANDLE;
+		VkDeviceMemory BufferMemory = VK_NULL_HANDLE;
 	};
 
 	class VulkanVertexBuffer : public VertexBuffer, public VulkanBuffer

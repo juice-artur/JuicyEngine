@@ -152,6 +152,10 @@ namespace JuicyEngine
 	{
 		return Device;
 	}
+	VkCommandPool VulkanContext::GetCommandPool() const
+	{
+		return CommandPool;
+	}
 
 	bool VulkanContext::InitInstance()
 	{
@@ -298,12 +302,16 @@ namespace JuicyEngine
 		RenderPass->Begin(CommandBuffer.GetCommandBuffer(), SwapChain.GetExtent());
 		GraphicsPipeline.Bind(CommandBuffer.GetCommandBuffer());
 
-		VkViewport Viewport { .x = 0.0f,
-			                  .y = 0.0f,
-			                  .width = static_cast<float>(SwapChain.GetExtent().width),
-			                  .height = static_cast<float>(SwapChain.GetExtent().height),
-			                  .minDepth = 0.0f,
-			                  .maxDepth = 1.0f };
+		VkViewport Viewport =
+		{
+			.x = 0.0f,
+			.y = 0.0f,
+			.width = static_cast<float>(SwapChain.GetExtent().width),
+			.height = static_cast<float>(SwapChain.GetExtent().height),
+			.minDepth = 0.0f,
+			.maxDepth = 1.0f
+		};
+		
 		vkCmdSetViewport(CommandBuffer.GetCommandBuffer(), 0, 1, &Viewport);
 
 		VkRect2D Scissor { .offset = { 0, 0 }, .extent = SwapChain.GetExtent() };

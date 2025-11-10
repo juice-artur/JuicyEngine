@@ -26,6 +26,8 @@ namespace JuicyEngine
 
 		VulkanDevice* GetDevice() const;
 
+		VkCommandPool GetCommandPool() const;
+
 		// Disable copy/move
 		VulkanContext(const VulkanContext&) = delete;
 		VulkanContext& operator=(const VulkanContext&) = delete;
