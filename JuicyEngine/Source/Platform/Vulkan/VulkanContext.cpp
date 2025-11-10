@@ -12,6 +12,16 @@ namespace JuicyEngine
 {
 	VulkanContext::VulkanContext() : Instance(nullptr), DebugMessenger(nullptr) {}
 
+	/**
+	 * @brief Initializes the Vulkan context and allocates required Vulkan resources.
+	 *
+	 * Initializes the Vulkan instance and debug messenger, creates a surface and logical device,
+	 * allocates a graphics command pool, creates the swap chain and render pass, initializes
+	 * the command buffer, builds the graphics pipeline, creates synchronization primitives,
+	 * and constructs the vertex and index buffers. Stores the provided window pointer for surface creation.
+	 *
+	 * @param Window Pointer to the platform-specific window handle used to create the Vulkan surface.
+	 */
 	void VulkanContext::Init(void* Window)
 	{
 		WindowPtr = Window;
@@ -43,6 +53,13 @@ namespace JuicyEngine
 		IndexBuffer = std::make_unique<VulkanIndexBuffer>(Indices);
 	}
 
+	/**
+	 * @brief Submits the recorded command buffer for the current frame and presents the acquired swapchain image.
+	 *
+	 * If the internal skip flag is set, clears it and returns without submitting or presenting.
+	 *
+	 * This function signals and waits on the frame's semaphores and uses the in-flight fence to synchronize GPU work before presenting.
+	 */
 	void VulkanContext::SwapBuffers()
 	{
 		if (Skip)
@@ -85,6 +102,13 @@ namespace JuicyEngine
 		vkQueuePresentKHR(Device->GetPresentQueue(), &PresentInfo);
 	}
 
+	/**
+	 * @brief Cleanly shuts down the Vulkan context and releases all associated resources.
+	 *
+	 * Waits for the device to become idle, destroys synchronization primitives and the command pool,
+	 * shuts down and releases the graphics pipeline, render pass, buffers, and swap chain,
+	 * destroys the debug messenger, surface, and finally destroys the Vulkan instance.
+	 */
 	void VulkanContext::Shutdown()
 	{
 		vkDeviceWaitIdle(Device->GetLogicalDevice());
@@ -154,16 +178,35 @@ namespace JuicyEngine
 	{
 		return Device;
 	}
+	/**
+	 * @brief Retrieve the Vulkan command pool used for allocating command buffers.
+	 *
+	 * @return VkCommandPool Handle to the command pool associated with this VulkanContext.
+	 */
 	VkCommandPool VulkanContext::GetCommandPool() const
 	{
 		return CommandPool;
 	}
 
+	/**
+	 * @brief Destructor for VulkanContext.
+	 *
+	 * Explicit no-op destructor; presence ensures proper symbol generation and destruction ordering.
+	 */
 	VulkanContext::~VulkanContext()
 	{
 		
 	}
 	
+	/**
+	 * @brief Creates and initializes the Vulkan instance with application information, validation layers, and required extensions.
+	 *
+	 * Populates a debug messenger create-info, verifies that the requested validation layers are available, and creates the VkInstance
+	 * with the debug utils, surface and Win32 surface extensions enabled. The function asserts if validation layers are missing or
+	 * if instance creation fails.
+	 *
+	 * @return true if the Vulkan instance was created successfully, false otherwise.
+	 */
 	bool VulkanContext::InitInstance()
 	{
 		VkApplicationInfo AppInfo = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -303,6 +346,14 @@ namespace JuicyEngine
 		vkDestroyShaderModule(Device->GetLogicalDevice(), VertShaderModule, nullptr);
 	}
 
+	/**
+	 * @brief Records GPU commands for a single frame into the context's command buffer.
+	 *
+	 * Begins recording, begins the render pass for the current swap chain extent, binds the graphics
+	 * pipeline, sets viewport and scissor to the swap chain extent, binds vertex and index buffers,
+	 * issues an indexed draw using the context's index count, then ends the render pass and finishes
+	 * recording.
+	 */
 	void VulkanContext::RecordCommandBuffer()
 	{
 		CommandBuffer.Begin();
