@@ -19,8 +19,9 @@ namespace JuicyEngine
 				return i;
 			}
 		}
-
+		
 		JE_CORE_ASSERT(false, "Failed to find suitable memory type!")
+		return 0;
 	}
 
 	VkBuffer& VulkanBuffer::GetBuffer()
@@ -149,6 +150,41 @@ namespace JuicyEngine
 		vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
 		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
 	}
+	void* VulkanVertexBuffer::GetNativeHandle()
+	{
+		return  &Buffer;
+	}
 
 	VulkanVertexBuffer::~VulkanVertexBuffer() {}
+	
+	VulkanIndexBuffer::VulkanIndexBuffer(const std::vector<uint16_t>& Indexes)
+	{
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+		JE_CORE_ASSERT(!Indexes.empty(), "Index buffer creation requires at least one index");
+		VkDeviceSize BufferSize = sizeof(Indexes[0]) * Indexes.size();
+
+		VkBuffer StagingBuffer;
+		VkDeviceMemory StagingBufferMemory;
+		CreateBuffer(BufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, StagingBuffer, StagingBufferMemory);
+
+		void* Data;
+		const VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
+		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory");
+		
+		memcpy(Data, Indexes.data(), (size_t) BufferSize);
+		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
+
+		CreateBuffer(BufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, Buffer, BufferMemory);
+
+		CopyBuffer(StagingBuffer, Buffer, BufferSize);
+
+		vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
+		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
+	}
+	void* VulkanIndexBuffer::GetNativeHandle()
+	{
+		return &Buffer;
+	}
+
+	VulkanIndexBuffer::~VulkanIndexBuffer() {}
 } // namespace JuicyEngine

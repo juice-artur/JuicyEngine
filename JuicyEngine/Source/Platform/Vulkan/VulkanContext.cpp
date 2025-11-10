@@ -39,7 +39,8 @@ namespace JuicyEngine
 		CreateGraphicsPipeline();
 		CreateSyncObjects();
 
-		VertexBuffer = std::make_unique<VulkanVertexBuffer>(Vertices);
+		VertexBuffer.reset(VertexBuffer::Create(Vertices));
+		IndexBuffer.reset(IndexBuffer::Create( Indices));
 	}
 
 	void VulkanContext::SwapBuffers()
@@ -95,6 +96,7 @@ namespace JuicyEngine
 		RenderPass->Shutdown();
 		RenderPass.reset();
 		VertexBuffer.reset();
+		IndexBuffer.reset();
 		SwapChain.Shutdown();
 		delete Device;
 
@@ -157,6 +159,11 @@ namespace JuicyEngine
 		return CommandPool;
 	}
 
+	VulkanContext::~VulkanContext()
+	{
+		
+	}
+	
 	bool VulkanContext::InitInstance()
 	{
 		VkApplicationInfo AppInfo = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -320,9 +327,10 @@ namespace JuicyEngine
 
 		VkDeviceSize Offsets[] = { 0 };
 
-		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
-
-		vkCmdDraw(CommandBuffer.GetCommandBuffer(), 3, 1, 0, 0);
+		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, (VkBuffer*)VertexBuffer->GetNativeHandle(), Offsets);
+		vkCmdBindIndexBuffer(CommandBuffer.GetCommandBuffer(), *(VkBuffer*)IndexBuffer->GetNativeHandle(), 0, VK_INDEX_TYPE_UINT16);
+		
+		vkCmdDrawIndexed(CommandBuffer.GetCommandBuffer(),  static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
 		RenderPass->End(CommandBuffer.GetCommandBuffer());
 		CommandBuffer.End();
 	}

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VulkanBuffer.h"
 #include "VulkanCommandBuffer.h"
 #include "VulkanDevice.h"
 #include "VulkanPipeline.h"
@@ -13,6 +12,9 @@
 
 namespace JuicyEngine
 {
+	class IndexBuffer;
+	class VertexBuffer;
+	
 	class VulkanContext : public GraphicsContext
 	{
 	public:
@@ -33,6 +35,8 @@ namespace JuicyEngine
 		VulkanContext& operator=(const VulkanContext&) = delete;
 		VulkanContext(VulkanContext&&) = delete;
 		VulkanContext& operator=(VulkanContext&&) = delete;
+
+		~VulkanContext() override;
 
 	private:
 		bool InitInstance();
@@ -79,10 +83,18 @@ namespace JuicyEngine
 
 		bool Skip = false;
 
-		const std::vector<Vertex> Vertices = { { { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-			                                   { { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
-			                                   { { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } } };
+		const std::vector<Vertex> Vertices = {
+            {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+        };
 
-		std::unique_ptr<VulkanVertexBuffer> VertexBuffer;
+		const std::vector<uint16_t> Indices = {
+			0, 1, 2, 2, 3, 0
+		};
+
+		std::unique_ptr<VertexBuffer> VertexBuffer;
+		std::unique_ptr<IndexBuffer> IndexBuffer;
 	};
 } // namespace JuicyEngine
