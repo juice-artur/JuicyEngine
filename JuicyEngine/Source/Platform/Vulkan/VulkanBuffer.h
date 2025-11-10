@@ -28,4 +28,12 @@ namespace JuicyEngine
 
 		~VulkanVertexBuffer() override;
 	};
+
+	class VulkanIndexBuffer : public VertexBuffer, public VulkanBuffer
+	{
+	public:
+		VulkanIndexBuffer(const std::vector<uint16_t>& Indexes);
+
+		~VulkanIndexBuffer() override;
+	};
 } // namespace JuicyEngine
