@@ -91,7 +91,7 @@ namespace JuicyEngine
 		};
 
 		VkCommandBuffer CommandBuffer;
-		const VkResult AllocateResult=
+		const VkResult AllocateResult =
 			vkAllocateCommandBuffers(Context->GetDevice()->GetLogicalDevice(), &AllocInfo, &CommandBuffer);
 		JE_CORE_ASSERT(AllocateResult == VK_SUCCESS, "Failed to allocate copy command buffer");
 		
@@ -99,20 +99,24 @@ namespace JuicyEngine
 		BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		BeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		vkBeginCommandBuffer(CommandBuffer, &BeginInfo);
+		const VkResult BeginResult = vkBeginCommandBuffer(CommandBuffer, &BeginInfo);
+		JE_CORE_ASSERT(BeginResult == VK_SUCCESS, "Failed to begin command buffer");
 
 		VkBufferCopy CopyRegion{};
 		CopyRegion.size = Size;
 		vkCmdCopyBuffer(CommandBuffer, SrcBuffer, DstBuffer, 1, &CopyRegion);
 
-		vkEndCommandBuffer(CommandBuffer);
-
+		const VkResult EndResult = vkEndCommandBuffer(CommandBuffer);
+		JE_CORE_ASSERT(EndResult == VK_SUCCESS, "Failed to end command buffer");
+		
 		VkSubmitInfo SubmitInfo{};
 		SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		SubmitInfo.commandBufferCount = 1;
 		SubmitInfo.pCommandBuffers = &CommandBuffer;
 
-		vkQueueSubmit(Context->GetDevice()->GetGraphicsQueue(), 1, &SubmitInfo, VK_NULL_HANDLE);
+		const VkResult SubmitResult = vkQueueSubmit(Context->GetDevice()->GetGraphicsQueue(), 1, &SubmitInfo, VK_NULL_HANDLE);
+		JE_CORE_ASSERT(SubmitResult == VK_SUCCESS, "Failed to submit copy command buffer");
+		
 		vkQueueWaitIdle(Context->GetDevice()->GetGraphicsQueue());
 
 		vkFreeCommandBuffers(Context->GetDevice()->GetLogicalDevice(), Context->GetCommandPool(), 1, &CommandBuffer);
@@ -132,7 +136,9 @@ namespace JuicyEngine
 		CreateBuffer(BufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, StagingBuffer, StagingBufferMemory);
 
 		void* Data;
-		vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
+		const VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
+		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory");
+		
 		memcpy(Data, Vertexes.data(), (size_t) BufferSize);
 		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
 
