@@ -12,8 +12,8 @@
 
 namespace JuicyEngine
 {
-	class VulkanVertexBuffer;
-	class VulkanIndexBuffer;
+	class IndexBuffer;
+	class VertexBuffer;
 	
 	class VulkanContext : public GraphicsContext
 	{
@@ -94,7 +94,7 @@ namespace JuicyEngine
 			0, 1, 2, 2, 3, 0
 		};
 
-		std::unique_ptr<VulkanVertexBuffer> VertexBuffer;
-		std::unique_ptr<VulkanIndexBuffer> IndexBuffer;
+		std::unique_ptr<VertexBuffer> VertexBuffer;
+		std::unique_ptr<IndexBuffer> IndexBuffer;
 	};
 } // namespace JuicyEngine

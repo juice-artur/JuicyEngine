@@ -25,15 +25,15 @@ namespace JuicyEngine
 	{
 	public:
 		VulkanVertexBuffer(const std::vector<Vertex>& Vertexes);
-
+		virtual void* GetNativeHandle() override;
 		~VulkanVertexBuffer() override;
 	};
 
-	class VulkanIndexBuffer : public VertexBuffer, public VulkanBuffer
+	class VulkanIndexBuffer : public IndexBuffer, public VulkanBuffer
 	{
 	public:
 		VulkanIndexBuffer(const std::vector<uint16_t>& Indexes);
-
+		virtual void* GetNativeHandle() override;
 		~VulkanIndexBuffer() override;
 	};
 } // namespace JuicyEngine

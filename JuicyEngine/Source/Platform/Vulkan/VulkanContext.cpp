@@ -39,8 +39,8 @@ namespace JuicyEngine
 		CreateGraphicsPipeline();
 		CreateSyncObjects();
 
-		VertexBuffer = std::make_unique<VulkanVertexBuffer>(Vertices);
-		IndexBuffer = std::make_unique<VulkanIndexBuffer>(Indices);
+		VertexBuffer.reset(VertexBuffer::Create(Vertices));
+		IndexBuffer.reset(IndexBuffer::Create( Indices));
 	}
 
 	void VulkanContext::SwapBuffers()
@@ -327,8 +327,8 @@ namespace JuicyEngine
 
 		VkDeviceSize Offsets[] = { 0 };
 
-		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
-		vkCmdBindIndexBuffer(CommandBuffer.GetCommandBuffer(), IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, (VkBuffer*)VertexBuffer->GetNativeHandle(), Offsets);
+		vkCmdBindIndexBuffer(CommandBuffer.GetCommandBuffer(), *(VkBuffer*)IndexBuffer->GetNativeHandle(), 0, VK_INDEX_TYPE_UINT16);
 		
 		vkCmdDrawIndexed(CommandBuffer.GetCommandBuffer(),  static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
 		RenderPass->End(CommandBuffer.GetCommandBuffer());
