@@ -94,21 +94,21 @@ namespace JuicyEngine
 		VkCommandBuffer CommandBuffer;
 		const VkResult AllocateResult =
 			vkAllocateCommandBuffers(Context->GetDevice()->GetLogicalDevice(), &AllocInfo, &CommandBuffer);
-		JE_CORE_ASSERT(AllocateResult == VK_SUCCESS, "Failed to allocate copy command buffer");
+		JE_CORE_ASSERT(AllocateResult == VK_SUCCESS, "Failed to allocate copy command buffer")
 		
 		VkCommandBufferBeginInfo BeginInfo{};
 		BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		BeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 		const VkResult BeginResult = vkBeginCommandBuffer(CommandBuffer, &BeginInfo);
-		JE_CORE_ASSERT(BeginResult == VK_SUCCESS, "Failed to begin command buffer");
+		JE_CORE_ASSERT(BeginResult == VK_SUCCESS, "Failed to begin command buffer")
 
 		VkBufferCopy CopyRegion{};
 		CopyRegion.size = Size;
 		vkCmdCopyBuffer(CommandBuffer, SrcBuffer, DstBuffer, 1, &CopyRegion);
 
 		const VkResult EndResult = vkEndCommandBuffer(CommandBuffer);
-		JE_CORE_ASSERT(EndResult == VK_SUCCESS, "Failed to end command buffer");
+		JE_CORE_ASSERT(EndResult == VK_SUCCESS, "Failed to end command buffer")
 		
 		VkSubmitInfo SubmitInfo{};
 		SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -116,7 +116,7 @@ namespace JuicyEngine
 		SubmitInfo.pCommandBuffers = &CommandBuffer;
 
 		const VkResult SubmitResult = vkQueueSubmit(Context->GetDevice()->GetGraphicsQueue(), 1, &SubmitInfo, VK_NULL_HANDLE);
-		JE_CORE_ASSERT(SubmitResult == VK_SUCCESS, "Failed to submit copy command buffer");
+		JE_CORE_ASSERT(SubmitResult == VK_SUCCESS, "Failed to submit copy command buffer")
 		
 		vkQueueWaitIdle(Context->GetDevice()->GetGraphicsQueue());
 
@@ -128,7 +128,7 @@ namespace JuicyEngine
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
 
 		const auto VertexCount = Vertexes.size();
-		JE_CORE_ASSERT(VertexCount > 0, "Vertex buffer creation requires at least one vertex");
+		JE_CORE_ASSERT(VertexCount > 0, "Vertex buffer creation requires at least one vertex")
 		
 		const VkDeviceSize BufferSize = VertexCount * sizeof(Vertex);
 
@@ -138,7 +138,7 @@ namespace JuicyEngine
 
 		void* Data;
 		const VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
-		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory");
+		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory")
 		
 		memcpy(Data, Vertexes.data(), (size_t) BufferSize);
 		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
@@ -150,17 +150,13 @@ namespace JuicyEngine
 		vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
 		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
 	}
-	void* VulkanVertexBuffer::GetNativeHandle()
-	{
-		return  &Buffer;
-	}
 
 	VulkanVertexBuffer::~VulkanVertexBuffer() {}
 	
 	VulkanIndexBuffer::VulkanIndexBuffer(const std::vector<uint16_t>& Indexes)
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-		JE_CORE_ASSERT(!Indexes.empty(), "Index buffer creation requires at least one index");
+		JE_CORE_ASSERT(!Indexes.empty(), "Index buffer creation requires at least one index")
 		VkDeviceSize BufferSize = sizeof(Indexes[0]) * Indexes.size();
 
 		VkBuffer StagingBuffer;
@@ -169,7 +165,7 @@ namespace JuicyEngine
 
 		void* Data;
 		const VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
-		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory");
+		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory")
 		
 		memcpy(Data, Indexes.data(), (size_t) BufferSize);
 		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
@@ -180,10 +176,6 @@ namespace JuicyEngine
 
 		vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
 		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
-	}
-	void* VulkanIndexBuffer::GetNativeHandle()
-	{
-		return &Buffer;
 	}
 
 	VulkanIndexBuffer::~VulkanIndexBuffer() {}

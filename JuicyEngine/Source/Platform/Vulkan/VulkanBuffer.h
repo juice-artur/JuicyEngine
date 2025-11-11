@@ -25,7 +25,6 @@ namespace JuicyEngine
 	{
 	public:
 		VulkanVertexBuffer(const std::vector<Vertex>& Vertexes);
-		virtual void* GetNativeHandle() override;
 		~VulkanVertexBuffer() override;
 	};
 
@@ -33,7 +32,6 @@ namespace JuicyEngine
 	{
 	public:
 		VulkanIndexBuffer(const std::vector<uint16_t>& Indexes);
-		virtual void* GetNativeHandle() override;
 		~VulkanIndexBuffer() override;
 	};
 } // namespace JuicyEngine

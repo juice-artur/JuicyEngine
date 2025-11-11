@@ -39,8 +39,8 @@ namespace JuicyEngine
 		CreateGraphicsPipeline();
 		CreateSyncObjects();
 
-		VertexBuffer.reset(VertexBuffer::Create(Vertices));
-		IndexBuffer.reset(IndexBuffer::Create( Indices));
+		VertexBuffer.reset(static_cast<std::unique_ptr<VulkanVertexBuffer>::pointer>(VertexBuffer::Create(Vertices)));
+		IndexBuffer.reset(static_cast<std::unique_ptr<VulkanIndexBuffer>::pointer>(IndexBuffer::Create(Indices)));
 	}
 
 	void VulkanContext::SwapBuffers()
@@ -54,18 +54,18 @@ namespace JuicyEngine
 		VkSubmitInfo SubmitInfo {};
 		SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkSemaphore waitSemaphores[] = { ImageAvailableSemaphore };
-		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		VkSemaphore WaitSemaphores[] = { ImageAvailableSemaphore };
+		VkPipelineStageFlags WaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		SubmitInfo.waitSemaphoreCount = 1;
-		SubmitInfo.pWaitSemaphores = waitSemaphores;
-		SubmitInfo.pWaitDstStageMask = waitStages;
+		SubmitInfo.pWaitSemaphores = WaitSemaphores;
+		SubmitInfo.pWaitDstStageMask = WaitStages;
 
 		SubmitInfo.commandBufferCount = 1;
 		SubmitInfo.pCommandBuffers = &CommandBuffer.GetCommandBuffer();
 
-		VkSemaphore signalSemaphores[] = { RenderFinishedSemaphore };
+		VkSemaphore SignalSemaphores[] = { RenderFinishedSemaphore };
 		SubmitInfo.signalSemaphoreCount = 1;
-		SubmitInfo.pSignalSemaphores = signalSemaphores;
+		SubmitInfo.pSignalSemaphores = SignalSemaphores;
 
 		auto QueueSubmitResult = vkQueueSubmit(Device->GetGraphicsQueue(), 1, &SubmitInfo, InFlightFence);
 		JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!")
@@ -74,11 +74,11 @@ namespace JuicyEngine
 		PresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 		PresentInfo.waitSemaphoreCount = 1;
-		PresentInfo.pWaitSemaphores = signalSemaphores;
+		PresentInfo.pWaitSemaphores = SignalSemaphores;
 
-		VkSwapchainKHR swapChains[] = { SwapChain.GetSwapChain() };
+		VkSwapchainKHR SwapChains[] = { SwapChain.GetSwapChain() };
 		PresentInfo.swapchainCount = 1;
-		PresentInfo.pSwapchains = swapChains;
+		PresentInfo.pSwapchains = SwapChains;
 
 		PresentInfo.pImageIndices = &RenderPass->SwapChainImageIndex;
 
@@ -327,8 +327,8 @@ namespace JuicyEngine
 
 		VkDeviceSize Offsets[] = { 0 };
 
-		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, (VkBuffer*)VertexBuffer->GetNativeHandle(), Offsets);
-		vkCmdBindIndexBuffer(CommandBuffer.GetCommandBuffer(), *(VkBuffer*)IndexBuffer->GetNativeHandle(), 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
+		vkCmdBindIndexBuffer(CommandBuffer.GetCommandBuffer(), IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
 		
 		vkCmdDrawIndexed(CommandBuffer.GetCommandBuffer(),  static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
 		RenderPass->End(CommandBuffer.GetCommandBuffer());
@@ -354,12 +354,12 @@ namespace JuicyEngine
 		}
 	}
 
-	VkBool32 VulkanContext::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkBool32 VulkanContext::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT MessageSeverity,
 	                                      VkDebugUtilsMessageTypeFlagsEXT messageType,
 	                                      const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	                                      void* pUserData)
 	{
-		switch (messageSeverity)
+		switch (MessageSeverity)
 		{
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
 				JE_CORE_TRACE("[VULKAN] {0}", pCallbackData->pMessage);

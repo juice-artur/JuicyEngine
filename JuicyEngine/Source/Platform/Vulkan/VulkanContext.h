@@ -12,6 +12,8 @@
 
 namespace JuicyEngine
 {
+	class VulkanIndexBuffer;
+	class VulkanVertexBuffer;
 	class IndexBuffer;
 	class VertexBuffer;
 	
@@ -57,7 +59,7 @@ namespace JuicyEngine
 
 		void CreateSyncObjects();
 
-		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT MessageSeverity,
 		                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
 		                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		                                                    void* pUserData);
@@ -94,7 +96,7 @@ namespace JuicyEngine
 			0, 1, 2, 2, 3, 0
 		};
 
-		std::unique_ptr<VertexBuffer> VertexBuffer;
-		std::unique_ptr<IndexBuffer> IndexBuffer;
+		std::unique_ptr<VulkanVertexBuffer> VertexBuffer;
+		std::unique_ptr<VulkanIndexBuffer> IndexBuffer;
 	};
 } // namespace JuicyEngine
