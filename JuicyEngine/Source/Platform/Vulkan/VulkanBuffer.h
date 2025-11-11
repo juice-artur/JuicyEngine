@@ -34,4 +34,12 @@ namespace JuicyEngine
 		VulkanIndexBuffer(const std::vector<uint16_t>& Indexes);
 		~VulkanIndexBuffer() override;
 	};
+
+	class VulkanUniformBuffer : public UniformBuffer, public VulkanBuffer
+	{
+	public:
+		VulkanUniformBuffer(int Size);
+		~VulkanUniformBuffer() override;
+		void UploadData(int Size, void* Data) override;
+	}; 
 } // namespace JuicyEngine

@@ -13,7 +13,7 @@ namespace JuicyEngine
 	{
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
 
-		VkVertexInputBindingDescription BindingDescriptions {
+		VkVertexInputBindingDescription BindingDescriptions = {
 			.binding = 0,
 			.stride = sizeof(Vertex),
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
@@ -57,7 +57,7 @@ namespace JuicyEngine
 		Rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		Rasterizer.lineWidth = 1.0f;
 		Rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-		Rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		Rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		Rasterizer.depthBiasEnable = VK_FALSE;
 
 		VkPipelineMultisampleStateCreateInfo Multisampling {};
@@ -88,9 +88,25 @@ namespace JuicyEngine
 		DynamicState.dynamicStateCount = static_cast<uint32_t>(DynamicStates.size());
 		DynamicState.pDynamicStates = DynamicStates.data();
 
+		VkDescriptorSetLayoutBinding UboLayoutBinding{};
+		UboLayoutBinding.binding = 0;
+		UboLayoutBinding.descriptorCount = 1;
+		UboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		UboLayoutBinding.pImmutableSamplers = nullptr;
+		UboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		VkDescriptorSetLayoutCreateInfo LayoutInfo{};
+		LayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		LayoutInfo.bindingCount = 1;
+		LayoutInfo.pBindings = &UboLayoutBinding;
+
+		auto CreateDescriptorResult = vkCreateDescriptorSetLayout( Context->GetDevice()->GetLogicalDevice(), &LayoutInfo, nullptr, &DescriptorSetLayout);
+		JE_CORE_ASSERT(CreateDescriptorResult == VK_SUCCESS, "Failed to create descriptor set layout!")
+		
 		VkPipelineLayoutCreateInfo PipelineLayoutInfo {};
 		PipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		PipelineLayoutInfo.setLayoutCount = 0;
+		PipelineLayoutInfo.setLayoutCount = 1;
+		PipelineLayoutInfo.pSetLayouts = &DescriptorSetLayout;
 		PipelineLayoutInfo.pushConstantRangeCount = 0;
 
 		auto PipelineLayoutResult = vkCreatePipelineLayout(
@@ -113,6 +129,7 @@ namespace JuicyEngine
 		PipelineInfo.renderPass = Info.RenderPass->GetVulkanRenderPass();
 		PipelineInfo.subpass = 0;
 		PipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+		
 		auto Result = vkCreateGraphicsPipelines(
 		    Context->GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline);
 
@@ -124,10 +141,19 @@ namespace JuicyEngine
 		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
 		vkDestroyPipeline(Context->GetDevice()->GetLogicalDevice(), Pipeline, nullptr);
 		vkDestroyPipelineLayout(Context->GetDevice()->GetLogicalDevice(), PipelineLayout, nullptr);
+		vkDestroyDescriptorSetLayout(Context->GetDevice()->GetLogicalDevice(), DescriptorSetLayout, nullptr);
 	}
 
 	void VulkanPipeline::Bind(VkCommandBuffer CommandBuffer)
 	{
 		vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline);
+	}
+	VkDescriptorSetLayout& VulkanPipeline::GetDescriptorSetLayout()
+	{
+		return DescriptorSetLayout;
+	}
+	VkPipelineLayout& VulkanPipeline::GetPipelineLayout()
+	{
+		return PipelineLayout;
 	}
 } // namespace JuicyEngine

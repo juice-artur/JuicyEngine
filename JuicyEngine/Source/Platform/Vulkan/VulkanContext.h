@@ -12,6 +12,7 @@
 
 namespace JuicyEngine
 {
+	class VulkanUniformBuffer;
 	class VulkanIndexBuffer;
 	class VulkanVertexBuffer;
 	class IndexBuffer;
@@ -64,6 +65,9 @@ namespace JuicyEngine
 		                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		                                                    void* pUserData);
 
+		void СreateDescriptorPool();
+		void CreateDescriptorSets();
+
 	private:
 		VkInstance Instance;
 		VkDebugUtilsMessengerEXT DebugMessenger;
@@ -74,13 +78,13 @@ namespace JuicyEngine
 		VulkanPipeline GraphicsPipeline;
 		std::shared_ptr<VulkanRenderPass> RenderPass = std::make_shared<VulkanRenderPass>();
 		VkCommandPool CommandPool = VK_NULL_HANDLE;
-
+		VkDescriptorSet DescriptorSet;
 		VulkanRenderCommandBuffer CommandBuffer;
 
 		VkSemaphore ImageAvailableSemaphore;
 		VkSemaphore RenderFinishedSemaphore;
 		VkFence InFlightFence;
-
+		VkDescriptorPool DescriptorPool;
 		void* WindowPtr = nullptr;
 
 		bool Skip = false;
@@ -96,7 +100,11 @@ namespace JuicyEngine
 			0, 1, 2, 2, 3, 0
 		};
 
+		UniformBufferObject Ubo{};
+		
+
 		std::unique_ptr<VulkanVertexBuffer> VertexBuffer;
 		std::unique_ptr<VulkanIndexBuffer> IndexBuffer;
+		std::unique_ptr<VulkanUniformBuffer> UniformBuffer;
 	};
 } // namespace JuicyEngine

@@ -179,4 +179,23 @@ namespace JuicyEngine
 	}
 
 	VulkanIndexBuffer::~VulkanIndexBuffer() {}
+	
+	VulkanUniformBuffer::VulkanUniformBuffer(int Size)
+	{
+		CreateBuffer(Size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, Buffer, BufferMemory);
+	}
+	
+	VulkanUniformBuffer::~VulkanUniformBuffer() {}
+	
+	void VulkanUniformBuffer::UploadData(int Size, void* Data)
+	{
+		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+    
+		void* MappedData = nullptr;
+		VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, 0, Size, 0, &MappedData);
+		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map uniform buffer memory");
+
+		memcpy(MappedData, Data, Size);
+		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory);
+	}
 } // namespace JuicyEngine

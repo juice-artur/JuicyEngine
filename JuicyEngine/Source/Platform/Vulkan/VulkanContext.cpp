@@ -7,6 +7,9 @@
 #include "VulkanShader.h"
 #include "Core/Core.h"
 #include "Renderer/Pipeline.h"
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace JuicyEngine
 {
@@ -38,9 +41,25 @@ namespace JuicyEngine
 		CommandBuffer.Init(Device->GetLogicalDevice(), CommandPool);
 		CreateGraphicsPipeline();
 		CreateSyncObjects();
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		
+		Ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		Ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		Ubo.Proj = glm::perspective(glm::radians(45.0f), SwapChain.GetExtent().width / (float) SwapChain.GetExtent().height, 0.1f, 10.0f);
+		Ubo.Proj[1][1] *= -1;
+		
 
 		VertexBuffer.reset(static_cast<std::unique_ptr<VulkanVertexBuffer>::pointer>(VertexBuffer::Create(Vertices)));
 		IndexBuffer.reset(static_cast<std::unique_ptr<VulkanIndexBuffer>::pointer>(IndexBuffer::Create(Indices)));
+		UniformBuffer.reset(static_cast<std::unique_ptr<VulkanUniformBuffer>::pointer>(UniformBuffer::Create(sizeof(Ubo))));
+
+		UniformBuffer->UploadData(sizeof(Ubo), &Ubo);
+
+		СreateDescriptorPool();
+		CreateDescriptorSets();
 	}
 
 	void VulkanContext::SwapBuffers()
@@ -92,11 +111,13 @@ namespace JuicyEngine
 		vkDestroySemaphore(Device->GetLogicalDevice(), RenderFinishedSemaphore, nullptr);
 		vkDestroyFence(Device->GetLogicalDevice(), InFlightFence, nullptr);
 		vkDestroyCommandPool(Device->GetLogicalDevice(), CommandPool, nullptr);
+		vkDestroyDescriptorPool(Device->GetLogicalDevice(), DescriptorPool, nullptr);
 		GraphicsPipeline.Shutdown();
 		RenderPass->Shutdown();
 		RenderPass.reset();
 		VertexBuffer.reset();
 		IndexBuffer.reset();
+		UniformBuffer.reset();
 		SwapChain.Shutdown();
 		delete Device;
 
@@ -166,13 +187,16 @@ namespace JuicyEngine
 	
 	bool VulkanContext::InitInstance()
 	{
-		VkApplicationInfo AppInfo = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-			                          .pNext = nullptr,
-			                          .pApplicationName = "JuicyEngine",
-			                          .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-			                          .pEngineName = "JuicyEngine",
-			                          .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-			                          .apiVersion = VK_API_VERSION_1_3 };
+		VkApplicationInfo AppInfo =
+		{
+			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			.pNext = nullptr,
+			.pApplicationName = "JuicyEngine",
+			.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+			.pEngineName = "JuicyEngine",
+			.engineVersion = VK_MAKE_VERSION(1, 0, 0),
+			.apiVersion = VK_API_VERSION_1_3
+		};
 
 		VkDebugUtilsMessengerCreateInfoEXT DebugCreateInfo {};
 		PopulateDebugMessengerCreateInfo(DebugCreateInfo);
@@ -327,8 +351,10 @@ namespace JuicyEngine
 
 		VkDeviceSize Offsets[] = { 0 };
 
+		UniformBuffer->UploadData(sizeof(Ubo), &Ubo);
 		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
 		vkCmdBindIndexBuffer(CommandBuffer.GetCommandBuffer(), IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindDescriptorSets(CommandBuffer.GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, GraphicsPipeline.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 		
 		vkCmdDrawIndexed(CommandBuffer.GetCommandBuffer(),  static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
 		RenderPass->End(CommandBuffer.GetCommandBuffer());
@@ -337,18 +363,18 @@ namespace JuicyEngine
 
 	void VulkanContext::CreateSyncObjects()
 	{
-		VkSemaphoreCreateInfo semaphoreInfo {};
-		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		VkSemaphoreCreateInfo SemaphoreInfo {};
+		SemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-		VkFenceCreateInfo fenceInfo {};
-		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		VkFenceCreateInfo FenceInfo {};
+		FenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		FenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		if (vkCreateSemaphore(Device->GetLogicalDevice(), &semaphoreInfo, nullptr, &ImageAvailableSemaphore)
+		if (vkCreateSemaphore(Device->GetLogicalDevice(), &SemaphoreInfo, nullptr, &ImageAvailableSemaphore)
 		        != VK_SUCCESS
-		    || vkCreateSemaphore(Device->GetLogicalDevice(), &semaphoreInfo, nullptr, &RenderFinishedSemaphore)
+		    || vkCreateSemaphore(Device->GetLogicalDevice(), &SemaphoreInfo, nullptr, &RenderFinishedSemaphore)
 		           != VK_SUCCESS
-		    || vkCreateFence(Device->GetLogicalDevice(), &fenceInfo, nullptr, &InFlightFence) != VK_SUCCESS)
+		    || vkCreateFence(Device->GetLogicalDevice(), &FenceInfo, nullptr, &InFlightFence) != VK_SUCCESS)
 		{
 			JE_CORE_ASSERT(false, "failed to create synchronization objects for a frame!")
 		}
@@ -378,5 +404,51 @@ namespace JuicyEngine
 		}
 
 		return VK_FALSE;
+	}
+	void VulkanContext::СreateDescriptorPool()
+	{
+		VkDescriptorPoolSize PoolSize =
+		{
+			PoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			PoolSize.descriptorCount = 1	
+		};
+
+		VkDescriptorPoolCreateInfo PoolInfo{};
+		PoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		PoolInfo.poolSizeCount = 1;
+		PoolInfo.pPoolSizes = &PoolSize;
+		PoolInfo.maxSets = 1;
+
+		auto Result = vkCreateDescriptorPool(Device->GetLogicalDevice(), &PoolInfo, nullptr, &DescriptorPool);
+		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create descriptor pool!")
+	}
+	
+	void VulkanContext::CreateDescriptorSets()
+	{
+		VkDescriptorSetAllocateInfo AllocInfo{};
+		AllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		AllocInfo.descriptorPool = DescriptorPool;
+		AllocInfo.descriptorSetCount = 1;
+		AllocInfo.pSetLayouts = &GraphicsPipeline.GetDescriptorSetLayout();
+
+		auto Result = vkAllocateDescriptorSets(Device->GetLogicalDevice(), &AllocInfo, &DescriptorSet);
+		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create descriptor set!")
+		
+		VkDescriptorBufferInfo BufferInfo =
+		{
+			.buffer = UniformBuffer->GetBuffer(),
+			.offset = 0,
+			.range = sizeof(UniformBufferObject)
+		};
+		
+		VkWriteDescriptorSet DescriptorWrite{};
+		DescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		DescriptorWrite.dstSet = DescriptorSet;
+		DescriptorWrite.dstBinding = 0;
+		DescriptorWrite.dstArrayElement = 0;
+		DescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		DescriptorWrite.descriptorCount = 1;
+		DescriptorWrite.pBufferInfo = &BufferInfo;
+		vkUpdateDescriptorSets(Device->GetLogicalDevice(), 1, &DescriptorWrite, 0, nullptr);
 	}
 } // namespace JuicyEngine

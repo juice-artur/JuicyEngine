@@ -9,7 +9,7 @@ std::vector<char> JuicyEngine::VulkanShader::ReadFile(const std::string& Filenam
 {
 	std::ifstream File(Filename, std::ios::ate | std::ios::binary);
 
-	JE_CORE_ASSERT(File.is_open(), "Failed to open file!");
+	JE_CORE_ASSERT(File.is_open(), "Failed to open file!")
 
 	size_t FileSize = File.tellg();
 	std::vector<char> Buffer(FileSize);
@@ -32,7 +32,7 @@ VkShaderModule JuicyEngine::VulkanShader::CreateShaderModule(VkDevice Device, co
 	VkShaderModule ShaderModule;
 	auto Result = vkCreateShaderModule(Device, &createInfo, nullptr, &ShaderModule);
 
-	JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create shader module!");
+	JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create shader module!")
 
 	return ShaderModule;
 }

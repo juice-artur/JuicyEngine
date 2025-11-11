@@ -20,9 +20,11 @@ namespace JuicyEngine
 		ColorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		ColorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-		VkAttachmentReference ColorAttachmentRef {};
-		ColorAttachmentRef.attachment = 0;
-		ColorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		VkAttachmentReference ColorAttachmentRef =
+		{
+			.attachment = 0,
+			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		};
 
 		VkSubpassDescription Subpass {};
 		Subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;

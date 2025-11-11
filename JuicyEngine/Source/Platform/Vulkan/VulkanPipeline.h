@@ -15,8 +15,13 @@ namespace JuicyEngine
 
 		void Bind(VkCommandBuffer CommandBuffer);
 
+		VkDescriptorSetLayout& GetDescriptorSetLayout();
+
+		VkPipelineLayout& GetPipelineLayout();
+
 	private:
 		VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
 		VkPipeline Pipeline = VK_NULL_HANDLE;
+		VkDescriptorSetLayout DescriptorSetLayout = VK_NULL_HANDLE;
 	};
 } // namespace JuicyEngine

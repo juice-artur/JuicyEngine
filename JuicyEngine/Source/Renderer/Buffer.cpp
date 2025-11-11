@@ -13,4 +13,9 @@ namespace JuicyEngine
 	{
 		return new VulkanIndexBuffer(Indices);
 	}
+	
+	UniformBuffer* UniformBuffer::Create(int Size)
+	{
+		return new VulkanUniformBuffer(Size);
+	}
 } // namespace JuicyEngine
