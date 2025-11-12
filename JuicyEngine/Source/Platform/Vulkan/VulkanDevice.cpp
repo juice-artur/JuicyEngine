@@ -59,8 +59,11 @@ namespace JuicyEngine
 			SwapChainSupportDetails SwapChainSupport = VulkanSwapChain::QuerySwapChainSupport(Device, Surface);
 			bSwapChainAdequate = !SwapChainSupport.Formats.empty() && !SwapChainSupport.PresentModes.empty();
 		}
-
-		return Indices.IsComplete() && bExtensionsSupported && bSwapChainAdequate;
+		
+		VkPhysicalDeviceFeatures SupportedFeatures;
+		vkGetPhysicalDeviceFeatures(Device, &SupportedFeatures);
+		
+		return Indices.IsComplete() && bExtensionsSupported && bSwapChainAdequate && SupportedFeatures.samplerAnisotropy;
 	}
 
 	bool VulkanDevice::IsDeviceExtensionSupport(VkPhysicalDevice Device)
@@ -99,6 +102,7 @@ namespace JuicyEngine
 		}
 
 		VkPhysicalDeviceFeatures DeviceFeatures {};
+		DeviceFeatures.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo DeviceCreateInfo {};
 		DeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
