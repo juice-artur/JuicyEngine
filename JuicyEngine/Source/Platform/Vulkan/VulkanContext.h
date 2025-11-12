@@ -1,11 +1,15 @@
 #pragma once
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
 #include "VulkanCommandBuffer.h"
 #include "VulkanDevice.h"
 #include "VulkanPipeline.h"
 #include "VulkanRenderPass.h"
 #include "VulkanSurface.h"
 #include "VulkanSwapChain.h"
+#include "VulkanTexture2D.h"
 #include "Renderer/GraphicsContext.h"
 #include "Renderer/Mesh.h"
 #include "vulkan/vulkan.h"
@@ -41,6 +45,10 @@ namespace JuicyEngine
 
 		~VulkanContext() override;
 
+		VkFormat FindDepthFormat();
+
+		VkImageView& GetDepthImageView();
+
 	private:
 		bool InitInstance();
 		void SetupDebugMessenger();
@@ -68,6 +76,9 @@ namespace JuicyEngine
 		void СreateDescriptorPool();
 		void CreateDescriptorSets();
 
+		void CreateDepthResources();
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& Candidates, VkImageTiling Tiling,
+		VkFormatFeatureFlags Features);
 	private:
 		VkInstance Instance;
 		VkDebugUtilsMessengerEXT DebugMessenger;
@@ -81,6 +92,10 @@ namespace JuicyEngine
 		VkDescriptorSet DescriptorSet;
 		VulkanRenderCommandBuffer CommandBuffer;
 
+		VkImage DepthImage;
+		VkDeviceMemory DepthImageMemory;
+		VkImageView DepthImageView;
+
 		VkSemaphore ImageAvailableSemaphore;
 		VkSemaphore RenderFinishedSemaphore;
 		VkFence InFlightFence;
@@ -90,14 +105,20 @@ namespace JuicyEngine
 		bool Skip = false;
 
 		const std::vector<Vertex> Vertices = {
-            {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
-        };
+			{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+		};
 
 		const std::vector<uint16_t> Indices = {
-			0, 1, 2, 2, 3, 0
+			0, 1, 2, 2, 3, 0,
+			4, 5, 6, 6, 7, 4
 		};
 
 		UniformBufferObject Ubo{};
@@ -106,5 +127,6 @@ namespace JuicyEngine
 		std::unique_ptr<VulkanVertexBuffer> VertexBuffer;
 		std::unique_ptr<VulkanIndexBuffer> IndexBuffer;
 		std::unique_ptr<VulkanUniformBuffer> UniformBuffer;
+		std::unique_ptr<VulkanTexture2D> Texture;
 	};
 } // namespace JuicyEngine

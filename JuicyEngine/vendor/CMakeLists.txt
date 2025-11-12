@@ -1,6 +1,7 @@
 add_subdirectory(SDL)
 add_subdirectory(spdlog)
 add_subdirectory(glm)
+add_subdirectory(stb)
 
 find_package(Vulkan REQUIRED)
 
@@ -9,4 +10,6 @@ target_link_libraries(vendor INTERFACE
 glm::glm
 SDL3::SDL3 
 spdlog::spdlog
-Vulkan::Vulkan)
+Vulkan::Vulkan
+stb
+)
