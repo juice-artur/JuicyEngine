@@ -6,8 +6,9 @@ namespace JuicyEngine
 {
 	struct Vertex
 	{
-		glm::vec2 Position;
+		glm::vec3 Position;
 		glm::vec3 Color;
+		glm::vec2 TexCoord;
 	};
 
 	struct UniformBufferObject {

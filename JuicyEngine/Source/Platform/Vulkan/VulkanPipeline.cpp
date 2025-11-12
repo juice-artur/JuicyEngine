@@ -4,8 +4,8 @@
 #include "Core/Core.h"
 #include "Renderer/Mesh.h"
 #include "Renderer/Pipeline.h"
-
 #include <array>
+
 
 namespace JuicyEngine
 {
@@ -19,11 +19,11 @@ namespace JuicyEngine
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
 		};
 
-		std::array<VkVertexInputAttributeDescription, 2> AttributeDescriptions {};
+		std::array<VkVertexInputAttributeDescription, 3> AttributeDescriptions {};
 
 		AttributeDescriptions[0].binding = 0;
 		AttributeDescriptions[0].location = 0;
-		AttributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		AttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		AttributeDescriptions[0].offset = offsetof(Vertex, Position);
 
 		AttributeDescriptions[1].binding = 0;
@@ -31,13 +31,18 @@ namespace JuicyEngine
 		AttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		AttributeDescriptions[1].offset = offsetof(Vertex, Color);
 
+		AttributeDescriptions[2].binding = 0;
+		AttributeDescriptions[2].location = 2;
+		AttributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+		AttributeDescriptions[2].offset = offsetof(Vertex, TexCoord);
+
 		VkPipelineVertexInputStateCreateInfo VertexInputInfo {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = 0,
 			.vertexBindingDescriptionCount = 1,
 			.pVertexBindingDescriptions = &BindingDescriptions,
-			.vertexAttributeDescriptionCount = 2,
+			.vertexAttributeDescriptionCount = AttributeDescriptions.size(),
 			.pVertexAttributeDescriptions = AttributeDescriptions.data(),
 		};
 
@@ -64,6 +69,15 @@ namespace JuicyEngine
 		Multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		Multisampling.sampleShadingEnable = VK_FALSE;
 		Multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		
+		VkPipelineDepthStencilStateCreateInfo DepthStencil{};
+		DepthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		DepthStencil.depthTestEnable = VK_TRUE;
+		DepthStencil.depthWriteEnable = VK_TRUE;
+		DepthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		DepthStencil.depthBoundsTestEnable = VK_FALSE;
+		DepthStencil.stencilTestEnable = VK_FALSE;
+		
 
 		VkPipelineColorBlendAttachmentState ColorBlendAttachment {};
 		ColorBlendAttachment.colorWriteMask
@@ -94,11 +108,20 @@ namespace JuicyEngine
 		UboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		UboLayoutBinding.pImmutableSamplers = nullptr;
 		UboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
+		
+		VkDescriptorSetLayoutBinding SamplerLayoutBinding{};
+		SamplerLayoutBinding.binding = 1;
+		SamplerLayoutBinding.descriptorCount = 1;
+		SamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		SamplerLayoutBinding.pImmutableSamplers = nullptr;
+		SamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		
+		std::array<VkDescriptorSetLayoutBinding, 2> Bindings = {UboLayoutBinding, SamplerLayoutBinding};
+		
 		VkDescriptorSetLayoutCreateInfo LayoutInfo{};
 		LayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		LayoutInfo.bindingCount = 1;
-		LayoutInfo.pBindings = &UboLayoutBinding;
+		LayoutInfo.bindingCount = static_cast<uint32_t>(Bindings.size());
+		LayoutInfo.pBindings = Bindings.data();
 
 		auto CreateDescriptorResult = vkCreateDescriptorSetLayout( Context->GetDevice()->GetLogicalDevice(), &LayoutInfo, nullptr, &DescriptorSetLayout);
 		JE_CORE_ASSERT(CreateDescriptorResult == VK_SUCCESS, "Failed to create descriptor set layout!")
@@ -128,12 +151,13 @@ namespace JuicyEngine
 		PipelineInfo.layout = PipelineLayout;
 		PipelineInfo.renderPass = Info.RenderPass->GetVulkanRenderPass();
 		PipelineInfo.subpass = 0;
+		PipelineInfo.pDepthStencilState = &DepthStencil;
 		PipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 		
 		auto Result = vkCreateGraphicsPipelines(
 		    Context->GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline);
 
-		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create graphics pipeline!");
+		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create graphics pipeline!")
 	}
 
 	void VulkanPipeline::Shutdown()

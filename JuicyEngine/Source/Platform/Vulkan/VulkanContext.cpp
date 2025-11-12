@@ -8,6 +8,7 @@
 #include "Core/Core.h"
 #include "Renderer/Pipeline.h"
 #define GLM_FORCE_RADIANS
+#include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -35,8 +36,9 @@ namespace JuicyEngine
 		JE_CORE_ASSERT(CreateCommandPoolResult == VK_SUCCESS,
 		               "Failed to create vulkan Instance: {0}",
 		               string_VkResult(CreateCommandPoolResult))
-
+		
 		SwapChain.Init(Surface->GetSurface(), Window);
+		CreateDepthResources();
 		RenderPass->CreateRenderPass(SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
 		CommandBuffer.Init(Device->GetLogicalDevice(), CommandPool);
 		CreateGraphicsPipeline();
@@ -51,11 +53,11 @@ namespace JuicyEngine
 		Ubo.Proj = glm::perspective(glm::radians(45.0f), SwapChain.GetExtent().width / (float) SwapChain.GetExtent().height, 0.1f, 10.0f);
 		Ubo.Proj[1][1] *= -1;
 		
-
+		
 		VertexBuffer.reset(static_cast<std::unique_ptr<VulkanVertexBuffer>::pointer>(VertexBuffer::Create(Vertices)));
 		IndexBuffer.reset(static_cast<std::unique_ptr<VulkanIndexBuffer>::pointer>(IndexBuffer::Create(Indices)));
 		UniformBuffer.reset(static_cast<std::unique_ptr<VulkanUniformBuffer>::pointer>(UniformBuffer::Create(sizeof(Ubo))));
-
+		Texture.reset(new VulkanTexture2D("Assets/Textures/statue.jpg"));
 		UniformBuffer->UploadData(sizeof(Ubo), &Ubo);
 
 		СreateDescriptorPool();
@@ -117,7 +119,11 @@ namespace JuicyEngine
 		RenderPass.reset();
 		VertexBuffer.reset();
 		IndexBuffer.reset();
+		Texture.reset();
 		UniformBuffer.reset();
+		vkDestroyImageView(Device->GetLogicalDevice(), DepthImageView, nullptr);
+		vkDestroyImage(Device->GetLogicalDevice(), DepthImage, nullptr);
+		vkFreeMemory(Device->GetLogicalDevice(), DepthImageMemory, nullptr);
 		SwapChain.Shutdown();
 		delete Device;
 
@@ -376,7 +382,7 @@ namespace JuicyEngine
 		           != VK_SUCCESS
 		    || vkCreateFence(Device->GetLogicalDevice(), &FenceInfo, nullptr, &InFlightFence) != VK_SUCCESS)
 		{
-			JE_CORE_ASSERT(false, "failed to create synchronization objects for a frame!")
+			JE_CORE_ASSERT(false, "Failed to create synchronization objects for a frame!")
 		}
 	}
 
@@ -440,15 +446,66 @@ namespace JuicyEngine
 			.offset = 0,
 			.range = sizeof(UniformBufferObject)
 		};
+
+		VkDescriptorImageInfo ImageInfo{};
+		ImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		ImageInfo.imageView = Texture->GetImageView();
+		ImageInfo.sampler = Texture->GetSampler();
+
+		std::array<VkWriteDescriptorSet, 2> DescriptorWrites{};
+
+		DescriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		DescriptorWrites[0].dstSet = DescriptorSet;
+		DescriptorWrites[0].dstBinding = 0;
+		DescriptorWrites[0].dstArrayElement = 0;
+		DescriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		DescriptorWrites[0].descriptorCount = 1;
+		DescriptorWrites[0].pBufferInfo = &BufferInfo;
+
+		DescriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		DescriptorWrites[1].dstSet = DescriptorSet;
+		DescriptorWrites[1].dstBinding = 1;
+		DescriptorWrites[1].dstArrayElement = 0;
+		DescriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		DescriptorWrites[1].descriptorCount = 1;
+		DescriptorWrites[1].pImageInfo = &ImageInfo;
 		
-		VkWriteDescriptorSet DescriptorWrite{};
-		DescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		DescriptorWrite.dstSet = DescriptorSet;
-		DescriptorWrite.dstBinding = 0;
-		DescriptorWrite.dstArrayElement = 0;
-		DescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		DescriptorWrite.descriptorCount = 1;
-		DescriptorWrite.pBufferInfo = &BufferInfo;
-		vkUpdateDescriptorSets(Device->GetLogicalDevice(), 1, &DescriptorWrite, 0, nullptr);
+		vkUpdateDescriptorSets(Device->GetLogicalDevice(), DescriptorWrites.size(), DescriptorWrites.data(), 0, nullptr);
+	}
+	void VulkanContext::CreateDepthResources()
+	{
+		VkFormat DepthFormat = FindDepthFormat();
+		VulkanTexture2D::CreateImage(SwapChain.GetExtent().width, SwapChain.GetExtent().height, DepthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, DepthImage, DepthImageMemory);
+		DepthImageView = VulkanTexture2D::CreateImageView(DepthImage, DepthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	}
+	VkFormat VulkanContext::FindDepthFormat()
+	{
+		return FindSupportedFormat(
+			{VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+		);
+	}
+	VkImageView& VulkanContext::GetDepthImageView()
+	{
+		return DepthImageView;
+	}
+	VkFormat VulkanContext::FindSupportedFormat(const std::vector<VkFormat>& Candidates,
+	                                            VkImageTiling Tiling,
+	                                            VkFormatFeatureFlags Features)
+	{
+		for (VkFormat Format : Candidates) {
+			VkFormatProperties Props;
+			vkGetPhysicalDeviceFormatProperties(Device->GetPhysicalDevice(), Format, &Props);
+
+			if (Tiling == VK_IMAGE_TILING_LINEAR && (Props.linearTilingFeatures & Features) == Features) {
+				return Format;
+			}
+			else if (Tiling == VK_IMAGE_TILING_OPTIMAL && (Props.optimalTilingFeatures & Features) == Features) {
+				return Format;
+			}
+		}
+
+		JE_CORE_ASSERT(false, "Failed to find supported format!")
 	}
 } // namespace JuicyEngine

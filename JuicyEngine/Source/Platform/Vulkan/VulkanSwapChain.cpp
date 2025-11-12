@@ -76,7 +76,7 @@ namespace JuicyEngine
 
 		VkResult Result
 		    = vkCreateSwapchainKHR(Context->GetDevice()->GetLogicalDevice(), &SwapchainCreateInfo, nullptr, &SwapChain);
-		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create Swap Chain!");
+		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create Swap Chain!")
 
 		vkGetSwapchainImagesKHR(Context->GetDevice()->GetLogicalDevice(), SwapChain, &ImageCount, nullptr);
 		SwapChainImages.resize(ImageCount);
@@ -116,7 +116,7 @@ namespace JuicyEngine
 
 	VkSurfaceFormatKHR VulkanSwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& AvailableFormats)
 	{
-		JE_CORE_ASSERT(!AvailableFormats.empty(), "No surface formats available");
+		JE_CORE_ASSERT(!AvailableFormats.empty(), "No surface formats available")
 		for (const auto& AvailableFormat : AvailableFormats)
 		{
 			if (AvailableFormat.format == VK_FORMAT_B8G8R8A8_SRGB
@@ -204,7 +204,7 @@ namespace JuicyEngine
 			createInfo.subresourceRange.layerCount = 1;
 
 			auto Result = vkCreateImageView(Device, &createInfo, nullptr, &SwapChainImageViews[i]);
-			JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create image views!");
+			JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create image views!")
 		}
 	}
 } // namespace JuicyEngine

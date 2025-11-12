@@ -46,6 +46,10 @@ set(SOURCES
     Source/Platform/Vulkan/VulkanCommandBuffer.cpp
     Source/Platform/Vulkan/VulkanBuffer.h
     Source/Platform/Vulkan/VulkanBuffer.cpp
+    Source/Platform/Vulkan/VulkanTexture2D.h
+    Source/Platform/Vulkan/VulkanTexture2D.cpp
+    Source/Platform/Vulkan/VulkanUtils.h
+    Source/Platform/Vulkan/VulkanUtils.cpp
 )
 
 
