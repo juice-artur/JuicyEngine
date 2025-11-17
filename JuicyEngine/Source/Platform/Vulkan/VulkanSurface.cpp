@@ -11,7 +11,7 @@ namespace JuicyEngine
 
 	void VulkanSurface::Init(void* Window)
 	{
-		JE_CORE_ASSERT(Window, "Window handle is null!");
+		JE_CORE_ASSERT(Window, "Window handle is null!")
 
 		HINSTANCE hInstance = GetModuleHandle(nullptr);
 
@@ -21,7 +21,7 @@ namespace JuicyEngine
 		SurfaceCreateInfo.hwnd = static_cast<HWND>(Window);
 
 		VkResult result = vkCreateWin32SurfaceKHR(Instance, &SurfaceCreateInfo, nullptr, &Surface);
-		JE_CORE_ASSERT(result == VK_SUCCESS, "Failed to create Win32 Vulkan surface!");
+		JE_CORE_ASSERT(result == VK_SUCCESS, "Failed to create Win32 Vulkan surface!")
 	}
 
 	void VulkanSurface::Shutdown()

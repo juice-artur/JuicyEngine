@@ -31,7 +31,7 @@ namespace JuicyEngine
 		uint32_t DeviceCount = 0;
 		vkEnumeratePhysicalDevices(Instance, &DeviceCount, nullptr);
 
-		JE_CORE_ASSERT(DeviceCount, "Failed to find GPUs with Vulkan support!");
+		JE_CORE_ASSERT(DeviceCount, "Failed to find GPUs with Vulkan support!")
 
 		std::vector<VkPhysicalDevice> Devices(DeviceCount);
 		vkEnumeratePhysicalDevices(Instance, &DeviceCount, Devices.data());
@@ -45,7 +45,7 @@ namespace JuicyEngine
 			}
 		}
 
-		JE_CORE_ASSERT(PhysicalDevice, "Failed to find a suitable GPU!");
+		JE_CORE_ASSERT(PhysicalDevice, "Failed to find a suitable GPU!")
 	}
 
 	bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice Device)
@@ -59,8 +59,11 @@ namespace JuicyEngine
 			SwapChainSupportDetails SwapChainSupport = VulkanSwapChain::QuerySwapChainSupport(Device, Surface);
 			bSwapChainAdequate = !SwapChainSupport.Formats.empty() && !SwapChainSupport.PresentModes.empty();
 		}
-
-		return Indices.IsComplete() && bExtensionsSupported && bSwapChainAdequate;
+		
+		VkPhysicalDeviceFeatures SupportedFeatures;
+		vkGetPhysicalDeviceFeatures(Device, &SupportedFeatures);
+		
+		return Indices.IsComplete() && bExtensionsSupported && bSwapChainAdequate && SupportedFeatures.samplerAnisotropy;
 	}
 
 	bool VulkanDevice::IsDeviceExtensionSupport(VkPhysicalDevice Device)
@@ -99,6 +102,7 @@ namespace JuicyEngine
 		}
 
 		VkPhysicalDeviceFeatures DeviceFeatures {};
+		DeviceFeatures.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo DeviceCreateInfo {};
 		DeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

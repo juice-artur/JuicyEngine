@@ -8,12 +8,9 @@ namespace JuicyEngine
 	class VulkanBuffer
 	{
 	public:
-		uint32_t FindMemoryType(uint32_t TypeFilter, VkMemoryPropertyFlags Properties);
 		VkBuffer& GetBuffer();
 		virtual ~VulkanBuffer();
-
 	protected:
-		void CreateBuffer(VkDeviceSize Size, VkBufferUsageFlags Usage, VkMemoryPropertyFlags Properties, VkBuffer& InBuffer, VkDeviceMemory& InBufferMemory);
 		void CopyBuffer(VkBuffer SrcBuffer, VkBuffer DstBuffer, VkDeviceSize Size);
 		
 	protected:

@@ -32,7 +32,7 @@ namespace JuicyEngine
 		if (!s_SDLInitialized)
 		{
 			JE_CORE_ASSERT(
-			    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS), "Could not initialize SDL3: {0}", SDL_GetError());
+			    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS), "Could not initialize SDL3: {0}", SDL_GetError())
 			s_SDLInitialized = true;
 		}
 
@@ -40,7 +40,7 @@ namespace JuicyEngine
 		m_Window = SDL_CreateWindow(m_Data.Title.c_str(), m_Data.Width, m_Data.Height, flags);
 		if (!m_Window)
 		{
-			JE_CORE_ASSERT(m_Window, "Failed to create SDL window: {0}", SDL_GetError());
+			JE_CORE_ASSERT(m_Window, "Failed to create SDL window: {0}", SDL_GetError())
 		}
 
 		VulkanContext::Get()->Init(GetNativeWindow());
