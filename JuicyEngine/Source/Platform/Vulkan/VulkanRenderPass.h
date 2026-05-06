@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <vector>
 
 namespace JuicyEngine
 {
@@ -11,7 +12,9 @@ namespace JuicyEngine
 		                      std::vector<VkImageView>& SwapChainImageViews,
 		                      VkExtent2D SwapChainExtent);
 		void Shutdown();
+		void SetRenderPass(VkRenderPass InRenderPass);
 		VkRenderPass GetVulkanRenderPass() const;
+		VkFramebuffer GetFramebuffer(uint32_t Index) const;
 		void Begin(VkCommandBuffer CommandBuffer, VkExtent2D SwapChainExtent);
 		void End(VkCommandBuffer CommandBuffer);
 		uint32_t SwapChainImageIndex = 0;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
@@ -34,6 +36,10 @@ namespace JuicyEngine
 		virtual void Draw() override;
 
 		VulkanDevice* GetDevice() const;
+		VkInstance GetInstance() const;
+		VulkanSwapChain& GetSwapchain();
+		std::shared_ptr<VulkanRenderPass> GetRenderPass() const;
+		VkRenderPass GetImGuiRenderPass() const;
 
 		VkCommandPool GetCommandPool() const;
 
@@ -49,6 +55,17 @@ namespace JuicyEngine
 
 		VkImageView& GetDepthImageView();
 
+		VkImageView GetViewportImageView() const;
+		VkSampler GetViewportSampler() const;
+		VkDescriptorSet GetViewportDescriptorSet() const;
+		void ResizeViewportFramebuffer(uint32_t Width, uint32_t Height);
+		void CreateViewportRenderPass();
+		void CreateViewportFramebuffer(uint32_t Width, uint32_t Height);
+		void DestroyViewportFramebuffer();
+		VkRenderPass GetViewportRenderPass() const;
+		VkFramebuffer GetViewportFramebuffer() const;
+		VkExtent2D GetViewportSize() const;
+
 	private:
 		bool InitInstance();
 		void SetupDebugMessenger();
@@ -63,8 +80,15 @@ namespace JuicyEngine
 		                                   const VkAllocationCallbacks* pAllocator);
 
 		void CreateGraphicsPipeline();
+		void CreateViewportGraphicsPipeline();
 
-		void RecordCommandBuffer();
+		void CreateImGuiRenderPass();
+		void CreateImGuiFramebuffers();
+		void DestroyImGuiFramebuffers();
+
+		void RecordCommandBuffer(VulkanRenderCommandBuffer& CB);
+
+		void RecreateSwapChain();
 
 		void CreateSyncObjects();
 
@@ -87,33 +111,51 @@ namespace JuicyEngine
 		VulkanSurface* Surface;
 		VulkanSwapChain SwapChain;
 		VulkanPipeline GraphicsPipeline;
+		VulkanPipeline ViewportGraphicsPipeline;
 		std::shared_ptr<VulkanRenderPass> RenderPass = std::make_shared<VulkanRenderPass>();
 		VkCommandPool CommandPool = VK_NULL_HANDLE;
 		VkDescriptorSet DescriptorSet;
-		VulkanRenderCommandBuffer CommandBuffer;
+		std::vector<VulkanRenderCommandBuffer> CommandBuffers;
 
 		VkImage DepthImage;
 		VkDeviceMemory DepthImageMemory;
 		VkImageView DepthImageView;
 
-		VkSemaphore ImageAvailableSemaphore;
-		VkSemaphore RenderFinishedSemaphore;
-		VkFence InFlightFence;
+		static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+		std::vector<VkSemaphore> ImageAvailableSemaphores;
+		std::vector<VkSemaphore> RenderFinishedSemaphores;
+		std::vector<VkFence> InFlightFences;
+		uint32_t CurrentFrameIndex = 0;
+		uint32_t CurrentSyncIndex = 0;
 		VkDescriptorPool DescriptorPool;
+		VkRenderPass ImGuiRenderPass = VK_NULL_HANDLE;
+		std::vector<VkFramebuffer> ImGuiFramebuffers;
+		VkRenderPass ViewportRenderPass = VK_NULL_HANDLE;
+		VkFramebuffer ViewportFramebuffer = VK_NULL_HANDLE;
+		VkImage ViewportImage;
+		VkDeviceMemory ViewportImageMemory;
+		VkImageView ViewportImageView;
+		VkSampler ViewportSampler;
+		VkDescriptorSet ViewportDescriptorSet = VK_NULL_HANDLE;
+		VkImage ViewportDepthImage;
+		VkDeviceMemory ViewportDepthImageMemory;
+		VkImageView ViewportDepthImageView;
+		VkExtent2D ViewportSize = {0, 0};
 		void* WindowPtr = nullptr;
 
 		bool Skip = false;
+		bool FramebufferResized = false;
 
 		const std::vector<Vertex> Vertices = {
-			{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+			{{-2.0f, -2.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{ 2.0f, -2.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{ 2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-2.0f,  2.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
 
-			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+			{{-2.0f, -2.0f, -2.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{ 2.0f, -2.0f, -2.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{ 2.0f,  2.0f, -2.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-2.0f,  2.0f, -2.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 		};
 
 		const std::vector<uint16_t> Indices = {

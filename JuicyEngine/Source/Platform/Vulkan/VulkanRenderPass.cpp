@@ -79,13 +79,13 @@ namespace JuicyEngine
 
 		for (size_t i = 0; i < SwapChainImageViews.size(); i++)
 		{
-			std::array<VkImageView, 2> attachments[] = { SwapChainImageViews[i], Context->GetDepthImageView() };
+			std::array<VkImageView, 2> attachments = { SwapChainImageViews[i], Context->GetDepthImageView() };
 
 			VkFramebufferCreateInfo FramebufferInfo {};
 			FramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			FramebufferInfo.renderPass = RenderPass;
-			FramebufferInfo.attachmentCount = static_cast<uint32_t>(attachments->size());
-			FramebufferInfo.pAttachments = attachments->data();
+			FramebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+			FramebufferInfo.pAttachments = attachments.data();
 			FramebufferInfo.width = SwapChainExtent.width;
 			FramebufferInfo.height = SwapChainExtent.height;
 			FramebufferInfo.layers = 1;
@@ -109,6 +109,17 @@ namespace JuicyEngine
 	VkRenderPass VulkanRenderPass::GetVulkanRenderPass() const
 	{
 		return RenderPass;
+	}
+
+	void VulkanRenderPass::SetRenderPass(VkRenderPass InRenderPass)
+	{
+		RenderPass = InRenderPass;
+	}
+
+	VkFramebuffer VulkanRenderPass::GetFramebuffer(uint32_t Index) const
+	{
+		JE_CORE_ASSERT(Index < SwapChainFramebuffers.size(), "Framebuffer index out of range!")
+		return SwapChainFramebuffers[Index];
 	}
 
 	void VulkanRenderPass::Begin(VkCommandBuffer CommandBuffer, VkExtent2D SwapChainExtent)

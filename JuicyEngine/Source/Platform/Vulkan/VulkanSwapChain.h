@@ -26,7 +26,9 @@ namespace JuicyEngine
 		VkFormat GetFormat() const;
 		VkExtent2D GetExtent() const;
 		std::vector<VkImageView>& GetSwapChainImageViews();
+		const std::vector<VkImage>& GetSwapChainImages() const;
 		VkSwapchainKHR GetSwapChain() const;
+		uint32_t GetImageCount() const;
 
 	private:
 		void CreateImageViews(const VkDevice Device);

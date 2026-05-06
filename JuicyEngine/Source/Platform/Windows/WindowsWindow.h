@@ -28,6 +28,7 @@ namespace JuicyEngine
 		void SetVSync(bool enabled) override;
 		bool IsVSync() const override;
 		void* GetNativeWindow() const override;
+		SDL_Window* GetSDLWindow() const { return m_Window; }
 
 	private:
 		virtual void Init(const WindowProps& props);

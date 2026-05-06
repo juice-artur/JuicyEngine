@@ -13,10 +13,13 @@ namespace JuicyEngine
 
 		void End();
 
+		void Reset();
+
 		VkCommandBuffer& GetCommandBuffer();
 
 	private:
 		VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
+		VkCommandPool CommandPool = VK_NULL_HANDLE;
 	};
 
 } // namespace JuicyEngine

@@ -1,3 +1,7 @@
+cmake_minimum_required(VERSION 3.20)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(SOURCES
     Source/jepch.h
     Source/JuicyEngine.h
@@ -50,6 +54,10 @@ set(SOURCES
     Source/Platform/Vulkan/VulkanTexture2D.cpp
     Source/Platform/Vulkan/VulkanUtils.h
     Source/Platform/Vulkan/VulkanUtils.cpp
+    Source/ImGui/ImGuiLayer.cpp
+    Source/ImGui/ImGuiLayer.h
+    Source/Editor/EditorLayer.cpp
+    Source/Editor/EditorLayer.h
 )
 
 

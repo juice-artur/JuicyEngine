@@ -17,6 +17,7 @@ namespace JuicyEngine
 		void PushOverlay(Layer* overlay);
 		void PopLayer(Layer* layer);
 		void PopOverlay(Layer* overlay);
+		void Cleanup();
 
 		std::vector<Layer*>::iterator begin()
 		{
@@ -24,12 +25,12 @@ namespace JuicyEngine
 		}
 		std::vector<Layer*>::iterator end()
 		{
-			return m_Layers.end();
+			return m_Layers.begin() + m_LayerInsert;
 		}
 
 	private:
 		std::vector<Layer*> m_Layers;
-		std::vector<Layer*>::iterator m_LayerInsert;
+		size_t m_LayerInsert = 0;
 	};
 
 } // namespace JuicyEngine
