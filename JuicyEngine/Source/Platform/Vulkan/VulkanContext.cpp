@@ -65,7 +65,7 @@ namespace JuicyEngine
 		Ubo.Proj[1][1] *= -1;
 		UniformBuffer->UploadData(sizeof(Ubo), &Ubo);
 
-		СreateDescriptorPool();
+		CreateDescriptorPool();
 		CreateDescriptorSets();
 		// Viewport framebuffer created on first use to avoid validation layer issues
 		
@@ -697,7 +697,7 @@ namespace JuicyEngine
 
 		return VK_FALSE;
 	}
-	void VulkanContext::СreateDescriptorPool()
+	void VulkanContext::CreateDescriptorPool()
 	{
 		VkDescriptorPoolSize PoolSizes[] = {
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },

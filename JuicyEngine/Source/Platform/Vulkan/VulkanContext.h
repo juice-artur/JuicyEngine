@@ -97,7 +97,7 @@ namespace JuicyEngine
 		                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		                                                    void* pUserData);
 
-		void СreateDescriptorPool();
+		void CreateDescriptorPool();
 		void CreateDescriptorSets();
 
 		void CreateDepthResources();
