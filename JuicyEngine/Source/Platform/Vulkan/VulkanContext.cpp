@@ -969,6 +969,7 @@ void VulkanContext::DestroyViewportFramebuffer()
 {
     if (ViewportDescriptorSet != VK_NULL_HANDLE)
     {
+        ImGui_ImplVulkan_RemoveTexture(ViewportDescriptorSet);
         ViewportDescriptorSet = VK_NULL_HANDLE;
     }
     if (ViewportSampler != VK_NULL_HANDLE)
@@ -1024,6 +1025,9 @@ void VulkanContext::ResizeViewportFramebuffer(uint32_t Width, uint32_t Height)
 
     vkDestroyRenderPass(Device->GetLogicalDevice(), ViewportRenderPass, nullptr);
     CreateViewportRenderPass();
+
+    ViewportGraphicsPipeline.Shutdown();
+    CreateViewportGraphicsPipeline();
 
     CreateViewportFramebuffer(Width, Height);
 }
