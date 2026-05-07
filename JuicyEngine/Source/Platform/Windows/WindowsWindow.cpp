@@ -5,7 +5,7 @@
 #include "Events/MouseEvent.h"
 #include <SDL3/SDL.h>
 
-#include "Platform/Vulkan/VulkanContext.h"
+#include <backends/imgui_impl_sdl3.h>
 
 namespace JuicyEngine
 {
@@ -18,7 +18,7 @@ namespace JuicyEngine
 
 	WindowsWindow::~WindowsWindow()
 	{
-		VulkanContext::Get()->Shutdown();
+		Shutdown();
 	}
 
 	void WindowsWindow::Init(const WindowProps& props)
@@ -43,16 +43,12 @@ namespace JuicyEngine
 			JE_CORE_ASSERT(m_Window, "Failed to create SDL window: {0}", SDL_GetError())
 		}
 
-		VulkanContext::Get()->Init(GetNativeWindow());
-
 		SetVSync(true);
 	}
 
 	void WindowsWindow::Shutdown()
 	{
-		VulkanContext::Get()->Shutdown();
 		SDL_DestroyWindow(m_Window);
-		SDL_Quit();
 	}
 
 	void WindowsWindow::OnUpdate()
@@ -60,6 +56,8 @@ namespace JuicyEngine
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
+			ImGui_ImplSDL3_ProcessEvent(&event);
+
 			switch (event.type)
 			{
 				case SDL_EVENT_QUIT:
@@ -121,9 +119,6 @@ namespace JuicyEngine
 				}
 			}
 		}
-
-		VulkanContext::Get()->Draw();
-		VulkanContext::Get()->SwapBuffers();
 	}
 
 	void WindowsWindow::SetVSync(bool enabled)

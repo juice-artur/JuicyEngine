@@ -61,7 +61,7 @@ namespace JuicyEngine
 		Rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		Rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		Rasterizer.lineWidth = 1.0f;
-		Rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		Rasterizer.cullMode = VK_CULL_MODE_NONE;
 		Rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		Rasterizer.depthBiasEnable = VK_FALSE;
 

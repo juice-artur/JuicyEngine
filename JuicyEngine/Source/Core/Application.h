@@ -8,6 +8,8 @@
 namespace JuicyEngine
 {
 
+	class ImGuiLayer;
+
 	class Application
 	{
 	public:
@@ -21,12 +23,16 @@ namespace JuicyEngine
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* layer);
 
+		static Application& Get();
+		Window& GetWindow();
+
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 
 		std::unique_ptr<Window> m_Window;
 		bool m_Running = true;
 		LayerStack m_LayerStack;
+		ImGuiLayer* m_ImGuiLayer = nullptr;
 	};
 
 	// To be defined in CLIENT

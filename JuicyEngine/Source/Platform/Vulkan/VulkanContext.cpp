@@ -1,6 +1,7 @@
 #include "VulkanContext.h"
 
 #include "VulkanBuffer.h"
+#include "VulkanUtils.h"
 #include "jepch.h"
 #include "vulkan/vulkan.h"
 #include <vulkan/vk_enum_string_helper.h>
@@ -11,6 +12,9 @@
 #include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <imgui.h>
+#include <backends/imgui_impl_vulkan.h>
 
 namespace JuicyEngine
 {
@@ -40,28 +44,32 @@ namespace JuicyEngine
 		SwapChain.Init(Surface->GetSurface(), Window);
 		CreateDepthResources();
 		RenderPass->CreateRenderPass(SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
-		CommandBuffer.Init(Device->GetLogicalDevice(), CommandPool);
+		CreateImGuiRenderPass();
+		CreateImGuiFramebuffers();
+		CreateViewportRenderPass();
+		CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		for (auto& CB : CommandBuffers)
+			CB.Init(Device->GetLogicalDevice(), CommandPool);
 		CreateGraphicsPipeline();
+		CreateViewportGraphicsPipeline();
 		CreateSyncObjects();
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		
-		Ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		Ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		Ubo.Proj = glm::perspective(glm::radians(45.0f), SwapChain.GetExtent().width / (float) SwapChain.GetExtent().height, 0.1f, 10.0f);
-		Ubo.Proj[1][1] *= -1;
 		
 		
 		VertexBuffer.reset(static_cast<std::unique_ptr<VulkanVertexBuffer>::pointer>(VertexBuffer::Create(Vertices)));
 		IndexBuffer.reset(static_cast<std::unique_ptr<VulkanIndexBuffer>::pointer>(IndexBuffer::Create(Indices)));
 		UniformBuffer.reset(static_cast<std::unique_ptr<VulkanUniformBuffer>::pointer>(UniformBuffer::Create(sizeof(Ubo))));
 		Texture.reset(new VulkanTexture2D("Assets/Textures/statue.jpg"));
+
+		Ubo.View = glm::lookAt(glm::vec3(0.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		Ubo.Proj = glm::perspective(glm::radians(60.0f), SwapChain.GetExtent().width / (float) SwapChain.GetExtent().height, 0.1f, 100.0f);
+		Ubo.Proj[1][1] *= -1;
 		UniformBuffer->UploadData(sizeof(Ubo), &Ubo);
 
-		СreateDescriptorPool();
+		CreateDescriptorPool();
 		CreateDescriptorSets();
+		// Viewport framebuffer created on first use to avoid validation layer issues
+		
+		vkDeviceWaitIdle(Device->GetLogicalDevice());
 	}
 
 	void VulkanContext::SwapBuffers()
@@ -72,23 +80,25 @@ namespace JuicyEngine
 			return;
 		}
 
+		uint32_t ImageIndex = CurrentSyncIndex;
+
 		VkSubmitInfo SubmitInfo {};
 		SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkSemaphore WaitSemaphores[] = { ImageAvailableSemaphore };
+		VkSemaphore WaitSemaphores[] = { ImageAvailableSemaphores[ImageIndex] };
 		VkPipelineStageFlags WaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		SubmitInfo.waitSemaphoreCount = 1;
 		SubmitInfo.pWaitSemaphores = WaitSemaphores;
 		SubmitInfo.pWaitDstStageMask = WaitStages;
 
 		SubmitInfo.commandBufferCount = 1;
-		SubmitInfo.pCommandBuffers = &CommandBuffer.GetCommandBuffer();
+		SubmitInfo.pCommandBuffers = &CommandBuffers[ImageIndex].GetCommandBuffer();
 
-		VkSemaphore SignalSemaphores[] = { RenderFinishedSemaphore };
+		VkSemaphore SignalSemaphores[] = { RenderFinishedSemaphores[ImageIndex] };
 		SubmitInfo.signalSemaphoreCount = 1;
 		SubmitInfo.pSignalSemaphores = SignalSemaphores;
 
-		auto QueueSubmitResult = vkQueueSubmit(Device->GetGraphicsQueue(), 1, &SubmitInfo, InFlightFence);
+		auto QueueSubmitResult = vkQueueSubmit(Device->GetGraphicsQueue(), 1, &SubmitInfo, InFlightFences[ImageIndex]);
 		JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!")
 
 		VkPresentInfoKHR PresentInfo {};
@@ -103,30 +113,65 @@ namespace JuicyEngine
 
 		PresentInfo.pImageIndices = &RenderPass->SwapChainImageIndex;
 
-		vkQueuePresentKHR(Device->GetPresentQueue(), &PresentInfo);
+		auto PresentResult = vkQueuePresentKHR(Device->GetPresentQueue(), &PresentInfo);
+		if (PresentResult == VK_ERROR_OUT_OF_DATE_KHR || PresentResult == VK_SUBOPTIMAL_KHR)
+		{
+			FramebufferResized = true;
+		}
 	}
 
 	void VulkanContext::Shutdown()
 	{
 		vkDeviceWaitIdle(Device->GetLogicalDevice());
-		vkDestroySemaphore(Device->GetLogicalDevice(), ImageAvailableSemaphore, nullptr);
-		vkDestroySemaphore(Device->GetLogicalDevice(), RenderFinishedSemaphore, nullptr);
-		vkDestroyFence(Device->GetLogicalDevice(), InFlightFence, nullptr);
-		vkDestroyCommandPool(Device->GetLogicalDevice(), CommandPool, nullptr);
-		vkDestroyDescriptorPool(Device->GetLogicalDevice(), DescriptorPool, nullptr);
+
+		// 2. Pipelines (in use by submitted command buffers)
 		GraphicsPipeline.Shutdown();
-		RenderPass->Shutdown();
-		RenderPass.reset();
+		ViewportGraphicsPipeline.Shutdown();
+
+		// 3. Descriptor pool (must be before buffers that use it)
+		vkDestroyDescriptorPool(Device->GetLogicalDevice(), DescriptorPool, nullptr);
+
+		// 4. Buffers and textures (command buffer references cleared by reset)
 		VertexBuffer.reset();
 		IndexBuffer.reset();
 		Texture.reset();
 		UniformBuffer.reset();
+
+		// 5. Command pool
+		vkDestroyCommandPool(Device->GetLogicalDevice(), CommandPool, nullptr);
+
+		// 6. Sync objects
+		for (auto Semaphore : ImageAvailableSemaphores)
+			vkDestroySemaphore(Device->GetLogicalDevice(), Semaphore, nullptr);
+		for (auto Semaphore : RenderFinishedSemaphores)
+			vkDestroySemaphore(Device->GetLogicalDevice(), Semaphore, nullptr);
+		for (auto Fence : InFlightFences)
+			vkDestroyFence(Device->GetLogicalDevice(), Fence, nullptr);
+
+		// 7. Render pass and swapchain framebuffers
+		RenderPass->Shutdown();
+		RenderPass.reset();
+
+		// 8. ImGui render pass and framebuffers
+		vkDestroyRenderPass(Device->GetLogicalDevice(), ImGuiRenderPass, nullptr);
+		DestroyImGuiFramebuffers();
+
+		// 9. Viewport render pass and framebuffer
+		vkDestroyRenderPass(Device->GetLogicalDevice(), ViewportRenderPass, nullptr);
+		DestroyViewportFramebuffer();
+
+		// 10. Depth resources
 		vkDestroyImageView(Device->GetLogicalDevice(), DepthImageView, nullptr);
 		vkDestroyImage(Device->GetLogicalDevice(), DepthImage, nullptr);
 		vkFreeMemory(Device->GetLogicalDevice(), DepthImageMemory, nullptr);
+
+		// 11. SwapChain
 		SwapChain.Shutdown();
+
+		// 12. Device
 		delete Device;
 
+		// 13. Instance-level objects
 		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
 		Surface->Shutdown();
 		delete Surface;
@@ -151,35 +196,75 @@ namespace JuicyEngine
 
 	void VulkanContext::Draw()
 	{
-		vkWaitForFences(Device->GetLogicalDevice(), 1, &InFlightFence, VK_TRUE, UINT64_MAX);
+		if (FramebufferResized)
+		{
+			vkDeviceWaitIdle(Device->GetLogicalDevice());
+			RecreateSwapChain();
+			FramebufferResized = false;
+		}
+
+		CurrentSyncIndex = CurrentFrameIndex % MAX_FRAMES_IN_FLIGHT;
+
+		vkWaitForFences(Device->GetLogicalDevice(), 1, &InFlightFences[CurrentSyncIndex], VK_TRUE, UINT64_MAX);
+		vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFences[CurrentSyncIndex]);
 
 		VkResult Result = vkAcquireNextImageKHR(Device->GetLogicalDevice(),
 		                                        SwapChain.GetSwapChain(),
 		                                        UINT64_MAX,
-		                                        ImageAvailableSemaphore,
+		                                        ImageAvailableSemaphores[CurrentSyncIndex],
 		                                        VK_NULL_HANDLE,
 		                                        &RenderPass->SwapChainImageIndex);
 
 		if (Result == VK_ERROR_OUT_OF_DATE_KHR || Result == VK_SUBOPTIMAL_KHR)
 		{
-			vkDeviceWaitIdle(Device->GetLogicalDevice());
-			RenderPass->Shutdown();
-			SwapChain.Shutdown();
-
-			SwapChain.Init(Surface->GetSurface(), WindowPtr);
-			RenderPass->CreateRenderPass(
-			    SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
-
+			if (CurrentFrameIndex == 0)
+			{
+				JE_CORE_WARN("Swapchain suboptimal on first frame, skipping...");
+				vkDeviceWaitIdle(Device->GetLogicalDevice());
+				RecreateSwapChain();
+				Skip = true;
+				CurrentFrameIndex++;
+				return;
+			}
+			FramebufferResized = true;
 			Skip = true;
+			CurrentFrameIndex++;
 			return;
 		}
 
-		vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFence);
-		RecordCommandBuffer();
+		static auto StartTime = std::chrono::high_resolution_clock::now();
+		auto CurrentTime = std::chrono::high_resolution_clock::now();
+		float Time = std::chrono::duration<float, std::chrono::seconds::period>(CurrentTime - StartTime).count();
+
+		Ubo.Model = glm::rotate(glm::mat4(1.0f), Time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		Ubo.View = glm::lookAt(glm::vec3(0.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		Ubo.Proj = glm::perspective(glm::radians(60.0f), SwapChain.GetExtent().width / (float) SwapChain.GetExtent().height, 0.1f, 100.0f);
+		Ubo.Proj[1][1] *= -1;
+
+		UniformBuffer->UploadData(sizeof(Ubo), &Ubo);
+
+		RecordCommandBuffer(CommandBuffers[CurrentSyncIndex]);
+		CurrentFrameIndex++;
 	}
 	VulkanDevice* VulkanContext::GetDevice() const
 	{
 		return Device;
+	}
+	VkInstance VulkanContext::GetInstance() const
+	{
+		return Instance;
+	}
+	VulkanSwapChain& VulkanContext::GetSwapchain()
+	{
+		return SwapChain;
+	}
+	std::shared_ptr<VulkanRenderPass> VulkanContext::GetRenderPass() const
+	{
+		return RenderPass;
+	}
+	VkRenderPass VulkanContext::GetImGuiRenderPass() const
+	{
+		return ImGuiRenderPass;
 	}
 	VkCommandPool VulkanContext::GetCommandPool() const
 	{
@@ -333,38 +418,203 @@ namespace JuicyEngine
 		vkDestroyShaderModule(Device->GetLogicalDevice(), VertShaderModule, nullptr);
 	}
 
-	void VulkanContext::RecordCommandBuffer()
+	void VulkanContext::CreateViewportGraphicsPipeline()
 	{
-		CommandBuffer.Begin();
-		RenderPass->Begin(CommandBuffer.GetCommandBuffer(), SwapChain.GetExtent());
-		GraphicsPipeline.Bind(CommandBuffer.GetCommandBuffer());
+		if (ViewportRenderPass == VK_NULL_HANDLE)
+			return;
 
-		VkViewport Viewport =
+		auto VertShaderCode = VulkanShader::ReadFile("Assets/Shaders/vert.spv");
+		auto FragShaderCode = VulkanShader::ReadFile("Assets/Shaders/frag.spv");
+
+		VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), VertShaderCode);
+		VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), FragShaderCode);
+
+		VkPipelineShaderStageCreateInfo VertShaderStageInfo {};
+		VertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		VertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		VertShaderStageInfo.module = VertShaderModule;
+		VertShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo {};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = FragShaderModule;
+		fragShaderStageInfo.pName = "main";
+
+		std::shared_ptr<VulkanRenderPass> ViewportRP = std::make_shared<VulkanRenderPass>();
+		ViewportRP->SetRenderPass(ViewportRenderPass);
+
+		PipelineCreateInfo Info = {};
+		Info.RenderPass = ViewportRP;
+		Info.VulkanShaderModules = std::vector { VertShaderStageInfo, fragShaderStageInfo };
+		ViewportGraphicsPipeline.Create(Info);
+
+		vkDestroyShaderModule(Device->GetLogicalDevice(), FragShaderModule, nullptr);
+		vkDestroyShaderModule(Device->GetLogicalDevice(), VertShaderModule, nullptr);
+	}
+
+	void VulkanContext::CreateImGuiRenderPass()
+	{
+		VkAttachmentDescription ColorAttachment {};
+		ColorAttachment.format = SwapChain.GetFormat();
+		ColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		ColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		ColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		ColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		ColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		ColorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		ColorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+		VkAttachmentReference ColorAttachmentRef {};
+		ColorAttachmentRef.attachment = 0;
+		ColorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription Subpass {};
+		Subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		Subpass.colorAttachmentCount = 1;
+		Subpass.pColorAttachments = &ColorAttachmentRef;
+
+		VkSubpassDependency Dependencies[2] {};
+		Dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+		Dependencies[0].dstSubpass = 0;
+		Dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		Dependencies[0].srcAccessMask = 0;
+		Dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		Dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+		Dependencies[1].srcSubpass = 0;
+		Dependencies[1].dstSubpass = 0;
+		Dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		Dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		Dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		Dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		Dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		VkRenderPassCreateInfo RenderPassInfo {};
+		RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		RenderPassInfo.attachmentCount = 1;
+		RenderPassInfo.pAttachments = &ColorAttachment;
+		RenderPassInfo.subpassCount = 1;
+		RenderPassInfo.pSubpasses = &Subpass;
+		RenderPassInfo.dependencyCount = 2;
+		RenderPassInfo.pDependencies = Dependencies;
+
+		VkResult Result = vkCreateRenderPass(Device->GetLogicalDevice(), &RenderPassInfo, nullptr, &ImGuiRenderPass);
+		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create ImGui render pass!")
+	}
+
+	void VulkanContext::CreateImGuiFramebuffers()
+	{
+		const auto& ImageViews = SwapChain.GetSwapChainImageViews();
+		ImGuiFramebuffers.resize(ImageViews.size());
+
+		for (size_t i = 0; i < ImageViews.size(); i++)
 		{
-			.x = 0.0f,
-			.y = 0.0f,
-			.width = static_cast<float>(SwapChain.GetExtent().width),
-			.height = static_cast<float>(SwapChain.GetExtent().height),
-			.minDepth = 0.0f,
-			.maxDepth = 1.0f
-		};
-		
-		vkCmdSetViewport(CommandBuffer.GetCommandBuffer(), 0, 1, &Viewport);
+			VkFramebufferCreateInfo FramebufferInfo {};
+			FramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			FramebufferInfo.renderPass = ImGuiRenderPass;
+			FramebufferInfo.attachmentCount = 1;
+			FramebufferInfo.pAttachments = &ImageViews[i];
+			FramebufferInfo.width = SwapChain.GetExtent().width;
+			FramebufferInfo.height = SwapChain.GetExtent().height;
+			FramebufferInfo.layers = 1;
 
-		VkRect2D Scissor { .offset = { 0, 0 }, .extent = SwapChain.GetExtent() };
+			VkResult Result = vkCreateFramebuffer(Device->GetLogicalDevice(), &FramebufferInfo, nullptr, &ImGuiFramebuffers[i]);
+			JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create ImGui framebuffer!")
+		}
+	}
 
-		vkCmdSetScissor(CommandBuffer.GetCommandBuffer(), 0, 1, &Scissor);
+	void VulkanContext::DestroyImGuiFramebuffers()
+	{
+		for (auto Framebuffer : ImGuiFramebuffers)
+		{
+			vkDestroyFramebuffer(Device->GetLogicalDevice(), Framebuffer, nullptr);
+		}
+		ImGuiFramebuffers.clear();
+	}
 
-		VkDeviceSize Offsets[] = { 0 };
+	void VulkanContext::RecordCommandBuffer(VulkanRenderCommandBuffer& CB)
+	{
+		CB.Begin();
 
-		UniformBuffer->UploadData(sizeof(Ubo), &Ubo);
-		vkCmdBindVertexBuffers(CommandBuffer.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
-		vkCmdBindIndexBuffer(CommandBuffer.GetCommandBuffer(), IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
-		vkCmdBindDescriptorSets(CommandBuffer.GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, GraphicsPipeline.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
-		
-		vkCmdDrawIndexed(CommandBuffer.GetCommandBuffer(),  static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
-		RenderPass->End(CommandBuffer.GetCommandBuffer());
-		CommandBuffer.End();
+		if (ViewportFramebuffer != VK_NULL_HANDLE && ViewportSize.width > 0 && ViewportSize.height > 0)
+		{
+			VkRenderPassBeginInfo ViewportRPInfo {};
+			ViewportRPInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			ViewportRPInfo.renderPass = ViewportRenderPass;
+			ViewportRPInfo.framebuffer = ViewportFramebuffer;
+			ViewportRPInfo.renderArea.offset = { 0, 0 };
+			ViewportRPInfo.renderArea.extent = ViewportSize;
+
+			std::array<VkClearValue, 2> ViewportClearValues {};
+			ViewportClearValues[0].color = { { 0.1f, 0.1f, 0.1f, 1.0f } };
+			ViewportClearValues[1].depthStencil = { 1.0f, 0 };
+			ViewportRPInfo.clearValueCount = static_cast<uint32_t>(ViewportClearValues.size());
+			ViewportRPInfo.pClearValues = ViewportClearValues.data();
+
+			vkCmdBeginRenderPass(CB.GetCommandBuffer(), &ViewportRPInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			VkViewport VP {};
+			VP.x = 0.0f;
+			VP.y = 0.0f;
+			VP.width = static_cast<float>(ViewportSize.width);
+			VP.height = static_cast<float>(ViewportSize.height);
+			VP.minDepth = 0.0f;
+			VP.maxDepth = 1.0f;
+			vkCmdSetViewport(CB.GetCommandBuffer(), 0, 1, &VP);
+
+			VkRect2D ScissorVP { .offset = { 0, 0 }, .extent = ViewportSize };
+			vkCmdSetScissor(CB.GetCommandBuffer(), 0, 1, &ScissorVP);
+
+			VkDeviceSize Offsets[] = { 0 };
+			vkCmdBindVertexBuffers(CB.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
+			vkCmdBindIndexBuffer(CB.GetCommandBuffer(), IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
+			vkCmdBindDescriptorSets(CB.GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, ViewportGraphicsPipeline.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
+			ViewportGraphicsPipeline.Bind(CB.GetCommandBuffer());
+			vkCmdDrawIndexed(CB.GetCommandBuffer(), static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
+
+			vkCmdEndRenderPass(CB.GetCommandBuffer());
+		}
+
+		RenderPass->Begin(CB.GetCommandBuffer(), SwapChain.GetExtent());
+		RenderPass->End(CB.GetCommandBuffer());
+
+		if (ImGui::GetDrawData())
+		{
+			VkImageMemoryBarrier Barrier {};
+			Barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			Barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			Barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			Barrier.image = SwapChain.GetSwapChainImages()[RenderPass->SwapChainImageIndex];
+			Barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			Barrier.subresourceRange.baseMipLevel = 0;
+			Barrier.subresourceRange.levelCount = 1;
+			Barrier.subresourceRange.baseArrayLayer = 0;
+			Barrier.subresourceRange.layerCount = 1;
+			Barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+			Barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+			vkCmdPipelineBarrier(CB.GetCommandBuffer(),
+			                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			                     0, 0, nullptr, 0, nullptr, 1, &Barrier);
+
+			VkRenderPassBeginInfo RenderPassInfo {};
+			RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			RenderPassInfo.renderPass = ImGuiRenderPass;
+			RenderPassInfo.framebuffer = ImGuiFramebuffers[RenderPass->SwapChainImageIndex];
+			RenderPassInfo.renderArea.offset = { 0, 0 };
+			RenderPassInfo.renderArea.extent = SwapChain.GetExtent();
+			RenderPassInfo.clearValueCount = 0;
+
+			vkCmdBeginRenderPass(CB.GetCommandBuffer(), &RenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), CB.GetCommandBuffer());
+			vkCmdEndRenderPass(CB.GetCommandBuffer());
+		}
+
+		CB.End();
 	}
 
 	void VulkanContext::CreateSyncObjects()
@@ -376,14 +626,50 @@ namespace JuicyEngine
 		FenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		FenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		if (vkCreateSemaphore(Device->GetLogicalDevice(), &SemaphoreInfo, nullptr, &ImageAvailableSemaphore)
-		        != VK_SUCCESS
-		    || vkCreateSemaphore(Device->GetLogicalDevice(), &SemaphoreInfo, nullptr, &RenderFinishedSemaphore)
-		           != VK_SUCCESS
-		    || vkCreateFence(Device->GetLogicalDevice(), &FenceInfo, nullptr, &InFlightFence) != VK_SUCCESS)
+		ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			JE_CORE_ASSERT(false, "Failed to create synchronization objects for a frame!")
+			if (vkCreateSemaphore(Device->GetLogicalDevice(), &SemaphoreInfo, nullptr, &ImageAvailableSemaphores[i]) != VK_SUCCESS
+			    || vkCreateSemaphore(Device->GetLogicalDevice(), &SemaphoreInfo, nullptr, &RenderFinishedSemaphores[i]) != VK_SUCCESS
+			    || vkCreateFence(Device->GetLogicalDevice(), &FenceInfo, nullptr, &InFlightFences[i]) != VK_SUCCESS)
+			{
+				JE_CORE_ASSERT(false, "Failed to create synchronization objects for a frame!")
+			}
 		}
+	}
+
+	void VulkanContext::RecreateSwapChain()
+	{
+		for (auto Semaphore : ImageAvailableSemaphores)
+			vkDestroySemaphore(Device->GetLogicalDevice(), Semaphore, nullptr);
+		for (auto Semaphore : RenderFinishedSemaphores)
+			vkDestroySemaphore(Device->GetLogicalDevice(), Semaphore, nullptr);
+		for (auto Fence : InFlightFences)
+			vkDestroyFence(Device->GetLogicalDevice(), Fence, nullptr);
+
+		GraphicsPipeline.Shutdown();
+		ViewportGraphicsPipeline.Shutdown();
+		RenderPass->Shutdown();
+		DestroyImGuiFramebuffers();
+		SwapChain.Shutdown();
+
+		vkDestroyImageView(Device->GetLogicalDevice(), DepthImageView, nullptr);
+		vkDestroyImage(Device->GetLogicalDevice(), DepthImage, nullptr);
+		vkFreeMemory(Device->GetLogicalDevice(), DepthImageMemory, nullptr);
+
+		SwapChain.Init(Surface->GetSurface(), WindowPtr);
+		CreateDepthResources();
+		RenderPass->CreateRenderPass(
+		    SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
+		CreateImGuiFramebuffers();
+		CreateGraphicsPipeline();
+		CreateViewportGraphicsPipeline();
+		CreateSyncObjects();
+
+		vkResetCommandPool(Device->GetLogicalDevice(), CommandPool, 0);
 	}
 
 	VkBool32 VulkanContext::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT MessageSeverity,
@@ -411,19 +697,19 @@ namespace JuicyEngine
 
 		return VK_FALSE;
 	}
-	void VulkanContext::СreateDescriptorPool()
+	void VulkanContext::CreateDescriptorPool()
 	{
-		VkDescriptorPoolSize PoolSize =
-		{
-			PoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			PoolSize.descriptorCount = 1	
+		VkDescriptorPoolSize PoolSizes[] = {
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 }
 		};
 
 		VkDescriptorPoolCreateInfo PoolInfo{};
 		PoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		PoolInfo.poolSizeCount = 1;
-		PoolInfo.pPoolSizes = &PoolSize;
-		PoolInfo.maxSets = 1;
+		PoolInfo.flags = 0;
+		PoolInfo.poolSizeCount = 2;
+		PoolInfo.pPoolSizes = PoolSizes;
+		PoolInfo.maxSets = 2;
 
 		auto Result = vkCreateDescriptorPool(Device->GetLogicalDevice(), &PoolInfo, nullptr, &DescriptorPool);
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create descriptor pool!")
@@ -431,14 +717,18 @@ namespace JuicyEngine
 	
 	void VulkanContext::CreateDescriptorSets()
 	{
+		std::array<VkDescriptorSetLayout, 1> SetLayouts = { GraphicsPipeline.GetDescriptorSetLayout() };
+		
 		VkDescriptorSetAllocateInfo AllocInfo{};
 		AllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		AllocInfo.descriptorPool = DescriptorPool;
 		AllocInfo.descriptorSetCount = 1;
-		AllocInfo.pSetLayouts = &GraphicsPipeline.GetDescriptorSetLayout();
+		AllocInfo.pSetLayouts = SetLayouts.data();
 
 		auto Result = vkAllocateDescriptorSets(Device->GetLogicalDevice(), &AllocInfo, &DescriptorSet);
 		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create descriptor set!")
+		JE_CORE_ASSERT(DescriptorSet != VK_NULL_HANDLE, "DescriptorSet is null after allocation!")
+		JE_CORE_ASSERT(GraphicsPipeline.GetDescriptorSetLayout() != VK_NULL_HANDLE, "DescriptorSetLayout is null!")
 		
 		VkDescriptorBufferInfo BufferInfo =
 		{
@@ -507,5 +797,232 @@ namespace JuicyEngine
 		}
 
 		JE_CORE_ASSERT(false, "Failed to find supported format!")
+		return VK_FORMAT_UNDEFINED;
+	}
+
+	void VulkanContext::CreateViewportRenderPass()
+	{
+		VkFormat ColorFormat = SwapChain.GetFormat();
+		VkFormat DepthFormat = FindDepthFormat();
+
+		VkAttachmentDescription ColorAttachment {};
+		ColorAttachment.format = ColorFormat;
+		ColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		ColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		ColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		ColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		ColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		ColorAttachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+		ColorAttachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+		VkAttachmentReference ColorAttachmentRef {};
+		ColorAttachmentRef.attachment = 0;
+		ColorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentDescription DepthAttachment {};
+		DepthAttachment.format = DepthFormat;
+		DepthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		DepthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		DepthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		DepthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		DepthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		DepthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		DepthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentReference DepthAttachmentRef {};
+		DepthAttachmentRef.attachment = 1;
+		DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription Subpass {};
+		Subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		Subpass.colorAttachmentCount = 1;
+		Subpass.pColorAttachments = &ColorAttachmentRef;
+		Subpass.pDepthStencilAttachment = &DepthAttachmentRef;
+
+		VkSubpassDependency Dependency {};
+		Dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		Dependency.dstSubpass = 0;
+		Dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		Dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		Dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		Dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		VkAttachmentDescription Attachments[] = { ColorAttachment, DepthAttachment };
+		VkRenderPassCreateInfo RenderPassInfo {};
+		RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		RenderPassInfo.attachmentCount = 2;
+		RenderPassInfo.pAttachments = Attachments;
+		RenderPassInfo.subpassCount = 1;
+		RenderPassInfo.pSubpasses = &Subpass;
+		RenderPassInfo.dependencyCount = 1;
+		RenderPassInfo.pDependencies = &Dependency;
+
+		VkResult Result = vkCreateRenderPass(Device->GetLogicalDevice(), &RenderPassInfo, nullptr, &ViewportRenderPass);
+		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport render pass!")
+	}
+
+	void VulkanContext::CreateViewportFramebuffer(uint32_t Width, uint32_t Height)
+	{
+		DestroyViewportFramebuffer();
+
+		VkFormat ColorFormat = SwapChain.GetFormat();
+		VkFormat DepthFormat = FindDepthFormat();
+
+		VulkanTexture2D::CreateImage(Width, Height, ColorFormat, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			ViewportImage, ViewportImageMemory);
+
+		ViewportImageView = VulkanTexture2D::CreateImageView(ViewportImage, ColorFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+
+		VulkanTexture2D::CreateImage(Width, Height, DepthFormat, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			ViewportDepthImage, ViewportDepthImageMemory);
+
+		ViewportDepthImageView = VulkanTexture2D::CreateImageView(ViewportDepthImage, DepthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+		VkImageView FramebufferAttachments[] = { ViewportImageView, ViewportDepthImageView };
+		VkFramebufferCreateInfo FramebufferInfo {};
+		FramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		FramebufferInfo.renderPass = ViewportRenderPass;
+		FramebufferInfo.attachmentCount = 2;
+		FramebufferInfo.pAttachments = FramebufferAttachments;
+		FramebufferInfo.width = Width;
+		FramebufferInfo.height = Height;
+		FramebufferInfo.layers = 1;
+
+		VkResult Result = vkCreateFramebuffer(Device->GetLogicalDevice(), &FramebufferInfo, nullptr, &ViewportFramebuffer);
+		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport framebuffer!")
+
+		VkSamplerCreateInfo SamplerInfo {};
+		SamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		SamplerInfo.magFilter = VK_FILTER_LINEAR;
+		SamplerInfo.minFilter = VK_FILTER_LINEAR;
+		SamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		SamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		SamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		SamplerInfo.anisotropyEnable = VK_FALSE;
+		SamplerInfo.maxAnisotropy = 1.0f;
+		SamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		SamplerInfo.unnormalizedCoordinates = VK_FALSE;
+		SamplerInfo.compareEnable = VK_FALSE;
+		SamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+		SamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+		Result = vkCreateSampler(Device->GetLogicalDevice(), &SamplerInfo, nullptr, &ViewportSampler);
+		JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport sampler!")
+
+		VkCommandBuffer Cmd = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands();
+		VkImageMemoryBarrier Barrier {};
+		Barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		Barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		Barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+		Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		Barrier.image = ViewportImage;
+		Barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		Barrier.subresourceRange.baseMipLevel = 0;
+		Barrier.subresourceRange.levelCount = 1;
+		Barrier.subresourceRange.baseArrayLayer = 0;
+		Barrier.subresourceRange.layerCount = 1;
+		Barrier.srcAccessMask = 0;
+		Barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+		vkCmdPipelineBarrier(Cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &Barrier);
+		RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(Cmd);
+
+		ViewportDescriptorSet = ImGui_ImplVulkan_AddTexture(ViewportSampler, ViewportImageView, VK_IMAGE_LAYOUT_GENERAL);
+		JE_CORE_ASSERT(ViewportDescriptorSet != VK_NULL_HANDLE, "Failed to create viewport descriptor set!")
+
+		ViewportSize = { Width, Height };
+	}
+
+	void VulkanContext::DestroyViewportFramebuffer()
+	{
+		if (ViewportDescriptorSet != VK_NULL_HANDLE)
+		{
+			ViewportDescriptorSet = VK_NULL_HANDLE;
+		}
+		if (ViewportSampler != VK_NULL_HANDLE)
+		{
+			vkDestroySampler(Device->GetLogicalDevice(), ViewportSampler, nullptr);
+			ViewportSampler = VK_NULL_HANDLE;
+		}
+		if (ViewportFramebuffer != VK_NULL_HANDLE)
+		{
+			vkDestroyFramebuffer(Device->GetLogicalDevice(), ViewportFramebuffer, nullptr);
+			ViewportFramebuffer = VK_NULL_HANDLE;
+		}
+		if (ViewportImageView != VK_NULL_HANDLE)
+		{
+			vkDestroyImageView(Device->GetLogicalDevice(), ViewportImageView, nullptr);
+			ViewportImageView = VK_NULL_HANDLE;
+		}
+		if (ViewportImage != VK_NULL_HANDLE)
+		{
+			vkDestroyImage(Device->GetLogicalDevice(), ViewportImage, nullptr);
+			ViewportImage = VK_NULL_HANDLE;
+		}
+		if (ViewportImageMemory != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(Device->GetLogicalDevice(), ViewportImageMemory, nullptr);
+			ViewportImageMemory = VK_NULL_HANDLE;
+		}
+		if (ViewportDepthImageView != VK_NULL_HANDLE)
+		{
+			vkDestroyImageView(Device->GetLogicalDevice(), ViewportDepthImageView, nullptr);
+			ViewportDepthImageView = VK_NULL_HANDLE;
+		}
+		if (ViewportDepthImage != VK_NULL_HANDLE)
+		{
+			vkDestroyImage(Device->GetLogicalDevice(), ViewportDepthImage, nullptr);
+			ViewportDepthImage = VK_NULL_HANDLE;
+		}
+		if (ViewportDepthImageMemory != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(Device->GetLogicalDevice(), ViewportDepthImageMemory, nullptr);
+			ViewportDepthImageMemory = VK_NULL_HANDLE;
+		}
+	}
+
+	void VulkanContext::ResizeViewportFramebuffer(uint32_t Width, uint32_t Height)
+	{
+		if (Width == 0 || Height == 0) return;
+		if (ViewportSize.width == Width && ViewportSize.height == Height) return;
+
+		vkDeviceWaitIdle(Device->GetLogicalDevice());
+
+		vkDestroyRenderPass(Device->GetLogicalDevice(), ViewportRenderPass, nullptr);
+		CreateViewportRenderPass();
+
+		CreateViewportFramebuffer(Width, Height);
+	}
+
+	VkImageView VulkanContext::GetViewportImageView() const
+	{
+		return ViewportImageView;
+	}
+
+	VkSampler VulkanContext::GetViewportSampler() const
+	{
+		return ViewportSampler;
+	}
+
+	VkDescriptorSet VulkanContext::GetViewportDescriptorSet() const
+	{
+		return ViewportDescriptorSet;
+	}
+
+	VkRenderPass VulkanContext::GetViewportRenderPass() const
+	{
+		return ViewportRenderPass;
+	}
+
+	VkFramebuffer VulkanContext::GetViewportFramebuffer() const
+	{
+		return ViewportFramebuffer;
+	}
+
+	VkExtent2D VulkanContext::GetViewportSize() const
+	{
+		return ViewportSize;
 	}
 } // namespace JuicyEngine

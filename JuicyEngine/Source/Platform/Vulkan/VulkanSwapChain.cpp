@@ -178,9 +178,19 @@ namespace JuicyEngine
 		return SwapChainImageViews;
 	}
 
+	const std::vector<VkImage>& VulkanSwapChain::GetSwapChainImages() const
+	{
+		return SwapChainImages;
+	}
+
 	VkSwapchainKHR VulkanSwapChain::GetSwapChain() const
 	{
 		return SwapChain;
+	}
+
+	uint32_t VulkanSwapChain::GetImageCount() const
+	{
+		return ImageCount;
 	}
 
 	void VulkanSwapChain::CreateImageViews(const VkDevice Device)
