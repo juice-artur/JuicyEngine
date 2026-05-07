@@ -1,28 +1,31 @@
-# pragma once
+#pragma once
 
 #include "Core/Layer.h"
 #include "vulkan/vulkan.h"
 
-namespace  JuicyEngine
+namespace JuicyEngine
 {
-	class ImGuiLayer : public Layer
-	{
-	public:
-		ImGuiLayer();
-		~ImGuiLayer();
-		
-		virtual void OnAttach();
-		virtual void OnDetach();
-		virtual void OnUpdate();
-		virtual void OnEvent(Event& event);
+class ImGuiLayer : public Layer
+{
+public:
+    ImGuiLayer();
+    ~ImGuiLayer();
 
-		void Begin();
-		void Render();
+    virtual void OnAttach();
+    virtual void OnDetach();
+    virtual void OnUpdate();
+    virtual void OnEvent(Event& event);
 
-		static ImGuiLayer* Get() { return s_Instance; }
+    void Begin();
+    void Render();
 
-	private:
-		static ImGuiLayer* s_Instance;
-		VkDescriptorPool ImGuiDescriptorPool;
-	};
+    static ImGuiLayer* Get()
+    {
+        return s_Instance;
+    }
+
+private:
+    static ImGuiLayer* s_Instance;
+    VkDescriptorPool ImGuiDescriptorPool;
+};
 }

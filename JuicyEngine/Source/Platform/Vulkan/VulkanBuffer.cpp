@@ -6,102 +6,124 @@
 
 namespace JuicyEngine
 {
-	VkBuffer& VulkanBuffer::GetBuffer()
-	{
-		return Buffer;
-	}
+VkBuffer& VulkanBuffer::GetBuffer()
+{
+    return Buffer;
+}
 
-	VulkanBuffer::~VulkanBuffer()
-	{
-		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-		vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), Buffer, nullptr);
-		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, nullptr);
-	}
-	
-	void VulkanBuffer::CopyBuffer(VkBuffer SrcBuffer, VkBuffer DstBuffer, VkDeviceSize Size)
-	{
-		VkCommandBuffer CommandBuffer = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands();
+VulkanBuffer::~VulkanBuffer()
+{
+    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+    vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), Buffer, nullptr);
+    vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, nullptr);
+}
 
-		VkBufferCopy CopyRegion{};
-		CopyRegion.size = Size;
-		vkCmdCopyBuffer(CommandBuffer, SrcBuffer, DstBuffer, 1, &CopyRegion);
+void VulkanBuffer::CopyBuffer(VkBuffer SrcBuffer, VkBuffer DstBuffer, VkDeviceSize Size)
+{
+    VkCommandBuffer CommandBuffer = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands();
 
-		RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(CommandBuffer);
-	}
+    VkBufferCopy CopyRegion {};
+    CopyRegion.size = Size;
+    vkCmdCopyBuffer(CommandBuffer, SrcBuffer, DstBuffer, 1, &CopyRegion);
 
-	VulkanVertexBuffer::VulkanVertexBuffer(const std::vector<Vertex>& Vertexes)
-	{
-		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+    RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(CommandBuffer);
+}
 
-		const auto VertexCount = Vertexes.size();
-		JE_CORE_ASSERT(VertexCount > 0, "Vertex buffer creation requires at least one vertex")
-		
-		const VkDeviceSize BufferSize = VertexCount * sizeof(Vertex);
+VulkanVertexBuffer::VulkanVertexBuffer(const std::vector<Vertex>& Vertexes)
+{
+    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
 
-		VkBuffer StagingBuffer;
-		VkDeviceMemory StagingBufferMemory;
-		RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, StagingBuffer, StagingBufferMemory);
+    const auto VertexCount = Vertexes.size();
+    JE_CORE_ASSERT(VertexCount > 0, "Vertex buffer creation requires at least one vertex")
 
-		void* Data;
-		const VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
-		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory")
-		
-		memcpy(Data, Vertexes.data(), (size_t) BufferSize);
-		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
+    const VkDeviceSize BufferSize = VertexCount * sizeof(Vertex);
 
-		RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, Buffer, BufferMemory);
+    VkBuffer StagingBuffer;
+    VkDeviceMemory StagingBufferMemory;
+    RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize,
+                                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                           StagingBuffer,
+                                           StagingBufferMemory);
 
-		CopyBuffer(StagingBuffer, Buffer, BufferSize);
+    void* Data;
+    const VkResult MapResult =
+        vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
+    JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory")
 
-		vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
-		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
-	}
+    memcpy(Data, Vertexes.data(), (size_t) BufferSize);
+    vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
 
-	VulkanVertexBuffer::~VulkanVertexBuffer() {}
-	
-	VulkanIndexBuffer::VulkanIndexBuffer(const std::vector<uint16_t>& Indexes)
-	{
-		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-		JE_CORE_ASSERT(!Indexes.empty(), "Index buffer creation requires at least one index")
-		VkDeviceSize BufferSize = sizeof(Indexes[0]) * Indexes.size();
+    RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize,
+                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                           Buffer,
+                                           BufferMemory);
 
-		VkBuffer StagingBuffer;
-		VkDeviceMemory StagingBufferMemory;
-		RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, StagingBuffer, StagingBufferMemory);
+    CopyBuffer(StagingBuffer, Buffer, BufferSize);
 
-		void* Data;
-		const VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
-		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory")
-		
-		memcpy(Data, Indexes.data(), (size_t) BufferSize);
-		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
+    vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
+    vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
+}
 
-		RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, Buffer, BufferMemory);
+VulkanVertexBuffer::~VulkanVertexBuffer() {}
 
-		CopyBuffer(StagingBuffer, Buffer, BufferSize);
+VulkanIndexBuffer::VulkanIndexBuffer(const std::vector<uint16_t>& Indexes)
+{
+    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+    JE_CORE_ASSERT(!Indexes.empty(), "Index buffer creation requires at least one index")
+    VkDeviceSize BufferSize = sizeof(Indexes[0]) * Indexes.size();
 
-		vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
-		vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
-	}
+    VkBuffer StagingBuffer;
+    VkDeviceMemory StagingBufferMemory;
+    RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize,
+                                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                           StagingBuffer,
+                                           StagingBufferMemory);
 
-	VulkanIndexBuffer::~VulkanIndexBuffer() {}
-	
-	VulkanUniformBuffer::VulkanUniformBuffer(int Size)
-	{
-		RHI::Vulkan::VulkanUtils::CreateBuffer(Size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, Buffer, BufferMemory);
-	}
-	
-	VulkanUniformBuffer::~VulkanUniformBuffer() {}
-	
-	void VulkanUniformBuffer::UploadData(int Size, void* Data)
-	{
-		const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    
-		void* MappedData = nullptr;
-		VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, 0, Size, 0, &MappedData);
-		JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map uniform buffer memory")
+    void* Data;
+    const VkResult MapResult =
+        vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
+    JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory")
 
-		memcpy(MappedData, Data, Size);
-		vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory);
-	}
+    memcpy(Data, Indexes.data(), (size_t) BufferSize);
+    vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
+
+    RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize,
+                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                           Buffer,
+                                           BufferMemory);
+
+    CopyBuffer(StagingBuffer, Buffer, BufferSize);
+
+    vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
+    vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
+}
+
+VulkanIndexBuffer::~VulkanIndexBuffer() {}
+
+VulkanUniformBuffer::VulkanUniformBuffer(int Size)
+{
+    RHI::Vulkan::VulkanUtils::CreateBuffer(Size,
+                                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                           Buffer,
+                                           BufferMemory);
+}
+
+VulkanUniformBuffer::~VulkanUniformBuffer() {}
+
+void VulkanUniformBuffer::UploadData(int Size, void* Data)
+{
+    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+
+    void* MappedData = nullptr;
+    VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, 0, Size, 0, &MappedData);
+    JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map uniform buffer memory")
+
+    memcpy(MappedData, Data, Size);
+    vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory);
+}
 } // namespace JuicyEngine

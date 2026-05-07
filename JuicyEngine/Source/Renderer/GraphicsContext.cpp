@@ -4,9 +4,9 @@
 
 namespace JuicyEngine
 {
-	GraphicsContext* GraphicsContext::Get()
-	{
-		static VulkanContext Instance;
-		return &Instance;
-	}
+GraphicsContext* GraphicsContext::Get()
+{
+    static VulkanContext Instance;
+    return &Instance;
+}
 } // namespace JuicyEngine

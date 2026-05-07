@@ -4,22 +4,22 @@
 
 namespace JuicyEngine
 {
-	class VulkanRenderCommandBuffer
-	{
-	public:
-		void Init(VkDevice Device, VkCommandPool CommandPool);
+class VulkanRenderCommandBuffer
+{
+public:
+    void Init(VkDevice Device, VkCommandPool CommandPool);
 
-		void Begin();
+    void Begin();
 
-		void End();
+    void End();
 
-		void Reset();
+    void Reset();
 
-		VkCommandBuffer& GetCommandBuffer();
+    VkCommandBuffer& GetCommandBuffer();
 
-	private:
-		VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
-		VkCommandPool CommandPool = VK_NULL_HANDLE;
-	};
+private:
+    VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
+    VkCommandPool CommandPool = VK_NULL_HANDLE;
+};
 
 } // namespace JuicyEngine
