@@ -18,157 +18,152 @@
 
 namespace JuicyEngine
 {
-	class VulkanUniformBuffer;
-	class VulkanIndexBuffer;
-	class VulkanVertexBuffer;
-	class IndexBuffer;
-	class VertexBuffer;
-	
-	class VulkanContext : public GraphicsContext
-	{
-	public:
-		VulkanContext();
+class VulkanUniformBuffer;
+class VulkanIndexBuffer;
+class VulkanVertexBuffer;
+class IndexBuffer;
+class VertexBuffer;
 
-		virtual void Init(void* Window) override;
-		virtual void SwapBuffers() override;
-		virtual void Shutdown() override;
-		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& DebugCreateInfo);
-		virtual void Draw() override;
+class VulkanContext : public GraphicsContext
+{
+public:
+    VulkanContext();
 
-		VulkanDevice* GetDevice() const;
-		VkInstance GetInstance() const;
-		VulkanSwapChain& GetSwapchain();
-		std::shared_ptr<VulkanRenderPass> GetRenderPass() const;
-		VkRenderPass GetImGuiRenderPass() const;
+    virtual void Init(void* Window) override;
+    virtual void SwapBuffers() override;
+    virtual void Shutdown() override;
+    void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& DebugCreateInfo);
+    virtual void Draw() override;
 
-		VkCommandPool GetCommandPool() const;
+    VulkanDevice* GetDevice() const;
+    VkInstance GetInstance() const;
+    VulkanSwapChain& GetSwapchain();
+    std::shared_ptr<VulkanRenderPass> GetRenderPass() const;
+    VkRenderPass GetImGuiRenderPass() const;
 
-		// Disable copy/move
-		VulkanContext(const VulkanContext&) = delete;
-		VulkanContext& operator=(const VulkanContext&) = delete;
-		VulkanContext(VulkanContext&&) = delete;
-		VulkanContext& operator=(VulkanContext&&) = delete;
+    VkCommandPool GetCommandPool() const;
 
-		~VulkanContext() override;
+    // Disable copy/move
+    VulkanContext(const VulkanContext&) = delete;
+    VulkanContext& operator=(const VulkanContext&) = delete;
+    VulkanContext(VulkanContext&&) = delete;
+    VulkanContext& operator=(VulkanContext&&) = delete;
 
-		VkFormat FindDepthFormat();
+    ~VulkanContext() override;
 
-		VkImageView& GetDepthImageView();
+    VkFormat FindDepthFormat();
 
-		VkImageView GetViewportImageView() const;
-		VkSampler GetViewportSampler() const;
-		VkDescriptorSet GetViewportDescriptorSet() const;
-		void ResizeViewportFramebuffer(uint32_t Width, uint32_t Height);
-		void CreateViewportRenderPass();
-		void CreateViewportFramebuffer(uint32_t Width, uint32_t Height);
-		void DestroyViewportFramebuffer();
-		VkRenderPass GetViewportRenderPass() const;
-		VkFramebuffer GetViewportFramebuffer() const;
-		VkExtent2D GetViewportSize() const;
+    VkImageView& GetDepthImageView();
 
-	private:
-		bool InitInstance();
-		void SetupDebugMessenger();
-		bool CheckValidationLayerSupport(const std::vector<const char*>& ValidationLayers);
+    VkImageView GetViewportImageView() const;
+    VkSampler GetViewportSampler() const;
+    VkDescriptorSet GetViewportDescriptorSet() const;
+    void ResizeViewportFramebuffer(uint32_t Width, uint32_t Height);
+    void CreateViewportRenderPass();
+    void CreateViewportFramebuffer(uint32_t Width, uint32_t Height);
+    void DestroyViewportFramebuffer();
+    VkRenderPass GetViewportRenderPass() const;
+    VkFramebuffer GetViewportFramebuffer() const;
+    VkExtent2D GetViewportSize() const;
 
-		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
-		                                      const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-		                                      const VkAllocationCallbacks* pAllocator,
-		                                      VkDebugUtilsMessengerEXT* pDebugMessenger);
-		void DestroyDebugUtilsMessengerEXT(VkInstance instance,
-		                                   VkDebugUtilsMessengerEXT debugMessenger,
-		                                   const VkAllocationCallbacks* pAllocator);
+private:
+    bool InitInstance();
+    void SetupDebugMessenger();
+    bool CheckValidationLayerSupport(const std::vector<const char*>& ValidationLayers);
 
-		void CreateGraphicsPipeline();
-		void CreateViewportGraphicsPipeline();
+    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
+                                          const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator,
+                                          VkDebugUtilsMessengerEXT* pDebugMessenger);
+    void DestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                       VkDebugUtilsMessengerEXT debugMessenger,
+                                       const VkAllocationCallbacks* pAllocator);
 
-		void CreateImGuiRenderPass();
-		void CreateImGuiFramebuffers();
-		void DestroyImGuiFramebuffers();
+    void CreateGraphicsPipeline();
+    void CreateViewportGraphicsPipeline();
 
-		void RecordCommandBuffer(VulkanRenderCommandBuffer& CB);
+    void CreateImGuiRenderPass();
+    void CreateImGuiFramebuffers();
+    void DestroyImGuiFramebuffers();
 
-		void RecreateSwapChain();
+    void RecordCommandBuffer(VulkanRenderCommandBuffer& CB);
 
-		void CreateSyncObjects();
+    void RecreateSwapChain();
 
-		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT MessageSeverity,
-		                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
-		                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		                                                    void* pUserData);
+    void CreateSyncObjects();
 
-		void CreateDescriptorPool();
-		void CreateDescriptorSets();
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT MessageSeverity,
+                                                        VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                        void* pUserData);
 
-		void CreateDepthResources();
-		VkFormat FindSupportedFormat(const std::vector<VkFormat>& Candidates, VkImageTiling Tiling,
-		VkFormatFeatureFlags Features);
-	private:
-		VkInstance Instance;
-		VkDebugUtilsMessengerEXT DebugMessenger;
+    void CreateDescriptorPool();
+    void CreateDescriptorSets();
 
-		VulkanDevice* Device;
-		VulkanSurface* Surface;
-		VulkanSwapChain SwapChain;
-		VulkanPipeline GraphicsPipeline;
-		VulkanPipeline ViewportGraphicsPipeline;
-		std::shared_ptr<VulkanRenderPass> RenderPass = std::make_shared<VulkanRenderPass>();
-		VkCommandPool CommandPool = VK_NULL_HANDLE;
-		VkDescriptorSet DescriptorSet;
-		std::vector<VulkanRenderCommandBuffer> CommandBuffers;
+    void CreateDepthResources();
+    VkFormat
+    FindSupportedFormat(const std::vector<VkFormat>& Candidates, VkImageTiling Tiling, VkFormatFeatureFlags Features);
 
-		VkImage DepthImage;
-		VkDeviceMemory DepthImageMemory;
-		VkImageView DepthImageView;
+private:
+    VkInstance Instance;
+    VkDebugUtilsMessengerEXT DebugMessenger;
 
-		static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
-		std::vector<VkSemaphore> ImageAvailableSemaphores;
-		std::vector<VkSemaphore> RenderFinishedSemaphores;
-		std::vector<VkFence> InFlightFences;
-		uint32_t CurrentFrameIndex = 0;
-		uint32_t CurrentSyncIndex = 0;
-		VkDescriptorPool DescriptorPool;
-		VkRenderPass ImGuiRenderPass = VK_NULL_HANDLE;
-		std::vector<VkFramebuffer> ImGuiFramebuffers;
-		VkRenderPass ViewportRenderPass = VK_NULL_HANDLE;
-		VkFramebuffer ViewportFramebuffer = VK_NULL_HANDLE;
-		VkImage ViewportImage;
-		VkDeviceMemory ViewportImageMemory;
-		VkImageView ViewportImageView;
-		VkSampler ViewportSampler;
-		VkDescriptorSet ViewportDescriptorSet = VK_NULL_HANDLE;
-		VkImage ViewportDepthImage;
-		VkDeviceMemory ViewportDepthImageMemory;
-		VkImageView ViewportDepthImageView;
-		VkExtent2D ViewportSize = {0, 0};
-		void* WindowPtr = nullptr;
+    VulkanDevice* Device;
+    VulkanSurface* Surface;
+    VulkanSwapChain SwapChain;
+    VulkanPipeline GraphicsPipeline;
+    VulkanPipeline ViewportGraphicsPipeline;
+    std::shared_ptr<VulkanRenderPass> RenderPass = std::make_shared<VulkanRenderPass>();
+    VkCommandPool CommandPool = VK_NULL_HANDLE;
+    VkDescriptorSet DescriptorSet;
+    std::vector<VulkanRenderCommandBuffer> CommandBuffers;
 
-		bool Skip = false;
-		bool FramebufferResized = false;
+    VkImage DepthImage;
+    VkDeviceMemory DepthImageMemory;
+    VkImageView DepthImageView;
 
-		const std::vector<Vertex> Vertices = {
-			{{-2.0f, -2.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{ 2.0f, -2.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{ 2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-2.0f,  2.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+    static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+    std::vector<VkSemaphore> ImageAvailableSemaphores;
+    std::vector<VkSemaphore> RenderFinishedSemaphores;
+    std::vector<VkFence> InFlightFences;
+    uint32_t CurrentFrameIndex = 0;
+    uint32_t CurrentSyncIndex = 0;
+    VkDescriptorPool DescriptorPool;
+    VkRenderPass ImGuiRenderPass = VK_NULL_HANDLE;
+    std::vector<VkFramebuffer> ImGuiFramebuffers;
+    VkRenderPass ViewportRenderPass = VK_NULL_HANDLE;
+    VkFramebuffer ViewportFramebuffer = VK_NULL_HANDLE;
+    VkImage ViewportImage;
+    VkDeviceMemory ViewportImageMemory;
+    VkImageView ViewportImageView;
+    VkSampler ViewportSampler;
+    VkDescriptorSet ViewportDescriptorSet = VK_NULL_HANDLE;
+    VkImage ViewportDepthImage;
+    VkDeviceMemory ViewportDepthImageMemory;
+    VkImageView ViewportDepthImageView;
+    VkExtent2D ViewportSize = {0, 0};
+    void* WindowPtr = nullptr;
 
-			{{-2.0f, -2.0f, -2.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{ 2.0f, -2.0f, -2.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{ 2.0f,  2.0f, -2.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-2.0f,  2.0f, -2.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-		};
+    bool Skip = false;
+    bool FramebufferResized = false;
 
-		const std::vector<uint16_t> Indices = {
-			0, 1, 2, 2, 3, 0,
-			4, 5, 6, 6, 7, 4
-		};
+    const std::vector<Vertex> Vertices = {{{-2.0f, -2.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+                                          {{2.0f, -2.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+                                          {{2.0f, 2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+                                          {{-2.0f, 2.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
 
-		UniformBufferObject Ubo{};
-		
+                                          {{-2.0f, -2.0f, -2.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+                                          {{2.0f, -2.0f, -2.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+                                          {{2.0f, 2.0f, -2.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+                                          {{-2.0f, 2.0f, -2.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
 
-		std::unique_ptr<VulkanVertexBuffer> VertexBuffer;
-		std::unique_ptr<VulkanIndexBuffer> IndexBuffer;
-		std::unique_ptr<VulkanUniformBuffer> UniformBuffer;
-		std::unique_ptr<VulkanTexture2D> Texture;
-	};
+    const std::vector<uint16_t> Indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
+
+    UniformBufferObject Ubo {};
+
+    std::unique_ptr<VulkanVertexBuffer> VertexBuffer;
+    std::unique_ptr<VulkanIndexBuffer> IndexBuffer;
+    std::unique_ptr<VulkanUniformBuffer> UniformBuffer;
+    std::unique_ptr<VulkanTexture2D> Texture;
+};
 } // namespace JuicyEngine

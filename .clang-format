@@ -1,80 +1,71 @@
 BasedOnStyle: LLVM
+
+# Indentation
+UseTab: Never
 IndentWidth: 4
 TabWidth: 4
-UseTab: ForIndentation
 
-# ---- Brace & Block Style ----
-BreakBeforeBraces: Allman
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
-AlwaysBreakTemplateDeclarations: Yes
-
-BraceWrapping:
-  AfterClass: true
-  AfterControlStatement: true
-  AfterEnum: true
-  AfterFunction: true
-  AfterNamespace: true
-  AfterStruct: true
-  AfterUnion: true
-  BeforeCatch: true
-  BeforeElse: true
-  IndentBraces: false
-
-# ---- Alignment ----
-AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
-AlignEscapedNewlines: Left
-AlignOperands: true
-AlignTrailingComments: true
-
-# ---- Function & Template Parameters ----
-AllowAllParametersOfDeclarationOnNextLine: false
-BinPackArguments: false
-BinPackParameters: false
-
-# ---- Line Breaking ----
-BreakBeforeBinaryOperators: All
-BreakBeforeTernaryOperators: true
-BreakConstructorInitializers: AfterColon
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
+# Line length
 ColumnLimit: 120
 
-# ---- Formatting Style ----
-Cpp11BracedListStyle: false
-DerivePointerAlignment: false
+# Language
+Standard: c++20
+
+# Braces
+BreakBeforeBraces: Allman
+BraceWrapping:
+  AfterClass: true
+  AfterStruct: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterControlStatement: true
+  AfterNamespace: true
+  BeforeCatch: true
+  BeforeElse: true
+
+# Pointers / references
 PointerAlignment: Left
+ReferenceAlignment: Left
 
-# ---- Spacing ----
-SpaceAfterCStyleCast: true
-SpaceAfterTemplateKeyword: true
-SpaceBeforeAssignmentOperators: true
+# Short statements
+AllowShortBlocksOnASingleLine: Always
+AllowShortEnumsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Arguments / parameters
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: true
+
+# Spaces
 SpaceBeforeCpp11BracedList: true
-SpaceBeforeCtorInitializerColon: true
-SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: ControlStatements
-SpaceInEmptyParentheses: false
-SpacesBeforeTrailingComments: 1
-SpacesInAngles: false
-SpacesInCStyleCastParentheses: false
-SpacesInContainerLiterals: false
+SpaceAfterCStyleCast: true
 SpacesInParentheses: false
-SpacesInSquareBrackets: false
+SpacesInAngles: false
+SpaceInEmptyParentheses: false
+SpacesInContainerLiterals: true
 
-# ---- Includes ----
-IncludeBlocks: Regroup
+# Required for designated initializers:
+# FHitResult Hit{ .bBlockingHit = true };
+SpaceBeforeAssignmentOperators: true
+Cpp11BracedListStyle: true
+
+# Includes
 SortIncludes: false
+IncludeBlocks: Preserve
 
-# ---- Indentation ----
-NamespaceIndentation: All
-IndentCaseLabels: true
-KeepEmptyLinesAtTheStartOfBlocks: false
-MaxEmptyLinesToKeep: 1
-
-# ---- Comments ----
-ReflowComments: false
-
-# ---- Misc ----
+# Access modifiers
 AccessModifierOffset: -4
+IndentAccessModifiers: false
+
+# Switch / namespaces
+IndentCaseLabels: true
+NamespaceIndentation: None
+FixNamespaceComments: false
+
+# Comments
+ReflowComments: false

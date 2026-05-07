@@ -2,15 +2,15 @@
 
 namespace JuicyEngine
 {
-	class GraphicsContext
-	{
-	public:
-		static GraphicsContext* Get();
+class GraphicsContext
+{
+public:
+    static GraphicsContext* Get();
 
-		virtual void Init(void* Window) = 0;
-		virtual void SwapBuffers() = 0;
-		virtual void Shutdown() = 0;
-		virtual void Draw() = 0;
-		virtual ~GraphicsContext() = default;
-	};
+    virtual void Init(void* Window) = 0;
+    virtual void SwapBuffers() = 0;
+    virtual void Shutdown() = 0;
+    virtual void Draw() = 0;
+    virtual ~GraphicsContext() = default;
+};
 } // namespace JuicyEngine

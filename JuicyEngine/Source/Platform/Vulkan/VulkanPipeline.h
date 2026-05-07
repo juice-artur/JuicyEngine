@@ -4,24 +4,24 @@
 
 namespace JuicyEngine
 {
-	struct PipelineCreateInfo;
+struct PipelineCreateInfo;
 
-	class VulkanPipeline
-	{
-	public:
-		void Create(const PipelineCreateInfo& Info);
+class VulkanPipeline
+{
+public:
+    void Create(const PipelineCreateInfo& Info);
 
-		void Shutdown();
+    void Shutdown();
 
-		void Bind(VkCommandBuffer CommandBuffer);
+    void Bind(VkCommandBuffer CommandBuffer);
 
-		VkDescriptorSetLayout& GetDescriptorSetLayout();
+    VkDescriptorSetLayout& GetDescriptorSetLayout();
 
-		VkPipelineLayout& GetPipelineLayout();
+    VkPipelineLayout& GetPipelineLayout();
 
-	private:
-		VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
-		VkPipeline Pipeline = VK_NULL_HANDLE;
-		VkDescriptorSetLayout DescriptorSetLayout = VK_NULL_HANDLE;
-	};
+private:
+    VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
+    VkPipeline Pipeline = VK_NULL_HANDLE;
+    VkDescriptorSetLayout DescriptorSetLayout = VK_NULL_HANDLE;
+};
 } // namespace JuicyEngine
