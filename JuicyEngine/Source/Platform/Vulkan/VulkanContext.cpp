@@ -18,29 +18,28 @@
 
 namespace JuicyEngine
 {
-VulkanContext::VulkanContext() : Instance(nullptr), DebugMessenger(nullptr) {}
+VulkanContext::VulkanContext() {}
 
 void VulkanContext::Init(void* Window)
 {
     WindowPtr = Window;
-    InitInstance();
-    SetupDebugMessenger();
-    Surface = new VulkanSurface(Instance);
-    Surface->Init(Window);
-    Device = new VulkanDevice(Instance, Surface->GetSurface());
+
+    m_DeviceManager = new VulkanDeviceManager();
+    m_DeviceManager->Init(Window);
 
     VkCommandPoolCreateInfo PoolInfo {};
     PoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     PoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    PoolInfo.queueFamilyIndex = Device->GetQueueFamilyIndices().GraphicsFamily.value();
+    PoolInfo.queueFamilyIndex = GetDevice()->GetQueueFamilyIndices().GraphicsFamily.value();
 
-    auto CreateCommandPoolResult = vkCreateCommandPool(Device->GetLogicalDevice(), &PoolInfo, nullptr, &CommandPool);
+    auto CreateCommandPoolResult =
+        vkCreateCommandPool(GetDevice()->GetLogicalDevice(), &PoolInfo, nullptr, &CommandPool);
 
     JE_CORE_ASSERT(CreateCommandPoolResult == VK_SUCCESS,
-                   "Failed to create vulkan Instance: {0}",
+                   "Failed to create command pool: {0}",
                    string_VkResult(CreateCommandPoolResult))
 
-    SwapChain.Init(Surface->GetSurface(), Window);
+    SwapChain.Init(m_DeviceManager->GetSurface()->GetSurface(), Window);
     CreateDepthResources();
     RenderPass->CreateRenderPass(SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
     CreateImGuiRenderPass();
@@ -48,7 +47,7 @@ void VulkanContext::Init(void* Window)
     CreateViewportRenderPass();
     CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     for (auto& CB : CommandBuffers)
-        CB.Init(Device->GetLogicalDevice(), CommandPool);
+        CB.Init(GetDevice()->GetLogicalDevice(), CommandPool);
     CreateGraphicsPipeline();
     CreateViewportGraphicsPipeline();
     CreateSyncObjects();
@@ -68,7 +67,7 @@ void VulkanContext::Init(void* Window)
     CreateDescriptorSets();
     // Viewport framebuffer created on first use to avoid validation layer issues
 
-    vkDeviceWaitIdle(Device->GetLogicalDevice());
+    vkDeviceWaitIdle(GetDevice()->GetLogicalDevice());
 }
 
 void VulkanContext::SwapBuffers()
@@ -97,7 +96,7 @@ void VulkanContext::SwapBuffers()
     SubmitInfo.signalSemaphoreCount = 1;
     SubmitInfo.pSignalSemaphores = SignalSemaphores;
 
-    auto QueueSubmitResult = vkQueueSubmit(Device->GetGraphicsQueue(), 1, &SubmitInfo, InFlightFences[ImageIndex]);
+    auto QueueSubmitResult = vkQueueSubmit(GetDevice()->GetGraphicsQueue(), 1, &SubmitInfo, InFlightFences[ImageIndex]);
     JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!")
 
     VkPresentInfoKHR PresentInfo {};
@@ -112,7 +111,7 @@ void VulkanContext::SwapBuffers()
 
     PresentInfo.pImageIndices = &RenderPass->SwapChainImageIndex;
 
-    auto PresentResult = vkQueuePresentKHR(Device->GetPresentQueue(), &PresentInfo);
+    auto PresentResult = vkQueuePresentKHR(GetDevice()->GetPresentQueue(), &PresentInfo);
     if (PresentResult == VK_ERROR_OUT_OF_DATE_KHR || PresentResult == VK_SUBOPTIMAL_KHR)
     {
         FramebufferResized = true;
@@ -121,93 +120,62 @@ void VulkanContext::SwapBuffers()
 
 void VulkanContext::Shutdown()
 {
-    vkDeviceWaitIdle(Device->GetLogicalDevice());
+    vkDeviceWaitIdle(GetDevice()->GetLogicalDevice());
 
-    // 2. Pipelines (in use by submitted command buffers)
     GraphicsPipeline.Shutdown();
     ViewportGraphicsPipeline.Shutdown();
 
-    // 3. Descriptor pool (must be before buffers that use it)
-    vkDestroyDescriptorPool(Device->GetLogicalDevice(), DescriptorPool, nullptr);
+    vkDestroyDescriptorPool(GetDevice()->GetLogicalDevice(), DescriptorPool, nullptr);
 
-    // 4. Buffers and textures (command buffer references cleared by reset)
     VertexBuffer.reset();
     IndexBuffer.reset();
     Texture.reset();
     UniformBuffer.reset();
 
-    // 5. Command pool
-    vkDestroyCommandPool(Device->GetLogicalDevice(), CommandPool, nullptr);
+    vkDestroyCommandPool(GetDevice()->GetLogicalDevice(), CommandPool, nullptr);
 
-    // 6. Sync objects
     for (auto Semaphore : ImageAvailableSemaphores)
-        vkDestroySemaphore(Device->GetLogicalDevice(), Semaphore, nullptr);
+        vkDestroySemaphore(GetDevice()->GetLogicalDevice(), Semaphore, nullptr);
     for (auto Semaphore : RenderFinishedSemaphores)
-        vkDestroySemaphore(Device->GetLogicalDevice(), Semaphore, nullptr);
+        vkDestroySemaphore(GetDevice()->GetLogicalDevice(), Semaphore, nullptr);
     for (auto Fence : InFlightFences)
-        vkDestroyFence(Device->GetLogicalDevice(), Fence, nullptr);
+        vkDestroyFence(GetDevice()->GetLogicalDevice(), Fence, nullptr);
 
-    // 7. Render pass and swapchain framebuffers
     RenderPass->Shutdown();
     RenderPass.reset();
 
-    // 8. ImGui render pass and framebuffers
-    vkDestroyRenderPass(Device->GetLogicalDevice(), ImGuiRenderPass, nullptr);
+    vkDestroyRenderPass(GetDevice()->GetLogicalDevice(), ImGuiRenderPass, nullptr);
     DestroyImGuiFramebuffers();
 
-    // 9. Viewport render pass and framebuffer
-    vkDestroyRenderPass(Device->GetLogicalDevice(), ViewportRenderPass, nullptr);
+    vkDestroyRenderPass(GetDevice()->GetLogicalDevice(), ViewportRenderPass, nullptr);
     DestroyViewportFramebuffer();
 
-    // 10. Depth resources
-    vkDestroyImageView(Device->GetLogicalDevice(), DepthImageView, nullptr);
-    vkDestroyImage(Device->GetLogicalDevice(), DepthImage, nullptr);
-    vkFreeMemory(Device->GetLogicalDevice(), DepthImageMemory, nullptr);
+    vkDestroyImageView(GetDevice()->GetLogicalDevice(), DepthImageView, nullptr);
+    vkDestroyImage(GetDevice()->GetLogicalDevice(), DepthImage, nullptr);
+    vkFreeMemory(GetDevice()->GetLogicalDevice(), DepthImageMemory, nullptr);
 
-    // 11. SwapChain
     SwapChain.Shutdown();
 
-    // 12. Device
-    delete Device;
-
-    // 13. Instance-level objects
-    DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
-    Surface->Shutdown();
-    delete Surface;
-
-    vkDestroyInstance(Instance, nullptr);
-}
-
-void VulkanContext::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& DebugCreateInfo)
-{
-    DebugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    DebugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                      VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                      VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    DebugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                                  VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                  VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    DebugCreateInfo.pfnUserCallback = &VulkanContext::DebugCallback;
-    DebugCreateInfo.pUserData = nullptr;
-    DebugCreateInfo.pNext = nullptr;
-    DebugCreateInfo.flags = 0;
+    m_DeviceManager->Shutdown();
+    delete m_DeviceManager;
+    m_DeviceManager = nullptr;
 }
 
 void VulkanContext::Draw()
 {
     if (FramebufferResized)
     {
-        vkDeviceWaitIdle(Device->GetLogicalDevice());
+        vkDeviceWaitIdle(GetDevice()->GetLogicalDevice());
         RecreateSwapChain();
         FramebufferResized = false;
     }
 
     CurrentSyncIndex = CurrentFrameIndex % MAX_FRAMES_IN_FLIGHT;
 
-    vkWaitForFences(Device->GetLogicalDevice(), 1, &InFlightFences[CurrentSyncIndex], VK_TRUE, UINT64_MAX);
-    vkResetFences(Device->GetLogicalDevice(), 1, &InFlightFences[CurrentSyncIndex]);
+    vkWaitForFences(GetDevice()->GetLogicalDevice(), 1, &InFlightFences[CurrentSyncIndex], VK_TRUE, UINT64_MAX);
+    vkResetFences(GetDevice()->GetLogicalDevice(), 1, &InFlightFences[CurrentSyncIndex]);
 
-    VkResult Result = vkAcquireNextImageKHR(Device->GetLogicalDevice(),
+    VkResult Result = vkAcquireNextImageKHR(GetDevice()->GetLogicalDevice(),
                                             SwapChain.GetSwapChain(),
                                             UINT64_MAX,
                                             ImageAvailableSemaphores[CurrentSyncIndex],
@@ -219,7 +187,7 @@ void VulkanContext::Draw()
         if (CurrentFrameIndex == 0)
         {
             JE_CORE_WARN("Swapchain suboptimal on first frame, skipping...");
-            vkDeviceWaitIdle(Device->GetLogicalDevice());
+            vkDeviceWaitIdle(GetDevice()->GetLogicalDevice());
             RecreateSwapChain();
             Skip = true;
             CurrentFrameIndex++;
@@ -248,11 +216,11 @@ void VulkanContext::Draw()
 }
 VulkanDevice* VulkanContext::GetDevice() const
 {
-    return Device;
+    return m_DeviceManager->GetDevice();
 }
 VkInstance VulkanContext::GetInstance() const
 {
-    return Instance;
+    return m_DeviceManager->GetInstance();
 }
 VulkanSwapChain& VulkanContext::GetSwapchain()
 {
@@ -273,123 +241,13 @@ VkCommandPool VulkanContext::GetCommandPool() const
 
 VulkanContext::~VulkanContext() {}
 
-bool VulkanContext::InitInstance()
-{
-    VkApplicationInfo AppInfo = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-                                 .pNext = nullptr,
-                                 .pApplicationName = "JuicyEngine",
-                                 .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-                                 .pEngineName = "JuicyEngine",
-                                 .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-                                 .apiVersion = VK_API_VERSION_1_3};
-
-    VkDebugUtilsMessengerCreateInfoEXT DebugCreateInfo {};
-    PopulateDebugMessengerCreateInfo(DebugCreateInfo);
-
-    std::vector<const char*> InstanceLayers = {
-        "VK_LAYER_KHRONOS_validation",
-    };
-
-    JE_ASSERT(CheckValidationLayerSupport(InstanceLayers), "Validation layers requested, but not available!")
-
-    std::vector<const char*> InstanceExtensions = {
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "VK_KHR_win32_surface"};
-
-    VkInstanceCreateInfo InstanceCreateInfo = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-                                               .pNext = &DebugCreateInfo,
-                                               .flags = 0,
-                                               .pApplicationInfo = &AppInfo,
-                                               .enabledLayerCount = static_cast<uint32_t>(InstanceLayers.size()),
-                                               .ppEnabledLayerNames = InstanceLayers.data(),
-                                               .enabledExtensionCount =
-                                                   static_cast<uint32_t>(InstanceExtensions.size()),
-                                               .ppEnabledExtensionNames = InstanceExtensions.data()};
-
-    VkResult CreateInstanceResult = vkCreateInstance(&InstanceCreateInfo, nullptr, &Instance);
-
-    JE_CORE_ASSERT(CreateInstanceResult == VK_SUCCESS,
-                   "Failed to create vulkan Instance: {0}",
-                   string_VkResult(CreateInstanceResult))
-
-    return true;
-}
-
-void VulkanContext::SetupDebugMessenger()
-{
-    VkDebugUtilsMessengerCreateInfoEXT CreateInfo;
-    PopulateDebugMessengerCreateInfo(CreateInfo);
-    if (CreateDebugUtilsMessengerEXT(Instance, &CreateInfo, nullptr, &DebugMessenger) != VK_SUCCESS)
-    {
-        JE_CORE_ASSERT(false, "Failed to set up debug messenger!")
-    }
-}
-
-bool VulkanContext::CheckValidationLayerSupport(const std::vector<const char*>& ValidationLayers)
-{
-    uint32_t LayerCount;
-    vkEnumerateInstanceLayerProperties(&LayerCount, nullptr);
-
-    std::vector<VkLayerProperties> AvailableLayers(LayerCount);
-    vkEnumerateInstanceLayerProperties(&LayerCount, AvailableLayers.data());
-
-    for (const char* LayerName : ValidationLayers)
-    {
-        bool bFound = false;
-
-        for (const auto& LayerProperties : AvailableLayers)
-        {
-            if (strcmp(LayerName, LayerProperties.layerName) == 0)
-            {
-                bFound = true;
-                break;
-            }
-        }
-
-        if (!bFound)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-VkResult VulkanContext::CreateDebugUtilsMessengerEXT(VkInstance instance,
-                                                     const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator,
-                                                     VkDebugUtilsMessengerEXT* pDebugMessenger)
-{
-    PFN_vkCreateDebugUtilsMessengerEXT Func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-        vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
-    if (Func != nullptr)
-    {
-        return Func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    }
-    else
-    {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void VulkanContext::DestroyDebugUtilsMessengerEXT(VkInstance instance,
-                                                  VkDebugUtilsMessengerEXT debugMessenger,
-                                                  const VkAllocationCallbacks* pAllocator)
-{
-    PFN_vkDestroyDebugUtilsMessengerEXT Func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-        vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-    if (Func != nullptr)
-    {
-        Func(instance, debugMessenger, pAllocator);
-    }
-}
-
 void VulkanContext::CreateGraphicsPipeline()
 {
     auto VertShaderCode = VulkanShader::ReadFile("Assets/Shaders/vert.spv");
     auto FragShaderCode = VulkanShader::ReadFile("Assets/Shaders/frag.spv");
 
-    VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), VertShaderCode);
-    VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), FragShaderCode);
+    VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(GetDevice()->GetLogicalDevice(), VertShaderCode);
+    VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(GetDevice()->GetLogicalDevice(), FragShaderCode);
 
     VkPipelineShaderStageCreateInfo VertShaderStageInfo {};
     VertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -408,8 +266,8 @@ void VulkanContext::CreateGraphicsPipeline()
     Info.VulkanShaderModules = std::vector {VertShaderStageInfo, fragShaderStageInfo};
     GraphicsPipeline.Create(Info);
 
-    vkDestroyShaderModule(Device->GetLogicalDevice(), FragShaderModule, nullptr);
-    vkDestroyShaderModule(Device->GetLogicalDevice(), VertShaderModule, nullptr);
+    vkDestroyShaderModule(GetDevice()->GetLogicalDevice(), FragShaderModule, nullptr);
+    vkDestroyShaderModule(GetDevice()->GetLogicalDevice(), VertShaderModule, nullptr);
 }
 
 void VulkanContext::CreateViewportGraphicsPipeline()
@@ -420,8 +278,8 @@ void VulkanContext::CreateViewportGraphicsPipeline()
     auto VertShaderCode = VulkanShader::ReadFile("Assets/Shaders/vert.spv");
     auto FragShaderCode = VulkanShader::ReadFile("Assets/Shaders/frag.spv");
 
-    VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), VertShaderCode);
-    VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(Device->GetLogicalDevice(), FragShaderCode);
+    VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(GetDevice()->GetLogicalDevice(), VertShaderCode);
+    VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(GetDevice()->GetLogicalDevice(), FragShaderCode);
 
     VkPipelineShaderStageCreateInfo VertShaderStageInfo {};
     VertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -443,8 +301,8 @@ void VulkanContext::CreateViewportGraphicsPipeline()
     Info.VulkanShaderModules = std::vector {VertShaderStageInfo, fragShaderStageInfo};
     ViewportGraphicsPipeline.Create(Info);
 
-    vkDestroyShaderModule(Device->GetLogicalDevice(), FragShaderModule, nullptr);
-    vkDestroyShaderModule(Device->GetLogicalDevice(), VertShaderModule, nullptr);
+    vkDestroyShaderModule(GetDevice()->GetLogicalDevice(), FragShaderModule, nullptr);
+    vkDestroyShaderModule(GetDevice()->GetLogicalDevice(), VertShaderModule, nullptr);
 }
 
 void VulkanContext::CreateImGuiRenderPass()
@@ -493,7 +351,7 @@ void VulkanContext::CreateImGuiRenderPass()
     RenderPassInfo.dependencyCount = 2;
     RenderPassInfo.pDependencies = Dependencies;
 
-    VkResult Result = vkCreateRenderPass(Device->GetLogicalDevice(), &RenderPassInfo, nullptr, &ImGuiRenderPass);
+    VkResult Result = vkCreateRenderPass(GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &ImGuiRenderPass);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create ImGui render pass!")
 }
 
@@ -514,7 +372,7 @@ void VulkanContext::CreateImGuiFramebuffers()
         FramebufferInfo.layers = 1;
 
         VkResult Result =
-            vkCreateFramebuffer(Device->GetLogicalDevice(), &FramebufferInfo, nullptr, &ImGuiFramebuffers[i]);
+            vkCreateFramebuffer(GetDevice()->GetLogicalDevice(), &FramebufferInfo, nullptr, &ImGuiFramebuffers[i]);
         JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create ImGui framebuffer!")
     }
 }
@@ -523,7 +381,7 @@ void VulkanContext::DestroyImGuiFramebuffers()
 {
     for (auto Framebuffer : ImGuiFramebuffers)
     {
-        vkDestroyFramebuffer(Device->GetLogicalDevice(), Framebuffer, nullptr);
+        vkDestroyFramebuffer(GetDevice()->GetLogicalDevice(), Framebuffer, nullptr);
     }
     ImGuiFramebuffers.clear();
 }
@@ -640,11 +498,11 @@ void VulkanContext::CreateSyncObjects()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        if (vkCreateSemaphore(Device->GetLogicalDevice(), &SemaphoreInfo, nullptr, &ImageAvailableSemaphores[i]) !=
+        if (vkCreateSemaphore(GetDevice()->GetLogicalDevice(), &SemaphoreInfo, nullptr, &ImageAvailableSemaphores[i]) !=
                 VK_SUCCESS ||
-            vkCreateSemaphore(Device->GetLogicalDevice(), &SemaphoreInfo, nullptr, &RenderFinishedSemaphores[i]) !=
+            vkCreateSemaphore(GetDevice()->GetLogicalDevice(), &SemaphoreInfo, nullptr, &RenderFinishedSemaphores[i]) !=
                 VK_SUCCESS ||
-            vkCreateFence(Device->GetLogicalDevice(), &FenceInfo, nullptr, &InFlightFences[i]) != VK_SUCCESS)
+            vkCreateFence(GetDevice()->GetLogicalDevice(), &FenceInfo, nullptr, &InFlightFences[i]) != VK_SUCCESS)
         {
             JE_CORE_ASSERT(false, "Failed to create synchronization objects for a frame!")
         }
@@ -654,11 +512,11 @@ void VulkanContext::CreateSyncObjects()
 void VulkanContext::RecreateSwapChain()
 {
     for (auto Semaphore : ImageAvailableSemaphores)
-        vkDestroySemaphore(Device->GetLogicalDevice(), Semaphore, nullptr);
+        vkDestroySemaphore(GetDevice()->GetLogicalDevice(), Semaphore, nullptr);
     for (auto Semaphore : RenderFinishedSemaphores)
-        vkDestroySemaphore(Device->GetLogicalDevice(), Semaphore, nullptr);
+        vkDestroySemaphore(GetDevice()->GetLogicalDevice(), Semaphore, nullptr);
     for (auto Fence : InFlightFences)
-        vkDestroyFence(Device->GetLogicalDevice(), Fence, nullptr);
+        vkDestroyFence(GetDevice()->GetLogicalDevice(), Fence, nullptr);
 
     GraphicsPipeline.Shutdown();
     ViewportGraphicsPipeline.Shutdown();
@@ -666,11 +524,11 @@ void VulkanContext::RecreateSwapChain()
     DestroyImGuiFramebuffers();
     SwapChain.Shutdown();
 
-    vkDestroyImageView(Device->GetLogicalDevice(), DepthImageView, nullptr);
-    vkDestroyImage(Device->GetLogicalDevice(), DepthImage, nullptr);
-    vkFreeMemory(Device->GetLogicalDevice(), DepthImageMemory, nullptr);
+    vkDestroyImageView(GetDevice()->GetLogicalDevice(), DepthImageView, nullptr);
+    vkDestroyImage(GetDevice()->GetLogicalDevice(), DepthImage, nullptr);
+    vkFreeMemory(GetDevice()->GetLogicalDevice(), DepthImageMemory, nullptr);
 
-    SwapChain.Init(Surface->GetSurface(), WindowPtr);
+    SwapChain.Init(m_DeviceManager->GetSurface()->GetSurface(), WindowPtr);
     CreateDepthResources();
     RenderPass->CreateRenderPass(SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
     CreateImGuiFramebuffers();
@@ -678,31 +536,9 @@ void VulkanContext::RecreateSwapChain()
     CreateViewportGraphicsPipeline();
     CreateSyncObjects();
 
-    vkResetCommandPool(Device->GetLogicalDevice(), CommandPool, 0);
+    vkResetCommandPool(GetDevice()->GetLogicalDevice(), CommandPool, 0);
 }
 
-VkBool32 VulkanContext::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT MessageSeverity,
-                                      VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                      const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                      void* pUserData)
-{
-    switch (MessageSeverity)
-    {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            JE_CORE_TRACE("[VULKAN] {0}", pCallbackData->pMessage);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: JE_CORE_INFO("[VULKAN] {0}", pCallbackData->pMessage); break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            JE_CORE_WARN("[VULKAN] {0}", pCallbackData->pMessage);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            JE_CORE_ERROR("[VULKAN] {0}", pCallbackData->pMessage);
-            break;
-        default: JE_CORE_ASSERT(false, "Incorrect enum value")
-    }
-
-    return VK_FALSE;
-}
 void VulkanContext::CreateDescriptorPool()
 {
     VkDescriptorPoolSize PoolSizes[] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
@@ -715,7 +551,7 @@ void VulkanContext::CreateDescriptorPool()
     PoolInfo.pPoolSizes = PoolSizes;
     PoolInfo.maxSets = 2;
 
-    auto Result = vkCreateDescriptorPool(Device->GetLogicalDevice(), &PoolInfo, nullptr, &DescriptorPool);
+    auto Result = vkCreateDescriptorPool(GetDevice()->GetLogicalDevice(), &PoolInfo, nullptr, &DescriptorPool);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create descriptor pool!")
 }
 
@@ -729,7 +565,7 @@ void VulkanContext::CreateDescriptorSets()
     AllocInfo.descriptorSetCount = 1;
     AllocInfo.pSetLayouts = SetLayouts.data();
 
-    auto Result = vkAllocateDescriptorSets(Device->GetLogicalDevice(), &AllocInfo, &DescriptorSet);
+    auto Result = vkAllocateDescriptorSets(GetDevice()->GetLogicalDevice(), &AllocInfo, &DescriptorSet);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create descriptor set!")
     JE_CORE_ASSERT(DescriptorSet != VK_NULL_HANDLE, "DescriptorSet is null after allocation!")
     JE_CORE_ASSERT(GraphicsPipeline.GetDescriptorSetLayout() != VK_NULL_HANDLE, "DescriptorSetLayout is null!")
@@ -760,7 +596,8 @@ void VulkanContext::CreateDescriptorSets()
     DescriptorWrites[1].descriptorCount = 1;
     DescriptorWrites[1].pImageInfo = &ImageInfo;
 
-    vkUpdateDescriptorSets(Device->GetLogicalDevice(), DescriptorWrites.size(), DescriptorWrites.data(), 0, nullptr);
+    vkUpdateDescriptorSets(
+        GetDevice()->GetLogicalDevice(), DescriptorWrites.size(), DescriptorWrites.data(), 0, nullptr);
 }
 void VulkanContext::CreateDepthResources()
 {
@@ -792,7 +629,7 @@ VkFormat VulkanContext::FindSupportedFormat(const std::vector<VkFormat>& Candida
     for (VkFormat Format : Candidates)
     {
         VkFormatProperties Props;
-        vkGetPhysicalDeviceFormatProperties(Device->GetPhysicalDevice(), Format, &Props);
+        vkGetPhysicalDeviceFormatProperties(GetDevice()->GetPhysicalDevice(), Format, &Props);
 
         if (Tiling == VK_IMAGE_TILING_LINEAR && (Props.linearTilingFeatures & Features) == Features)
         {
@@ -866,7 +703,8 @@ void VulkanContext::CreateViewportRenderPass()
     RenderPassInfo.dependencyCount = 1;
     RenderPassInfo.pDependencies = &Dependency;
 
-    VkResult Result = vkCreateRenderPass(Device->GetLogicalDevice(), &RenderPassInfo, nullptr, &ViewportRenderPass);
+    VkResult Result =
+        vkCreateRenderPass(GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &ViewportRenderPass);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport render pass!")
 }
 
@@ -911,7 +749,8 @@ void VulkanContext::CreateViewportFramebuffer(uint32_t Width, uint32_t Height)
     FramebufferInfo.height = Height;
     FramebufferInfo.layers = 1;
 
-    VkResult Result = vkCreateFramebuffer(Device->GetLogicalDevice(), &FramebufferInfo, nullptr, &ViewportFramebuffer);
+    VkResult Result =
+        vkCreateFramebuffer(GetDevice()->GetLogicalDevice(), &FramebufferInfo, nullptr, &ViewportFramebuffer);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport framebuffer!")
 
     VkSamplerCreateInfo SamplerInfo {};
@@ -929,7 +768,7 @@ void VulkanContext::CreateViewportFramebuffer(uint32_t Width, uint32_t Height)
     SamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     SamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    Result = vkCreateSampler(Device->GetLogicalDevice(), &SamplerInfo, nullptr, &ViewportSampler);
+    Result = vkCreateSampler(GetDevice()->GetLogicalDevice(), &SamplerInfo, nullptr, &ViewportSampler);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport sampler!")
 
     VkCommandBuffer Cmd = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands();
@@ -974,42 +813,42 @@ void VulkanContext::DestroyViewportFramebuffer()
     }
     if (ViewportSampler != VK_NULL_HANDLE)
     {
-        vkDestroySampler(Device->GetLogicalDevice(), ViewportSampler, nullptr);
+        vkDestroySampler(GetDevice()->GetLogicalDevice(), ViewportSampler, nullptr);
         ViewportSampler = VK_NULL_HANDLE;
     }
     if (ViewportFramebuffer != VK_NULL_HANDLE)
     {
-        vkDestroyFramebuffer(Device->GetLogicalDevice(), ViewportFramebuffer, nullptr);
+        vkDestroyFramebuffer(GetDevice()->GetLogicalDevice(), ViewportFramebuffer, nullptr);
         ViewportFramebuffer = VK_NULL_HANDLE;
     }
     if (ViewportImageView != VK_NULL_HANDLE)
     {
-        vkDestroyImageView(Device->GetLogicalDevice(), ViewportImageView, nullptr);
+        vkDestroyImageView(GetDevice()->GetLogicalDevice(), ViewportImageView, nullptr);
         ViewportImageView = VK_NULL_HANDLE;
     }
     if (ViewportImage != VK_NULL_HANDLE)
     {
-        vkDestroyImage(Device->GetLogicalDevice(), ViewportImage, nullptr);
+        vkDestroyImage(GetDevice()->GetLogicalDevice(), ViewportImage, nullptr);
         ViewportImage = VK_NULL_HANDLE;
     }
     if (ViewportImageMemory != VK_NULL_HANDLE)
     {
-        vkFreeMemory(Device->GetLogicalDevice(), ViewportImageMemory, nullptr);
+        vkFreeMemory(GetDevice()->GetLogicalDevice(), ViewportImageMemory, nullptr);
         ViewportImageMemory = VK_NULL_HANDLE;
     }
     if (ViewportDepthImageView != VK_NULL_HANDLE)
     {
-        vkDestroyImageView(Device->GetLogicalDevice(), ViewportDepthImageView, nullptr);
+        vkDestroyImageView(GetDevice()->GetLogicalDevice(), ViewportDepthImageView, nullptr);
         ViewportDepthImageView = VK_NULL_HANDLE;
     }
     if (ViewportDepthImage != VK_NULL_HANDLE)
     {
-        vkDestroyImage(Device->GetLogicalDevice(), ViewportDepthImage, nullptr);
+        vkDestroyImage(GetDevice()->GetLogicalDevice(), ViewportDepthImage, nullptr);
         ViewportDepthImage = VK_NULL_HANDLE;
     }
     if (ViewportDepthImageMemory != VK_NULL_HANDLE)
     {
-        vkFreeMemory(Device->GetLogicalDevice(), ViewportDepthImageMemory, nullptr);
+        vkFreeMemory(GetDevice()->GetLogicalDevice(), ViewportDepthImageMemory, nullptr);
         ViewportDepthImageMemory = VK_NULL_HANDLE;
     }
 }
@@ -1021,9 +860,9 @@ void VulkanContext::ResizeViewportFramebuffer(uint32_t Width, uint32_t Height)
     if (ViewportSize.width == Width && ViewportSize.height == Height)
         return;
 
-    vkDeviceWaitIdle(Device->GetLogicalDevice());
+    vkDeviceWaitIdle(GetDevice()->GetLogicalDevice());
 
-    vkDestroyRenderPass(Device->GetLogicalDevice(), ViewportRenderPass, nullptr);
+    vkDestroyRenderPass(GetDevice()->GetLogicalDevice(), ViewportRenderPass, nullptr);
     CreateViewportRenderPass();
 
     ViewportGraphicsPipeline.Shutdown();

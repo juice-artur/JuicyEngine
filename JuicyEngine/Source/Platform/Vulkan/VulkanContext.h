@@ -6,10 +6,9 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include "VulkanCommandBuffer.h"
-#include "VulkanDevice.h"
+#include "VulkanDeviceManager.h"
 #include "VulkanPipeline.h"
 #include "VulkanRenderPass.h"
-#include "VulkanSurface.h"
 #include "VulkanSwapChain.h"
 #include "VulkanTexture2D.h"
 #include "Renderer/GraphicsContext.h"
@@ -32,7 +31,6 @@ public:
     virtual void Init(void* Window) override;
     virtual void SwapBuffers() override;
     virtual void Shutdown() override;
-    void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& DebugCreateInfo);
     virtual void Draw() override;
 
     VulkanDevice* GetDevice() const;
@@ -67,18 +65,6 @@ public:
     VkExtent2D GetViewportSize() const;
 
 private:
-    bool InitInstance();
-    void SetupDebugMessenger();
-    bool CheckValidationLayerSupport(const std::vector<const char*>& ValidationLayers);
-
-    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
-                                          const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator,
-                                          VkDebugUtilsMessengerEXT* pDebugMessenger);
-    void DestroyDebugUtilsMessengerEXT(VkInstance instance,
-                                       VkDebugUtilsMessengerEXT debugMessenger,
-                                       const VkAllocationCallbacks* pAllocator);
-
     void CreateGraphicsPipeline();
     void CreateViewportGraphicsPipeline();
 
@@ -92,11 +78,6 @@ private:
 
     void CreateSyncObjects();
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT MessageSeverity,
-                                                        VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                        void* pUserData);
-
     void CreateDescriptorPool();
     void CreateDescriptorSets();
 
@@ -105,11 +86,7 @@ private:
     FindSupportedFormat(const std::vector<VkFormat>& Candidates, VkImageTiling Tiling, VkFormatFeatureFlags Features);
 
 private:
-    VkInstance Instance;
-    VkDebugUtilsMessengerEXT DebugMessenger;
-
-    VulkanDevice* Device;
-    VulkanSurface* Surface;
+    VulkanDeviceManager* m_DeviceManager;
     VulkanSwapChain SwapChain;
     VulkanPipeline GraphicsPipeline;
     VulkanPipeline ViewportGraphicsPipeline;
