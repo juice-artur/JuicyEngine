@@ -78,25 +78,26 @@ void VulkanContext::SwapBuffers()
         return;
     }
 
-    uint32_t ImageIndex = CurrentSyncIndex;
+    uint32_t FenceIndex = CurrentSyncIndex;
+    uint32_t ImageIndex = RenderPass->SwapChainImageIndex;
 
     VkSubmitInfo SubmitInfo {};
     SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore WaitSemaphores[] = {ImageAvailableSemaphores[ImageIndex]};
+    VkSemaphore WaitSemaphores[] = {ImageAvailableSemaphores[CurrentAcquireIndex]};
     VkPipelineStageFlags WaitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     SubmitInfo.waitSemaphoreCount = 1;
     SubmitInfo.pWaitSemaphores = WaitSemaphores;
     SubmitInfo.pWaitDstStageMask = WaitStages;
 
     SubmitInfo.commandBufferCount = 1;
-    SubmitInfo.pCommandBuffers = &CommandBuffers[ImageIndex].GetCommandBuffer();
+    SubmitInfo.pCommandBuffers = &CommandBuffers[FenceIndex].GetCommandBuffer();
 
     VkSemaphore SignalSemaphores[] = {RenderFinishedSemaphores[ImageIndex]};
     SubmitInfo.signalSemaphoreCount = 1;
     SubmitInfo.pSignalSemaphores = SignalSemaphores;
 
-    auto QueueSubmitResult = vkQueueSubmit(GetDevice()->GetGraphicsQueue(), 1, &SubmitInfo, InFlightFences[ImageIndex]);
+    auto QueueSubmitResult = vkQueueSubmit(GetDevice()->GetGraphicsQueue(), 1, &SubmitInfo, GraphicsFences[FenceIndex]);
     JE_ASSERT(QueueSubmitResult == VK_SUCCESS, "Queue submit failed!")
 
     VkPresentInfoKHR PresentInfo {};
@@ -138,7 +139,7 @@ void VulkanContext::Shutdown()
         vkDestroySemaphore(GetDevice()->GetLogicalDevice(), Semaphore, nullptr);
     for (auto Semaphore : RenderFinishedSemaphores)
         vkDestroySemaphore(GetDevice()->GetLogicalDevice(), Semaphore, nullptr);
-    for (auto Fence : InFlightFences)
+    for (auto Fence : GraphicsFences)
         vkDestroyFence(GetDevice()->GetLogicalDevice(), Fence, nullptr);
 
     RenderPass->Shutdown();
@@ -172,13 +173,14 @@ void VulkanContext::Draw()
 
     CurrentSyncIndex = CurrentFrameIndex % MAX_FRAMES_IN_FLIGHT;
 
-    vkWaitForFences(GetDevice()->GetLogicalDevice(), 1, &InFlightFences[CurrentSyncIndex], VK_TRUE, UINT64_MAX);
-    vkResetFences(GetDevice()->GetLogicalDevice(), 1, &InFlightFences[CurrentSyncIndex]);
+    vkWaitForFences(GetDevice()->GetLogicalDevice(), 1, &GraphicsFences[CurrentSyncIndex], VK_TRUE, UINT64_MAX);
+    vkResetFences(GetDevice()->GetLogicalDevice(), 1, &GraphicsFences[CurrentSyncIndex]);
 
+    CurrentAcquireIndex = CurrentFrameIndex % SwapChain.GetImageCount();
     VkResult Result = vkAcquireNextImageKHR(GetDevice()->GetLogicalDevice(),
                                             SwapChain.GetSwapChain(),
                                             UINT64_MAX,
-                                            ImageAvailableSemaphores[CurrentSyncIndex],
+                                            ImageAvailableSemaphores[CurrentAcquireIndex],
                                             VK_NULL_HANDLE,
                                             &RenderPass->SwapChainImageIndex);
 
@@ -492,19 +494,28 @@ void VulkanContext::CreateSyncObjects()
     FenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     FenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    uint32_t ImageCount = SwapChain.GetImageCount();
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    ImageAvailableSemaphores.resize(ImageCount);
+    RenderFinishedSemaphores.resize(ImageCount);
+    GraphicsFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < ImageCount; i++)
     {
         if (vkCreateSemaphore(GetDevice()->GetLogicalDevice(), &SemaphoreInfo, nullptr, &ImageAvailableSemaphores[i]) !=
                 VK_SUCCESS ||
             vkCreateSemaphore(GetDevice()->GetLogicalDevice(), &SemaphoreInfo, nullptr, &RenderFinishedSemaphores[i]) !=
-                VK_SUCCESS ||
-            vkCreateFence(GetDevice()->GetLogicalDevice(), &FenceInfo, nullptr, &InFlightFences[i]) != VK_SUCCESS)
+                VK_SUCCESS)
         {
-            JE_CORE_ASSERT(false, "Failed to create synchronization objects for a frame!")
+            JE_CORE_ASSERT(false, "Failed to create semaphores!")
+        }
+    }
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        if (vkCreateFence(GetDevice()->GetLogicalDevice(), &FenceInfo, nullptr, &GraphicsFences[i]) != VK_SUCCESS)
+        {
+            JE_CORE_ASSERT(false, "Failed to create fences!")
         }
     }
 }
@@ -515,7 +526,7 @@ void VulkanContext::RecreateSwapChain()
         vkDestroySemaphore(GetDevice()->GetLogicalDevice(), Semaphore, nullptr);
     for (auto Semaphore : RenderFinishedSemaphores)
         vkDestroySemaphore(GetDevice()->GetLogicalDevice(), Semaphore, nullptr);
-    for (auto Fence : InFlightFences)
+    for (auto Fence : GraphicsFences)
         vkDestroyFence(GetDevice()->GetLogicalDevice(), Fence, nullptr);
 
     GraphicsPipeline.Shutdown();

@@ -99,12 +99,13 @@ private:
     VkDeviceMemory DepthImageMemory;
     VkImageView DepthImageView;
 
-    static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+    static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
     std::vector<VkSemaphore> ImageAvailableSemaphores;
     std::vector<VkSemaphore> RenderFinishedSemaphores;
-    std::vector<VkFence> InFlightFences;
+    std::vector<VkFence> GraphicsFences;
     uint32_t CurrentFrameIndex = 0;
     uint32_t CurrentSyncIndex = 0;
+    uint32_t CurrentAcquireIndex = 0;
     VkDescriptorPool DescriptorPool;
     VkRenderPass ImGuiRenderPass = VK_NULL_HANDLE;
     std::vector<VkFramebuffer> ImGuiFramebuffers;
