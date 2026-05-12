@@ -56,6 +56,12 @@ set(SOURCES
     Source/Platform/Vulkan/VulkanTexture2D.cpp
     Source/Platform/Vulkan/VulkanUtils.h
     Source/Platform/Vulkan/VulkanUtils.cpp
+    Source/Platform/Vulkan/VulkanImage.h
+    Source/Platform/Vulkan/VulkanImage.cpp
+    Source/Platform/Vulkan/VulkanFramebuffer.h
+    Source/Platform/Vulkan/VulkanFramebuffer.cpp
+    Source/Platform/Vulkan/VulkanRenderTarget.h
+    Source/Platform/Vulkan/VulkanRenderTarget.cpp
     Source/ImGui/ImGuiLayer.cpp
     Source/ImGui/ImGuiLayer.h
     Source/Editor/EditorLayer.cpp
