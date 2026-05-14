@@ -1,7 +1,6 @@
 #include "VulkanContext.h"
 
 #include "VulkanBuffer.h"
-#include "VulkanUtils.h"
 #include "jepch.h"
 #include "vulkan/vulkan.h"
 #include <vulkan/vk_enum_string_helper.h>
@@ -151,9 +150,7 @@ void VulkanContext::Shutdown()
     vkDestroyRenderPass(GetDevice()->GetLogicalDevice(), ViewportRenderPass, nullptr);
     DestroyViewportFramebuffer();
 
-    vkDestroyImageView(GetDevice()->GetLogicalDevice(), DepthImageView, nullptr);
-    vkDestroyImage(GetDevice()->GetLogicalDevice(), DepthImage, nullptr);
-    vkFreeMemory(GetDevice()->GetLogicalDevice(), DepthImageMemory, nullptr);
+    DepthImage.reset();
 
     SwapChain.Shutdown();
 
@@ -535,9 +532,7 @@ void VulkanContext::RecreateSwapChain()
     DestroyImGuiFramebuffers();
     SwapChain.Shutdown();
 
-    vkDestroyImageView(GetDevice()->GetLogicalDevice(), DepthImageView, nullptr);
-    vkDestroyImage(GetDevice()->GetLogicalDevice(), DepthImage, nullptr);
-    vkFreeMemory(GetDevice()->GetLogicalDevice(), DepthImageMemory, nullptr);
+    DepthImage.reset();
 
     SwapChain.Init(m_DeviceManager->GetSurface()->GetSurface(), WindowPtr);
     CreateDepthResources();
@@ -586,7 +581,7 @@ void VulkanContext::CreateDescriptorSets()
 
     VkDescriptorImageInfo ImageInfo {};
     ImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    ImageInfo.imageView = Texture->GetImageView();
+    ImageInfo.imageView = Texture->GetImage()->GetImageView();
     ImageInfo.sampler = Texture->GetSampler();
 
     std::array<VkWriteDescriptorSet, 2> DescriptorWrites {};
@@ -613,15 +608,10 @@ void VulkanContext::CreateDescriptorSets()
 void VulkanContext::CreateDepthResources()
 {
     VkFormat DepthFormat = FindDepthFormat();
-    VulkanTexture2D::CreateImage(SwapChain.GetExtent().width,
-                                 SwapChain.GetExtent().height,
-                                 DepthFormat,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 DepthImage,
-                                 DepthImageMemory);
-    DepthImageView = VulkanTexture2D::CreateImageView(DepthImage, DepthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    DepthImage = std::make_unique<VulkanImage>(SwapChain.GetExtent().width,
+                                               SwapChain.GetExtent().height,
+                                               DepthFormat,
+                                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 VkFormat VulkanContext::FindDepthFormat()
 {
@@ -629,9 +619,9 @@ VkFormat VulkanContext::FindDepthFormat()
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
-VkImageView& VulkanContext::GetDepthImageView()
+VkImageView VulkanContext::GetDepthImageView() const
 {
-    return DepthImageView;
+    return DepthImage->GetImageView();
 }
 VkFormat VulkanContext::FindSupportedFormat(const std::vector<VkFormat>& Candidates,
                                             VkImageTiling Tiling,
@@ -726,31 +716,17 @@ void VulkanContext::CreateViewportFramebuffer(uint32_t Width, uint32_t Height)
     VkFormat ColorFormat = SwapChain.GetFormat();
     VkFormat DepthFormat = FindDepthFormat();
 
-    VulkanTexture2D::CreateImage(Width,
-                                 Height,
-                                 ColorFormat,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                                     VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 ViewportImage,
-                                 ViewportImageMemory);
+    ViewportImage.reset(new VulkanImage(Width,
+                                        Height,
+                                        ColorFormat,
+                                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                                            VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-    ViewportImageView = VulkanTexture2D::CreateImageView(ViewportImage, ColorFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+    ViewportDepthImage.reset(new VulkanImage(
+        Width, Height, DepthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-    VulkanTexture2D::CreateImage(Width,
-                                 Height,
-                                 DepthFormat,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 ViewportDepthImage,
-                                 ViewportDepthImageMemory);
-
-    ViewportDepthImageView =
-        VulkanTexture2D::CreateImageView(ViewportDepthImage, DepthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-    VkImageView FramebufferAttachments[] = {ViewportImageView, ViewportDepthImageView};
+    VkImageView FramebufferAttachments[] = {ViewportImage->GetImageView(), ViewportDepthImage->GetImageView()};
     VkFramebufferCreateInfo FramebufferInfo {};
     FramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     FramebufferInfo.renderPass = ViewportRenderPass;
@@ -782,34 +758,10 @@ void VulkanContext::CreateViewportFramebuffer(uint32_t Width, uint32_t Height)
     Result = vkCreateSampler(GetDevice()->GetLogicalDevice(), &SamplerInfo, nullptr, &ViewportSampler);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport sampler!")
 
-    VkCommandBuffer Cmd = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands();
-    VkImageMemoryBarrier Barrier {};
-    Barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    Barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    Barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    Barrier.image = ViewportImage;
-    Barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    Barrier.subresourceRange.baseMipLevel = 0;
-    Barrier.subresourceRange.levelCount = 1;
-    Barrier.subresourceRange.baseArrayLayer = 0;
-    Barrier.subresourceRange.layerCount = 1;
-    Barrier.srcAccessMask = 0;
-    Barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
-    vkCmdPipelineBarrier(Cmd,
-                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                         0,
-                         0,
-                         nullptr,
-                         0,
-                         nullptr,
-                         1,
-                         &Barrier);
-    RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(Cmd);
+    ViewportImage->TransitionLayoutImmediate(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-    ViewportDescriptorSet = ImGui_ImplVulkan_AddTexture(ViewportSampler, ViewportImageView, VK_IMAGE_LAYOUT_GENERAL);
+    ViewportDescriptorSet =
+        ImGui_ImplVulkan_AddTexture(ViewportSampler, ViewportImage->GetImageView(), VK_IMAGE_LAYOUT_GENERAL);
     JE_CORE_ASSERT(ViewportDescriptorSet != VK_NULL_HANDLE, "Failed to create viewport descriptor set!")
 
     ViewportSize = {Width, Height};
@@ -832,35 +784,13 @@ void VulkanContext::DestroyViewportFramebuffer()
         vkDestroyFramebuffer(GetDevice()->GetLogicalDevice(), ViewportFramebuffer, nullptr);
         ViewportFramebuffer = VK_NULL_HANDLE;
     }
-    if (ViewportImageView != VK_NULL_HANDLE)
+    if (ViewportImage)
     {
-        vkDestroyImageView(GetDevice()->GetLogicalDevice(), ViewportImageView, nullptr);
-        ViewportImageView = VK_NULL_HANDLE;
+        ViewportImage.reset();
     }
-    if (ViewportImage != VK_NULL_HANDLE)
+    if (ViewportDepthImage)
     {
-        vkDestroyImage(GetDevice()->GetLogicalDevice(), ViewportImage, nullptr);
-        ViewportImage = VK_NULL_HANDLE;
-    }
-    if (ViewportImageMemory != VK_NULL_HANDLE)
-    {
-        vkFreeMemory(GetDevice()->GetLogicalDevice(), ViewportImageMemory, nullptr);
-        ViewportImageMemory = VK_NULL_HANDLE;
-    }
-    if (ViewportDepthImageView != VK_NULL_HANDLE)
-    {
-        vkDestroyImageView(GetDevice()->GetLogicalDevice(), ViewportDepthImageView, nullptr);
-        ViewportDepthImageView = VK_NULL_HANDLE;
-    }
-    if (ViewportDepthImage != VK_NULL_HANDLE)
-    {
-        vkDestroyImage(GetDevice()->GetLogicalDevice(), ViewportDepthImage, nullptr);
-        ViewportDepthImage = VK_NULL_HANDLE;
-    }
-    if (ViewportDepthImageMemory != VK_NULL_HANDLE)
-    {
-        vkFreeMemory(GetDevice()->GetLogicalDevice(), ViewportDepthImageMemory, nullptr);
-        ViewportDepthImageMemory = VK_NULL_HANDLE;
+        ViewportDepthImage.reset();
     }
 }
 
@@ -884,7 +814,7 @@ void VulkanContext::ResizeViewportFramebuffer(uint32_t Width, uint32_t Height)
 
 VkImageView VulkanContext::GetViewportImageView() const
 {
-    return ViewportImageView;
+    return ViewportImage->GetImageView();
 }
 
 VkSampler VulkanContext::GetViewportSampler() const

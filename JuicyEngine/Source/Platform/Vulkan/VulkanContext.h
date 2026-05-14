@@ -51,7 +51,7 @@ public:
 
     VkFormat FindDepthFormat();
 
-    VkImageView& GetDepthImageView();
+    VkImageView GetDepthImageView() const;
 
     VkImageView GetViewportImageView() const;
     VkSampler GetViewportSampler() const;
@@ -95,9 +95,7 @@ private:
     VkDescriptorSet DescriptorSet;
     std::vector<VulkanRenderCommandBuffer> CommandBuffers;
 
-    VkImage DepthImage;
-    VkDeviceMemory DepthImageMemory;
-    VkImageView DepthImageView;
+    std::unique_ptr<VulkanImage> DepthImage;
 
     static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
     std::vector<VkSemaphore> ImageAvailableSemaphores;
@@ -111,14 +109,10 @@ private:
     std::vector<VkFramebuffer> ImGuiFramebuffers;
     VkRenderPass ViewportRenderPass = VK_NULL_HANDLE;
     VkFramebuffer ViewportFramebuffer = VK_NULL_HANDLE;
-    VkImage ViewportImage;
-    VkDeviceMemory ViewportImageMemory;
-    VkImageView ViewportImageView;
+    std::unique_ptr<VulkanImage> ViewportImage;
     VkSampler ViewportSampler;
     VkDescriptorSet ViewportDescriptorSet = VK_NULL_HANDLE;
-    VkImage ViewportDepthImage;
-    VkDeviceMemory ViewportDepthImageMemory;
-    VkImageView ViewportDepthImageView;
+    std::unique_ptr<VulkanImage> ViewportDepthImage;
     VkExtent2D ViewportSize = {0, 0};
     void* WindowPtr = nullptr;
 
