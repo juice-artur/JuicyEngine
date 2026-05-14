@@ -148,7 +148,7 @@ void VulkanPipeline::Create(const PipelineCreateInfo& Info)
     PipelineInfo.pColorBlendState = &ColorBlending;
     PipelineInfo.pDynamicState = &DynamicState;
     PipelineInfo.layout = PipelineLayout;
-    PipelineInfo.renderPass = Info.RenderPass->GetVulkanRenderPass();
+    PipelineInfo.renderPass = Info.RenderPass;
     PipelineInfo.subpass = 0;
     PipelineInfo.pDepthStencilState = &DepthStencil;
     PipelineInfo.basePipelineHandle = VK_NULL_HANDLE;

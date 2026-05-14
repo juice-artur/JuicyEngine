@@ -1,12 +1,13 @@
 #pragma once
 
-#include "VulkanRenderPass.h"
+#include <vulkan/vulkan.h>
+#include <vector>
 
 namespace JuicyEngine
 {
 struct PipelineCreateInfo
 {
-    std::shared_ptr<VulkanRenderPass> RenderPass;
+    VkRenderPass RenderPass = VK_NULL_HANDLE;
     std::vector<VkPipelineShaderStageCreateInfo> VulkanShaderModules;
 };
 } // namespace JuicyEngine

@@ -9,6 +9,7 @@
 #include "VulkanDeviceManager.h"
 #include "VulkanPipeline.h"
 #include "VulkanRenderPass.h"
+#include "VulkanRenderTarget.h"
 #include "VulkanSwapChain.h"
 #include "VulkanTexture2D.h"
 #include "Renderer/GraphicsContext.h"
@@ -41,7 +42,6 @@ public:
 
     VkCommandPool GetCommandPool() const;
 
-    // Disable copy/move
     VulkanContext(const VulkanContext&) = delete;
     VulkanContext& operator=(const VulkanContext&) = delete;
     VulkanContext(VulkanContext&&) = delete;
@@ -53,15 +53,9 @@ public:
 
     VkImageView GetDepthImageView() const;
 
-    VkImageView GetViewportImageView() const;
-    VkSampler GetViewportSampler() const;
     VkDescriptorSet GetViewportDescriptorSet() const;
     void ResizeViewportFramebuffer(uint32_t Width, uint32_t Height);
-    void CreateViewportRenderPass();
-    void CreateViewportFramebuffer(uint32_t Width, uint32_t Height);
     void DestroyViewportFramebuffer();
-    VkRenderPass GetViewportRenderPass() const;
-    VkFramebuffer GetViewportFramebuffer() const;
     VkExtent2D GetViewportSize() const;
 
 private:
@@ -107,13 +101,7 @@ private:
     VkDescriptorPool DescriptorPool;
     VkRenderPass ImGuiRenderPass = VK_NULL_HANDLE;
     std::vector<std::unique_ptr<VulkanFramebuffer>> ImGuiFramebuffers;
-    VkRenderPass ViewportRenderPass = VK_NULL_HANDLE;
-    std::unique_ptr<VulkanFramebuffer> ViewportFramebuffer;
-    std::unique_ptr<VulkanImage> ViewportImage;
-    VkSampler ViewportSampler;
-    VkDescriptorSet ViewportDescriptorSet = VK_NULL_HANDLE;
-    std::unique_ptr<VulkanImage> ViewportDepthImage;
-    VkExtent2D ViewportSize = {0, 0};
+    std::unique_ptr<VulkanRenderTarget> m_ViewportRT;
     void* WindowPtr = nullptr;
 
     bool Skip = false;

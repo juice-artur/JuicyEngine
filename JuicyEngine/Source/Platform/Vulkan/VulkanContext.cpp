@@ -43,7 +43,6 @@ void VulkanContext::Init(void* Window)
     RenderPass->CreateRenderPass(SwapChain.GetFormat(), SwapChain.GetSwapChainImageViews(), SwapChain.GetExtent());
     CreateImGuiRenderPass();
     CreateImGuiFramebuffers();
-    CreateViewportRenderPass();
     CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     for (auto& CB : CommandBuffers)
         CB.Init(GetDevice()->GetLogicalDevice(), CommandPool);
@@ -147,8 +146,7 @@ void VulkanContext::Shutdown()
     vkDestroyRenderPass(GetDevice()->GetLogicalDevice(), ImGuiRenderPass, nullptr);
     DestroyImGuiFramebuffers();
 
-    vkDestroyRenderPass(GetDevice()->GetLogicalDevice(), ViewportRenderPass, nullptr);
-    DestroyViewportFramebuffer();
+    m_ViewportRT.reset();
 
     DepthImage.reset();
 
@@ -261,7 +259,7 @@ void VulkanContext::CreateGraphicsPipeline()
     fragShaderStageInfo.pName = "main";
 
     PipelineCreateInfo Info = {};
-    Info.RenderPass = RenderPass;
+    Info.RenderPass = RenderPass->GetVulkanRenderPass();
     Info.VulkanShaderModules = std::vector {VertShaderStageInfo, fragShaderStageInfo};
     GraphicsPipeline.Create(Info);
 
@@ -271,7 +269,7 @@ void VulkanContext::CreateGraphicsPipeline()
 
 void VulkanContext::CreateViewportGraphicsPipeline()
 {
-    if (ViewportRenderPass == VK_NULL_HANDLE)
+    if (!m_ViewportRT)
         return;
 
     auto VertShaderCode = VulkanShader::ReadFile("Assets/Shaders/vert.spv");
@@ -292,11 +290,8 @@ void VulkanContext::CreateViewportGraphicsPipeline()
     fragShaderStageInfo.module = FragShaderModule;
     fragShaderStageInfo.pName = "main";
 
-    std::shared_ptr<VulkanRenderPass> ViewportRP = std::make_shared<VulkanRenderPass>();
-    ViewportRP->SetRenderPass(ViewportRenderPass);
-
     PipelineCreateInfo Info = {};
-    Info.RenderPass = ViewportRP;
+    Info.RenderPass = m_ViewportRT->GetRenderPass();
     Info.VulkanShaderModules = std::vector {VertShaderStageInfo, fragShaderStageInfo};
     ViewportGraphicsPipeline.Create(Info);
 
@@ -374,14 +369,16 @@ void VulkanContext::RecordCommandBuffer(VulkanRenderCommandBuffer& CB)
 {
     CB.Begin();
 
-    if (ViewportFramebuffer != VK_NULL_HANDLE && ViewportSize.width > 0 && ViewportSize.height > 0)
+    if (m_ViewportRT)
     {
+        VkExtent2D VPExtent = m_ViewportRT->GetExtent();
+
         VkRenderPassBeginInfo ViewportRPInfo {};
         ViewportRPInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        ViewportRPInfo.renderPass = ViewportRenderPass;
-        ViewportRPInfo.framebuffer = ViewportFramebuffer->GetFramebuffer();
+        ViewportRPInfo.renderPass = m_ViewportRT->GetRenderPass();
+        ViewportRPInfo.framebuffer = m_ViewportRT->GetFramebuffer();
         ViewportRPInfo.renderArea.offset = {0, 0};
-        ViewportRPInfo.renderArea.extent = ViewportSize;
+        ViewportRPInfo.renderArea.extent = VPExtent;
 
         std::array<VkClearValue, 2> ViewportClearValues {};
         ViewportClearValues[0].color = {{0.1f, 0.1f, 0.1f, 1.0f}};
@@ -394,13 +391,13 @@ void VulkanContext::RecordCommandBuffer(VulkanRenderCommandBuffer& CB)
         VkViewport VP {};
         VP.x = 0.0f;
         VP.y = 0.0f;
-        VP.width = static_cast<float>(ViewportSize.width);
-        VP.height = static_cast<float>(ViewportSize.height);
+        VP.width = static_cast<float>(VPExtent.width);
+        VP.height = static_cast<float>(VPExtent.height);
         VP.minDepth = 0.0f;
         VP.maxDepth = 1.0f;
         vkCmdSetViewport(CB.GetCommandBuffer(), 0, 1, &VP);
 
-        VkRect2D ScissorVP {.offset = {0, 0}, .extent = ViewportSize};
+        VkRect2D ScissorVP {.offset = {0, 0}, .extent = VPExtent};
         vkCmdSetScissor(CB.GetCommandBuffer(), 0, 1, &ScissorVP);
 
         VkDeviceSize Offsets[] = {0};
@@ -631,190 +628,41 @@ VkFormat VulkanContext::FindSupportedFormat(const std::vector<VkFormat>& Candida
     return VK_FORMAT_UNDEFINED;
 }
 
-void VulkanContext::CreateViewportRenderPass()
-{
-    VkFormat ColorFormat = SwapChain.GetFormat();
-    VkFormat DepthFormat = FindDepthFormat();
-
-    VkAttachmentDescription ColorAttachment {};
-    ColorAttachment.format = ColorFormat;
-    ColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    ColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    ColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    ColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    ColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    ColorAttachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-    ColorAttachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkAttachmentReference ColorAttachmentRef {};
-    ColorAttachmentRef.attachment = 0;
-    ColorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentDescription DepthAttachment {};
-    DepthAttachment.format = DepthFormat;
-    DepthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    DepthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    DepthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    DepthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    DepthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    DepthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    DepthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference DepthAttachmentRef {};
-    DepthAttachmentRef.attachment = 1;
-    DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription Subpass {};
-    Subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    Subpass.colorAttachmentCount = 1;
-    Subpass.pColorAttachments = &ColorAttachmentRef;
-    Subpass.pDepthStencilAttachment = &DepthAttachmentRef;
-
-    VkSubpassDependency Dependency {};
-    Dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    Dependency.dstSubpass = 0;
-    Dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    Dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    Dependency.dstStageMask =
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    Dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    VkAttachmentDescription Attachments[] = {ColorAttachment, DepthAttachment};
-    VkRenderPassCreateInfo RenderPassInfo {};
-    RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    RenderPassInfo.attachmentCount = 2;
-    RenderPassInfo.pAttachments = Attachments;
-    RenderPassInfo.subpassCount = 1;
-    RenderPassInfo.pSubpasses = &Subpass;
-    RenderPassInfo.dependencyCount = 1;
-    RenderPassInfo.pDependencies = &Dependency;
-
-    VkResult Result =
-        vkCreateRenderPass(GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &ViewportRenderPass);
-    JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport render pass!")
-}
-
-void VulkanContext::CreateViewportFramebuffer(uint32_t Width, uint32_t Height)
-{
-    DestroyViewportFramebuffer();
-
-    VkFormat ColorFormat = SwapChain.GetFormat();
-    VkFormat DepthFormat = FindDepthFormat();
-
-    ViewportImage.reset(new VulkanImage(Width,
-                                        Height,
-                                        ColorFormat,
-                                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                                            VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-
-    ViewportDepthImage.reset(new VulkanImage(
-        Width, Height, DepthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-
-    VkImageView FramebufferAttachments[] = {ViewportImage->GetImageView(), ViewportDepthImage->GetImageView()};
-
-    ViewportFramebuffer = std::make_unique<VulkanFramebuffer>(
-        ViewportRenderPass,
-        VkExtent2D {Width, Height},
-        std::vector<VkImageView> {FramebufferAttachments, FramebufferAttachments + 2});
-
-    VkSamplerCreateInfo SamplerInfo {};
-    SamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    SamplerInfo.magFilter = VK_FILTER_LINEAR;
-    SamplerInfo.minFilter = VK_FILTER_LINEAR;
-    SamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    SamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    SamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    SamplerInfo.anisotropyEnable = VK_FALSE;
-    SamplerInfo.maxAnisotropy = 1.0f;
-    SamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-    SamplerInfo.unnormalizedCoordinates = VK_FALSE;
-    SamplerInfo.compareEnable = VK_FALSE;
-    SamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    SamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-    auto Result = vkCreateSampler(GetDevice()->GetLogicalDevice(), &SamplerInfo, nullptr, &ViewportSampler);
-    JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport sampler!")
-
-    ViewportImage->TransitionLayoutImmediate(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-
-    ViewportDescriptorSet =
-        ImGui_ImplVulkan_AddTexture(ViewportSampler, ViewportImage->GetImageView(), VK_IMAGE_LAYOUT_GENERAL);
-    JE_CORE_ASSERT(ViewportDescriptorSet != VK_NULL_HANDLE, "Failed to create viewport descriptor set!")
-
-    ViewportSize = {Width, Height};
-}
-
 void VulkanContext::DestroyViewportFramebuffer()
 {
-    if (ViewportDescriptorSet != VK_NULL_HANDLE)
-    {
-        ImGui_ImplVulkan_RemoveTexture(ViewportDescriptorSet);
-        ViewportDescriptorSet = VK_NULL_HANDLE;
-    }
-    if (ViewportSampler != VK_NULL_HANDLE)
-    {
-        vkDestroySampler(GetDevice()->GetLogicalDevice(), ViewportSampler, nullptr);
-        ViewportSampler = VK_NULL_HANDLE;
-    }
-
-    ViewportFramebuffer.reset();
-
-    if (ViewportImage)
-    {
-        ViewportImage.reset();
-    }
-    if (ViewportDepthImage)
-    {
-        ViewportDepthImage.reset();
-    }
+    m_ViewportRT.reset();
 }
 
 void VulkanContext::ResizeViewportFramebuffer(uint32_t Width, uint32_t Height)
 {
     if (Width == 0 || Height == 0)
         return;
-    if (ViewportSize.width == Width && ViewportSize.height == Height)
+    if (m_ViewportRT && m_ViewportRT->GetExtent().width == Width && m_ViewportRT->GetExtent().height == Height)
         return;
 
     vkDeviceWaitIdle(GetDevice()->GetLogicalDevice());
 
-    vkDestroyRenderPass(GetDevice()->GetLogicalDevice(), ViewportRenderPass, nullptr);
-    CreateViewportRenderPass();
-
     ViewportGraphicsPipeline.Shutdown();
+
+    VulkanRenderTarget::CreateInfo Info {};
+    Info.Width = Width;
+    Info.Height = Height;
+    Info.ColorFormat = SwapChain.GetFormat();
+    Info.DepthFormat = FindDepthFormat();
+    Info.CreateImGuiDescriptor = true;
+    Info.ImGuiLayout = VK_IMAGE_LAYOUT_GENERAL;
+    m_ViewportRT = std::make_unique<VulkanRenderTarget>(Info);
+
     CreateViewportGraphicsPipeline();
-
-    CreateViewportFramebuffer(Width, Height);
-}
-
-VkImageView VulkanContext::GetViewportImageView() const
-{
-    return ViewportImage->GetImageView();
-}
-
-VkSampler VulkanContext::GetViewportSampler() const
-{
-    return ViewportSampler;
 }
 
 VkDescriptorSet VulkanContext::GetViewportDescriptorSet() const
 {
-    return ViewportDescriptorSet;
-}
-
-VkRenderPass VulkanContext::GetViewportRenderPass() const
-{
-    return ViewportRenderPass;
-}
-
-VkFramebuffer VulkanContext::GetViewportFramebuffer() const
-{
-    return ViewportFramebuffer->GetFramebuffer();
+    return m_ViewportRT ? m_ViewportRT->GetDescriptorSet() : VK_NULL_HANDLE;
 }
 
 VkExtent2D VulkanContext::GetViewportSize() const
 {
-    return ViewportSize;
+    return m_ViewportRT ? m_ViewportRT->GetExtent() : VkExtent2D {0, 0};
 }
 } // namespace JuicyEngine
