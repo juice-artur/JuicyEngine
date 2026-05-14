@@ -68,34 +68,20 @@ void VulkanRenderPass::CreateRenderPass(VkFormat SwapChainImageFormat,
     auto Result = vkCreateRenderPass(Context->GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &RenderPass);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create render pass!")
 
-    SwapChainFramebuffers.resize(SwapChainImageViews.size());
-
     for (size_t i = 0; i < SwapChainImageViews.size(); i++)
     {
         std::array<VkImageView, 2> attachments = {SwapChainImageViews[i], Context->GetDepthImageView()};
 
-        VkFramebufferCreateInfo FramebufferInfo {};
-        FramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        FramebufferInfo.renderPass = RenderPass;
-        FramebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        FramebufferInfo.pAttachments = attachments.data();
-        FramebufferInfo.width = SwapChainExtent.width;
-        FramebufferInfo.height = SwapChainExtent.height;
-        FramebufferInfo.layers = 1;
-
-        auto FramebufferResult = vkCreateFramebuffer(
-            Context->GetDevice()->GetLogicalDevice(), &FramebufferInfo, nullptr, &SwapChainFramebuffers[i]);
-        JE_CORE_ASSERT(FramebufferResult == VK_SUCCESS, "Failed to create framebuffer!")
+        SwapChainFramebuffers.push_back(std::make_unique<VulkanFramebuffer>(
+            RenderPass, SwapChainExtent, std::vector<VkImageView> {attachments.begin(), attachments.end()}));
     }
 }
 
 void VulkanRenderPass::Shutdown()
 {
     const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    for (auto Framebuffer : SwapChainFramebuffers)
-    {
-        vkDestroyFramebuffer(Context->GetDevice()->GetLogicalDevice(), Framebuffer, nullptr);
-    }
+    SwapChainFramebuffers.clear();
+
     vkDestroyRenderPass(Context->GetDevice()->GetLogicalDevice(), RenderPass, nullptr);
 }
 
@@ -112,7 +98,7 @@ void VulkanRenderPass::SetRenderPass(VkRenderPass InRenderPass)
 VkFramebuffer VulkanRenderPass::GetFramebuffer(uint32_t Index) const
 {
     JE_CORE_ASSERT(Index < SwapChainFramebuffers.size(), "Framebuffer index out of range!")
-    return SwapChainFramebuffers[Index];
+    return SwapChainFramebuffers[Index]->GetFramebuffer();
 }
 
 void VulkanRenderPass::Begin(VkCommandBuffer CommandBuffer, VkExtent2D SwapChainExtent)
@@ -120,7 +106,7 @@ void VulkanRenderPass::Begin(VkCommandBuffer CommandBuffer, VkExtent2D SwapChain
     VkRenderPassBeginInfo RenderPassInfo {};
     RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     RenderPassInfo.renderPass = RenderPass;
-    RenderPassInfo.framebuffer = SwapChainFramebuffers[SwapChainImageIndex];
+    RenderPassInfo.framebuffer = SwapChainFramebuffers[SwapChainImageIndex]->GetFramebuffer();
     RenderPassInfo.renderArea.offset = {0, 0};
     RenderPassInfo.renderArea.extent = SwapChainExtent;
 

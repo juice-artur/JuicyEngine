@@ -106,9 +106,9 @@ private:
     uint32_t CurrentAcquireIndex = 0;
     VkDescriptorPool DescriptorPool;
     VkRenderPass ImGuiRenderPass = VK_NULL_HANDLE;
-    std::vector<VkFramebuffer> ImGuiFramebuffers;
+    std::vector<std::unique_ptr<VulkanFramebuffer>> ImGuiFramebuffers;
     VkRenderPass ViewportRenderPass = VK_NULL_HANDLE;
-    VkFramebuffer ViewportFramebuffer = VK_NULL_HANDLE;
+    std::unique_ptr<VulkanFramebuffer> ViewportFramebuffer;
     std::unique_ptr<VulkanImage> ViewportImage;
     VkSampler ViewportSampler;
     VkDescriptorSet ViewportDescriptorSet = VK_NULL_HANDLE;

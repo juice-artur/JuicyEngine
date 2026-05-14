@@ -147,7 +147,7 @@ void VulkanImage::CreateRawImage(VkDevice Device,
 
     auto AllocateResult = vkAllocateMemory(Device, &AllocInfo, nullptr, &OutImageMemory);
     JE_CORE_ASSERT(AllocateResult == VK_SUCCESS, "Failed to allocate memory!")
-    
+
     VkResult BindResult = vkBindImageMemory(Device, OutImage, OutImageMemory, 0);
     JE_CORE_ASSERT(BindResult == VK_SUCCESS, "Failed to bind image memory!")
 }

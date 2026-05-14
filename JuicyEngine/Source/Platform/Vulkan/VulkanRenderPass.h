@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanFramebuffer.h"
+
 #include <vulkan/vulkan.h>
 #include <vector>
 
@@ -21,6 +23,6 @@ public:
 
 private:
     VkRenderPass RenderPass = VK_NULL_HANDLE;
-    std::vector<VkFramebuffer> SwapChainFramebuffers;
+    std::vector<std::unique_ptr<VulkanFramebuffer>> SwapChainFramebuffers;
 };
 } // namespace JuicyEngine
