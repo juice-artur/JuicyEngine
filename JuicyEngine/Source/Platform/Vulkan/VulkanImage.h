@@ -13,7 +13,7 @@ public:
                 VkImageUsageFlags usage,
                 VkMemoryPropertyFlags props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     ~VulkanImage();
-    
+
     VulkanImage(const VulkanImage&) = delete;
     VulkanImage& operator=(const VulkanImage&) = delete;
     VulkanImage(VulkanImage&&) = delete;

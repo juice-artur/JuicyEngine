@@ -33,6 +33,8 @@ Application::~Application()
     auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
     vkDeviceWaitIdle(Context->GetDevice()->GetLogicalDevice());
 
+    Context->DestroyViewportFramebuffer();
+
     m_LayerStack.Cleanup();
 
     Context->Shutdown();

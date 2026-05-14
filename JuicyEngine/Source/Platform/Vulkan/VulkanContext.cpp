@@ -357,31 +357,16 @@ void VulkanContext::CreateImGuiRenderPass()
 void VulkanContext::CreateImGuiFramebuffers()
 {
     const auto& ImageViews = SwapChain.GetSwapChainImageViews();
-    ImGuiFramebuffers.resize(ImageViews.size());
 
     for (size_t i = 0; i < ImageViews.size(); i++)
     {
-        VkFramebufferCreateInfo FramebufferInfo {};
-        FramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        FramebufferInfo.renderPass = ImGuiRenderPass;
-        FramebufferInfo.attachmentCount = 1;
-        FramebufferInfo.pAttachments = &ImageViews[i];
-        FramebufferInfo.width = SwapChain.GetExtent().width;
-        FramebufferInfo.height = SwapChain.GetExtent().height;
-        FramebufferInfo.layers = 1;
-
-        VkResult Result =
-            vkCreateFramebuffer(GetDevice()->GetLogicalDevice(), &FramebufferInfo, nullptr, &ImGuiFramebuffers[i]);
-        JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create ImGui framebuffer!")
+        ImGuiFramebuffers.push_back(std::make_unique<VulkanFramebuffer>(
+            ImGuiRenderPass, SwapChain.GetExtent(), std::vector<VkImageView> {ImageViews[i]}));
     }
 }
 
 void VulkanContext::DestroyImGuiFramebuffers()
 {
-    for (auto Framebuffer : ImGuiFramebuffers)
-    {
-        vkDestroyFramebuffer(GetDevice()->GetLogicalDevice(), Framebuffer, nullptr);
-    }
     ImGuiFramebuffers.clear();
 }
 
@@ -394,7 +379,7 @@ void VulkanContext::RecordCommandBuffer(VulkanRenderCommandBuffer& CB)
         VkRenderPassBeginInfo ViewportRPInfo {};
         ViewportRPInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         ViewportRPInfo.renderPass = ViewportRenderPass;
-        ViewportRPInfo.framebuffer = ViewportFramebuffer;
+        ViewportRPInfo.framebuffer = ViewportFramebuffer->GetFramebuffer();
         ViewportRPInfo.renderArea.offset = {0, 0};
         ViewportRPInfo.renderArea.extent = ViewportSize;
 
@@ -469,7 +454,7 @@ void VulkanContext::RecordCommandBuffer(VulkanRenderCommandBuffer& CB)
         VkRenderPassBeginInfo RenderPassInfo {};
         RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         RenderPassInfo.renderPass = ImGuiRenderPass;
-        RenderPassInfo.framebuffer = ImGuiFramebuffers[RenderPass->SwapChainImageIndex];
+        RenderPassInfo.framebuffer = ImGuiFramebuffers[RenderPass->SwapChainImageIndex]->GetFramebuffer();
         RenderPassInfo.renderArea.offset = {0, 0};
         RenderPassInfo.renderArea.extent = SwapChain.GetExtent();
         RenderPassInfo.clearValueCount = 0;
@@ -727,18 +712,11 @@ void VulkanContext::CreateViewportFramebuffer(uint32_t Width, uint32_t Height)
         Width, Height, DepthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
     VkImageView FramebufferAttachments[] = {ViewportImage->GetImageView(), ViewportDepthImage->GetImageView()};
-    VkFramebufferCreateInfo FramebufferInfo {};
-    FramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    FramebufferInfo.renderPass = ViewportRenderPass;
-    FramebufferInfo.attachmentCount = 2;
-    FramebufferInfo.pAttachments = FramebufferAttachments;
-    FramebufferInfo.width = Width;
-    FramebufferInfo.height = Height;
-    FramebufferInfo.layers = 1;
 
-    VkResult Result =
-        vkCreateFramebuffer(GetDevice()->GetLogicalDevice(), &FramebufferInfo, nullptr, &ViewportFramebuffer);
-    JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport framebuffer!")
+    ViewportFramebuffer = std::make_unique<VulkanFramebuffer>(
+        ViewportRenderPass,
+        VkExtent2D {Width, Height},
+        std::vector<VkImageView> {FramebufferAttachments, FramebufferAttachments + 2});
 
     VkSamplerCreateInfo SamplerInfo {};
     SamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -755,7 +733,7 @@ void VulkanContext::CreateViewportFramebuffer(uint32_t Width, uint32_t Height)
     SamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     SamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    Result = vkCreateSampler(GetDevice()->GetLogicalDevice(), &SamplerInfo, nullptr, &ViewportSampler);
+    auto Result = vkCreateSampler(GetDevice()->GetLogicalDevice(), &SamplerInfo, nullptr, &ViewportSampler);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create viewport sampler!")
 
     ViewportImage->TransitionLayoutImmediate(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
@@ -779,11 +757,9 @@ void VulkanContext::DestroyViewportFramebuffer()
         vkDestroySampler(GetDevice()->GetLogicalDevice(), ViewportSampler, nullptr);
         ViewportSampler = VK_NULL_HANDLE;
     }
-    if (ViewportFramebuffer != VK_NULL_HANDLE)
-    {
-        vkDestroyFramebuffer(GetDevice()->GetLogicalDevice(), ViewportFramebuffer, nullptr);
-        ViewportFramebuffer = VK_NULL_HANDLE;
-    }
+
+    ViewportFramebuffer.reset();
+
     if (ViewportImage)
     {
         ViewportImage.reset();
@@ -834,7 +810,7 @@ VkRenderPass VulkanContext::GetViewportRenderPass() const
 
 VkFramebuffer VulkanContext::GetViewportFramebuffer() const
 {
-    return ViewportFramebuffer;
+    return ViewportFramebuffer->GetFramebuffer();
 }
 
 VkExtent2D VulkanContext::GetViewportSize() const
