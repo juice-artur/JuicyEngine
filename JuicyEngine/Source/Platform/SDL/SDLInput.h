@@ -5,7 +5,7 @@
 namespace JuicyEngine
 {
 
-class WindowsInput : public Input
+class SDLInput : public Input
 {
 protected:
     virtual bool IsKeyPressedImpl(int keycode) override;

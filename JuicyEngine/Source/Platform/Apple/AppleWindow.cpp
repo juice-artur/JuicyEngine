@@ -1,9 +1,10 @@
-#include "WindowsWindow.h"
+#include "AppleWindow.h"
 #include "Core/Log.h"
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_hints.h>
 
 #include <backends/imgui_impl_sdl3.h>
 
@@ -11,17 +12,17 @@ namespace JuicyEngine
 {
 static bool s_SDLInitialized = false;
 
-WindowsWindow::WindowsWindow(const WindowProps& props)
+AppleWindow::AppleWindow(const WindowProps& props)
 {
     Init(props);
 }
 
-WindowsWindow::~WindowsWindow()
+AppleWindow::~AppleWindow()
 {
     Shutdown();
 }
 
-void WindowsWindow::Init(const WindowProps& props)
+void AppleWindow::Init(const WindowProps& props)
 {
     m_Data.Title = props.Title;
     m_Data.Width = props.Width;
@@ -35,7 +36,18 @@ void WindowsWindow::Init(const WindowProps& props)
         s_SDLInitialized = true;
     }
 
-    Uint32 flags = SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE;
+#if defined(__APPLE__)
+    // On iOS touches are converted into mouse events, which keeps the engine
+    // and ImGui input working through the standard mouse event pipeline.
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+#endif
+
+    Uint32 flags = SDL_WINDOW_VULKAN;
+
+#if !defined(__APPLE__)
+    flags |= SDL_WINDOW_RESIZABLE;
+#endif
+
     m_Window = SDL_CreateWindow(m_Data.Title.c_str(), m_Data.Width, m_Data.Height, flags);
     if (!m_Window)
     {
@@ -45,12 +57,12 @@ void WindowsWindow::Init(const WindowProps& props)
     SetVSync(true);
 }
 
-void WindowsWindow::Shutdown()
+void AppleWindow::Shutdown()
 {
     SDL_DestroyWindow(m_Window);
 }
 
-void WindowsWindow::OnUpdate()
+void AppleWindow::OnUpdate()
 {
     SDL_Event event;
     while (SDL_PollEvent(&event))
@@ -116,21 +128,22 @@ void WindowsWindow::OnUpdate()
                 m_Data.EventCallback(e);
                 break;
             }
+
         }
     }
 }
 
-void WindowsWindow::SetVSync(bool enabled)
+void AppleWindow::SetVSync(bool enabled)
 {
     m_Data.VSync = enabled;
 }
 
-bool WindowsWindow::IsVSync() const
+bool AppleWindow::IsVSync() const
 {
     return m_Data.VSync;
 }
 
-void* WindowsWindow::GetNativeWindow() const
+void* AppleWindow::GetNativeWindow() const
 {
     return (void*) m_Window;
 }

@@ -60,6 +60,7 @@ private:
     VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
     VulkanDevice* m_Device = nullptr;
     VulkanSurface* m_Surface = nullptr;
+    bool m_DebugUtilsEnabled = false;
 };
 
 } // namespace JuicyEngine

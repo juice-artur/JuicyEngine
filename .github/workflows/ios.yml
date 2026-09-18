@@ -1,0 +1,136 @@
+name: iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  JE_ENABLE_VALIDATION_LAYERS: "OFF"
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build iOS (device)
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure iOS project
+        shell: bash
+        run: |
+          cmake -S . -B build-ios \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DJE_ENABLE_VALIDATION_LAYERS=OFF
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build-ios \
+            --config Release \
+            -- "-sdk" "iphoneos" CODE_SIGNING_ALLOWED=NO
+
+      - name: Verify bundle
+        shell: bash
+        run: |
+          APP="$(find . -path '*/Release-iphoneos/Sandbox.app' | head -n1)"
+          test -n "${APP}" || { echo "Sandbox.app not found!"; exit 1; }
+          test -f "${APP}/Sandbox" || { echo "Sandbox binary missing!"; exit 1; }
+          find "${APP}" -name '*.xcframework' | head -n3
+          echo "App bundle OK: ${APP}"
+
+      - name: Package IPA
+        shell: bash
+        run: |
+          APP="$(find . -path '*/Release-iphoneos/Sandbox.app' | head -n1)"
+          mkdir -p ipa/Payload
+          codesign --force --sign - --timestamp=none "${APP}"
+          cp -R "${APP}" ipa/Payload/Sandbox.app
+          (cd ipa && zip -r -X ../Sandbox-ios-device.ipa Payload)
+
+      - name: Upload iOS app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sandbox-ios-device
+          path: build-ios/Release-iphoneos/Sandbox.app
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload iOS IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sandbox-ios-device-ipa
+          path: Sandbox-ios-device.ipa
+          if-no-files-found: error
+          retention-days: 7
+
+  build-simulator:
+    name: Build iOS Simulator
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure iOS Simulator project
+        shell: bash
+        run: |
+          cmake -S . -B build-ios-sim \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphonesimulator \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DJE_ENABLE_VALIDATION_LAYERS=OFF
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build-ios-sim \
+            --config Release \
+            -- "-sdk" "iphonesimulator" CODE_SIGNING_ALLOWED=NO
+
+      - name: Verify bundle
+        shell: bash
+        run: |
+          APP="$(find . -path '*/Release-iphonesimulator/Sandbox.app' | head -n1)"
+          test -n "${APP}" || { echo "Sandbox.app not found!"; exit 1; }
+          test -f "${APP}/Sandbox" || { echo "Sandbox binary missing!"; exit 1; }
+          echo "App bundle OK: ${APP}"
+
+      - name: Package IPA
+        shell: bash
+        run: |
+          APP="$(find . -path '*/Release-iphonesimulator/Sandbox.app' | head -n1)"
+          mkdir -p ipa/Payload
+          cp -R "${APP}" ipa/Payload/Sandbox.app
+          (cd ipa && zip -r -X ../Sandbox-ios-simulator.ipa Payload)
+
+      - name: Upload iOS simulator app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sandbox-ios-simulator
+          path: build-ios-sim/Release-iphonesimulator/Sandbox.app
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload iOS simulator IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sandbox-ios-simulator-ipa
+          path: Sandbox-ios-simulator.ipa
+          if-no-files-found: error
+          retention-days: 7
