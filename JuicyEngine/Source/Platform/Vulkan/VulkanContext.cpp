@@ -3,8 +3,23 @@
 #include "VulkanBuffer.h"
 #include "jepch.h"
 #include "vulkan/vulkan.h"
-#include <vulkan/vk_enum_string_helper.h>
+#if defined(__has_include)
+#  if __has_include(<vulkan/vk_enum_string_helper.h>)
+#    include <vulkan/vk_enum_string_helper.h>
+#  else
+static const char* string_VkResult(VkResult result)
+{
+    return "VkResult";
+}
+#  endif
+#else
+static const char* string_VkResult(VkResult result)
+{
+    return "VkResult";
+}
+#endif
 #include "VulkanShader.h"
+#include "Core/ApplicationPaths.h"
 #include "Core/Core.h"
 #include "Renderer/Pipeline.h"
 #define GLM_FORCE_RADIANS
@@ -53,7 +68,7 @@ void VulkanContext::Init(void* Window)
     VertexBuffer.reset(static_cast<std::unique_ptr<VulkanVertexBuffer>::pointer>(VertexBuffer::Create(Vertices)));
     IndexBuffer.reset(static_cast<std::unique_ptr<VulkanIndexBuffer>::pointer>(IndexBuffer::Create(Indices)));
     UniformBuffer.reset(static_cast<std::unique_ptr<VulkanUniformBuffer>::pointer>(UniformBuffer::Create(sizeof(Ubo))));
-    Texture.reset(new VulkanTexture2D("Assets/Textures/statue.jpg"));
+    Texture.reset(new VulkanTexture2D(ApplicationPaths::GetAssetPath("Assets/Textures/statue.jpg")));
 
     Ubo.View = glm::lookAt(glm::vec3(0.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     Ubo.Proj = glm::perspective(
@@ -240,8 +255,8 @@ VulkanContext::~VulkanContext() {}
 
 void VulkanContext::CreateGraphicsPipeline()
 {
-    auto VertShaderCode = VulkanShader::ReadFile("Assets/Shaders/vert.spv");
-    auto FragShaderCode = VulkanShader::ReadFile("Assets/Shaders/frag.spv");
+    auto VertShaderCode = VulkanShader::ReadFile(ApplicationPaths::GetAssetPath("Assets/Shaders/vert.spv"));
+    auto FragShaderCode = VulkanShader::ReadFile(ApplicationPaths::GetAssetPath("Assets/Shaders/frag.spv"));
 
     VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(GetDevice()->GetLogicalDevice(), VertShaderCode);
     VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(GetDevice()->GetLogicalDevice(), FragShaderCode);
@@ -272,8 +287,8 @@ void VulkanContext::CreateViewportGraphicsPipeline()
     if (!m_ViewportRT)
         return;
 
-    auto VertShaderCode = VulkanShader::ReadFile("Assets/Shaders/vert.spv");
-    auto FragShaderCode = VulkanShader::ReadFile("Assets/Shaders/frag.spv");
+    auto VertShaderCode = VulkanShader::ReadFile(ApplicationPaths::GetAssetPath("Assets/Shaders/vert.spv"));
+    auto FragShaderCode = VulkanShader::ReadFile(ApplicationPaths::GetAssetPath("Assets/Shaders/frag.spv"));
 
     VkShaderModule VertShaderModule = VulkanShader::CreateShaderModule(GetDevice()->GetLogicalDevice(), VertShaderCode);
     VkShaderModule FragShaderModule = VulkanShader::CreateShaderModule(GetDevice()->GetLogicalDevice(), FragShaderCode);

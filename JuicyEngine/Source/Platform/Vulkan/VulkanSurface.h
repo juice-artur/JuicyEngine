@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
+struct SDL_Window;
+
 namespace JuicyEngine
 {
 class VulkanSurface

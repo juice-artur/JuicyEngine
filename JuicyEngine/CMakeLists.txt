@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(SOURCES
+set(CORE_SOURCES
     Source/jepch.h
     Source/JuicyEngine.h
     Source/Core/Core.h
@@ -18,14 +18,14 @@ set(SOURCES
     Source/Core/LayerStack.h
     Source/Core/LayerStack.cpp
     Source/Core/Input.h
+    Source/Core/ApplicationPaths.h
+    Source/Core/ApplicationPaths.cpp
     Source/Events/ApplicationEvent.h
     Source/Events/Event.h
     Source/Events/KeyEvent.h
     Source/Events/MouseEvent.h
-    Source/Platform/Windows/WindowsWindow.cpp
-    Source/Platform/Windows/WindowsWindow.h
-    Source/Platform/Windows/WindowsInput.h
-    Source/Platform/Windows/WindowsInput.cpp
+    Source/Platform/SDL/SDLInput.h
+    Source/Platform/SDL/SDLInput.cpp
     Source/Renderer/GraphicsContext.h
     Source/Renderer/GraphicsContext.cpp
     Source/Renderer/Pipeline.h
@@ -68,6 +68,20 @@ set(SOURCES
     Source/Editor/EditorLayer.h
 )
 
+set(PLATFORM_SOURCES)
+if(WIN32)
+    list(APPEND PLATFORM_SOURCES
+        Source/Platform/Windows/WindowsWindow.cpp
+        Source/Platform/Windows/WindowsWindow.h
+    )
+elseif(APPLE)
+    list(APPEND PLATFORM_SOURCES
+        Source/Platform/Apple/AppleWindow.cpp
+        Source/Platform/Apple/AppleWindow.h
+    )
+endif()
+
+set(SOURCES ${CORE_SOURCES} ${PLATFORM_SOURCES})
 
 add_subdirectory(vendor)
 
@@ -80,7 +94,10 @@ target_sources(JuicyEngine PRIVATE ${SOURCES})
 # Match VS filters to directory structure on disk
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 
-
 target_link_libraries(JuicyEngine vendor)
 
 target_include_directories(JuicyEngine PUBLIC "Source")
+
+if(JE_ENABLE_VALIDATION_LAYERS)
+    target_compile_definitions(JuicyEngine PUBLIC JE_ENABLE_VALIDATION_LAYERS=1)
+endif()

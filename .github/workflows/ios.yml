@@ -1,0 +1,95 @@
+name: iOS
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+env:
+  JE_ENABLE_VALIDATION_LAYERS: "OFF"
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build iOS (device)
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Vulkan SDK (macOS, incl. MoltenVK)
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          cache: true
+
+      - name: Configure iOS project
+        shell: bash
+        run: |
+          cmake -S . -B build-ios \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DJE_ENABLE_VALIDATION_LAYERS=OFF
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build-ios \
+            --config Release \
+            -- "-sdk" "iphoneos" CODE_SIGNING_ALLOWED=NO
+
+      - name: Verify bundle
+        shell: bash
+        run: |
+          APP="$(find . -path '*/Release-iphoneos/Sandbox.app' | head -n1)"
+          test -n "${APP}" || { echo "Sandbox.app not found!"; exit 1; }
+          test -f "${APP}/Sandbox" || { echo "Sandbox binary missing!"; exit 1; }
+          find "${APP}" -name '*.xcframework' | head -n3
+          echo "App bundle OK: ${APP}"
+
+  build-simulator:
+    name: Build iOS Simulator
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Vulkan SDK (macOS, incl. MoltenVK)
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          cache: true
+
+      - name: Configure iOS Simulator project
+        shell: bash
+        run: |
+          cmake -S . -B build-ios-sim \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphonesimulator \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DJE_ENABLE_VALIDATION_LAYERS=OFF
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build-ios-sim \
+            --config Release \
+            -- "-sdk" "iphonesimulator" CODE_SIGNING_ALLOWED=NO
+
+      - name: Verify bundle
+        shell: bash
+        run: |
+          APP="$(find . -path '*/Release-iphonesimulator/Sandbox.app' | head -n1)"
+          test -n "${APP}" || { echo "Sandbox.app not found!"; exit 1; }
+          test -f "${APP}/Sandbox" || { echo "Sandbox binary missing!"; exit 1; }
+          echo "App bundle OK: ${APP}"

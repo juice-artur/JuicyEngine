@@ -3,7 +3,25 @@
 #include "VulkanSurface.h"
 #include "jepch.h"
 #include "Core/Core.h"
-#include <vulkan/vk_enum_string_helper.h>
+#if defined(__has_include)
+#  if __has_include(<vulkan/vk_enum_string_helper.h>)
+#    include <vulkan/vk_enum_string_helper.h>
+#  else
+static const char* string_VkResult(VkResult result)
+{
+    return "VkResult";
+}
+#  endif
+#else
+static const char* string_VkResult(VkResult result)
+{
+    return "VkResult";
+}
+#endif
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
+
+#include <algorithm>
 
 namespace JuicyEngine
 {
@@ -29,7 +47,10 @@ void VulkanDeviceManager::Shutdown()
     delete m_Surface;
     m_Surface = nullptr;
 
-    DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
+    if (m_DebugUtilsEnabled)
+    {
+        DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
+    }
 
     vkDestroyInstance(m_Instance, nullptr);
 }
@@ -47,18 +68,69 @@ void VulkanDeviceManager::CreateInstance()
     VkDebugUtilsMessengerCreateInfoEXT DebugCreateInfo {};
     PopulateDebugMessengerCreateInfo(DebugCreateInfo);
 
-    std::vector<const char*> InstanceLayers = {
-        "VK_LAYER_KHRONOS_validation",
+    std::vector<const char*> InstanceLayers;
+#ifdef JE_ENABLE_VALIDATION_LAYERS
+    InstanceLayers = {"VK_LAYER_KHRONOS_validation"};
+    if (!CheckValidationLayerSupport(InstanceLayers))
+    {
+        JE_CORE_WARN("Validation layers requested but not available - running without them.");
+        InstanceLayers.clear();
+    }
+#endif
+
+    // Load the Vulkan driver. On Apple platforms this loads MoltenVK.
+    if (!SDL_Vulkan_LoadLibrary(nullptr))
+    {
+        JE_CORE_ASSERT(false, "Failed to load Vulkan library: {0}", SDL_GetError())
+    }
+
+    // The set of required instance extensions is platform specific (surface,
+    // win32/metal/platform surface, ...). Let SDL hand them to us.
+    uint32_t ExtensionCount = 0;
+    const char* const* SDLExtensions = SDL_Vulkan_GetInstanceExtensions(&ExtensionCount);
+    JE_CORE_ASSERT(SDLExtensions, "Failed to query Vulkan extensions from SDL: {0}", SDL_GetError())
+
+    std::vector<const char*> InstanceExtensions(SDLExtensions, SDLExtensions + ExtensionCount);
+
+    // Enumerate the extensions the loaded driver actually supports so we can
+    // conditionally enable optional extensions below.
+    uint32_t DriverExtensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &DriverExtensionCount, nullptr);
+    std::vector<VkExtensionProperties> DriverExtensions(DriverExtensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &DriverExtensionCount, DriverExtensions.data());
+
+    auto HasExtension = [&DriverExtensions](const char* Name) {
+        return std::any_of(DriverExtensions.begin(), DriverExtensions.end(), [Name](const VkExtensionProperties& P) {
+            return strcmp(P.extensionName, Name) == 0;
+        });
     };
 
-    JE_ASSERT(CheckValidationLayerSupport(InstanceLayers), "Validation layers requested, but not available!")
+    if (HasExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+    {
+        InstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        m_DebugUtilsEnabled = true;
+    }
 
-    std::vector<const char*> InstanceExtensions = {
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, "VK_KHR_win32_surface"};
+    VkInstanceCreateFlags InstanceFlags = 0;
+#if defined(__APPLE__)
+    // MoltenVK is a portability driver. Create the instance with the portability
+    // enumeration bit enabled so the driver is listed by the loader/device query.
+    if (HasExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME))
+    {
+        InstanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        if (HasExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+        {
+            InstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        }
+#ifdef VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
+        InstanceFlags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+    }
+#endif
 
     VkInstanceCreateInfo InstanceCreateInfo = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-                                               .pNext = &DebugCreateInfo,
-                                               .flags = 0,
+                                               .pNext = m_DebugUtilsEnabled ? &DebugCreateInfo : nullptr,
+                                               .flags = InstanceFlags,
                                                .pApplicationInfo = &AppInfo,
                                                .enabledLayerCount = static_cast<uint32_t>(InstanceLayers.size()),
                                                .ppEnabledLayerNames = InstanceLayers.data(),
@@ -75,6 +147,11 @@ void VulkanDeviceManager::CreateInstance()
 
 void VulkanDeviceManager::SetupDebugMessenger()
 {
+    if (!m_DebugUtilsEnabled)
+    {
+        return;
+    }
+
     VkDebugUtilsMessengerCreateInfoEXT CreateInfo;
     PopulateDebugMessengerCreateInfo(CreateInfo);
     if (CreateDebugUtilsMessengerEXT(m_Instance, &CreateInfo, nullptr, &m_DebugMessenger) != VK_SUCCESS)

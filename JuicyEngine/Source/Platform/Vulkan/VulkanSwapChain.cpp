@@ -2,7 +2,9 @@
 #define NOMINMAX
 #include "VulkanContext.h"
 
-#include <windows.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_video.h>
+
 #include <limits>
 
 #include "VulkanDevice.h"
@@ -147,15 +149,15 @@ VkExtent2D VulkanSwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& Cap
     }
     else
     {
-        RECT Rect;
-        GetClientRect(static_cast<HWND>(Window), &Rect);
-
-        uint32_t Width = Rect.right - Rect.left;
-        uint32_t Height = Rect.bottom - Rect.top;
+        SDL_Window* SDLWindow = static_cast<SDL_Window*>(Window);
+        int PixelWidth, PixelHeight;
+        SDL_GetWindowSizeInPixels(SDLWindow, &PixelWidth, &PixelHeight);
 
         VkExtent2D ActualExtent = {
-            std::clamp(Width, Capabilities.minImageExtent.width, Capabilities.maxImageExtent.width),
-            std::clamp(Height, Capabilities.minImageExtent.height, Capabilities.maxImageExtent.height)};
+            std::clamp(static_cast<uint32_t>(PixelWidth), Capabilities.minImageExtent.width,
+                       Capabilities.maxImageExtent.width),
+            std::clamp(static_cast<uint32_t>(PixelHeight), Capabilities.minImageExtent.height,
+                       Capabilities.maxImageExtent.height)};
 
         return ActualExtent;
     }
