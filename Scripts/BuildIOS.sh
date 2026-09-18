@@ -3,7 +3,8 @@
 #
 # Requirements (run on macOS):
 #   - Xcode with iOS SDK
-#   - LunarG Vulkan SDK for macOS (installs MoltenVK for iOS), VULKAN_SDK set
+#   - Optional: LunarG Vulkan SDK for macOS (installs MoltenVK for iOS), VULKAN_SDK set.
+#     When VULKAN_SDK is not set, CMake downloads MoltenVK automatically.
 #
 # Usage: ./Scripts/BuildIOS.sh
 
@@ -14,15 +15,12 @@ BUILD_DIR="${ROOT_DIR}/build-ios"
 
 GENERATOR="${JE_CMAKE_GENERATOR:-Xcode}"
 CONFIGURATION="${JE_CONFIGURATION:-Release}"
-DEPLOYMENT_TARGET="${JE_IOS_DEPLOYMENT_TARGET:-14.0}"
+DEPLOYMENT_TARGET="${JE_IOS_DEPLOYMENT_TARGET:-15.0}"
 ARCHITECTURES="${JE_IOS_ARCHITECTURES:-arm64}"
 
 if [ -z "${VULKAN_SDK:-}" ]; then
-    echo "ERROR: VULKAN_SDK is not set. Install the LunarG Vulkan SDK (macOS)," >&2
-    echo "       which ships MoltenVK for iOS, then set VULKAN_SDK, e.g.:" >&2
-    echo "         export VULKAN_SDK=\"/usr/local/VulkanSDK/<version>/macOS\"" >&2
-    echo "       See https://vulkan.lunarg.com/sdk/home" >&2
-    exit 1
+    echo "NOTE: VULKAN_SDK is not set. CMake will download MoltenVK automatically." >&2
+    echo "      (Or install the LunarG Vulkan SDK: https://vulkan.lunarg.com/sdk/home)" >&2
 fi
 
 echo "Configuring iOS (iphoneos) build in ${BUILD_DIR}"

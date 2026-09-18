@@ -24,11 +24,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Vulkan SDK (macOS, incl. MoltenVK)
-        uses: jakoch/install-vulkan-sdk-action@v1
-        with:
-          cache: true
-
       - name: Configure iOS project
         shell: bash
         run: |
@@ -36,7 +31,7 @@ jobs:
             -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_SYSROOT=iphoneos \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DJE_ENABLE_VALIDATION_LAYERS=OFF
 
@@ -90,11 +85,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Vulkan SDK (macOS, incl. MoltenVK)
-        uses: jakoch/install-vulkan-sdk-action@v1
-        with:
-          cache: true
-
       - name: Configure iOS Simulator project
         shell: bash
         run: |
@@ -102,7 +92,7 @@ jobs:
             -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_SYSROOT=iphonesimulator \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DJE_ENABLE_VALIDATION_LAYERS=OFF
 

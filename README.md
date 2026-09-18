@@ -26,8 +26,12 @@ The Vulkan instance, surface and swapchain are created through SDL3, so no platf
 graphics code is required. Input works through SDL's touch-to-mouse event synthesis.
 
 ## Requirements
-- macOS with Xcode (iOS SDK + simulator SDK)
-- **MoltenVK + Vulkan headers** — one of:
+- macOS with Xcode (iOS SDK + simulator SDK). Minimum deployment target is **iOS 15.0**
+  (required by MoltenVK 1.4.x).
+- **MoltenVK + Vulkan headers** — nothing to install: when no SDK is found, CMake
+  automatically downloads the official MoltenVK release (`MoltenVK-ios.tar`,
+  `-DJE_DOWNLOAD_MOLTENVK=ON` by default, version `-DJE_MOLTENVK_VERSION=v1.4.2`).
+  If you prefer an installed SDK instead:
   - **iOS / tvOS builds**: install the LunarG Vulkan SDK for macOS
     (<https://vulkan.lunarg.com/sdk/home>) and set `VULKAN_SDK`; it ships the MoltenVK
     slices for iOS device and simulator. CMake looks for the SDK in these places:
@@ -35,7 +39,6 @@ graphics code is required. Input works through SDL's touch-to-mouse event synthe
     If your SDK has another layout, pass `-DJE_MOLTENVK_XCFRAMEWORK=/path/to/MoltenVK.xcframework`.
   - **Native macOS-only builds**: `brew install molten-vk` is enough; the Homebrew
     library is auto-detected, no `VULKAN_SDK` needed.
-  - Vulkan headers alone (if the SDK is not installed): `brew install vulkan-headers`.
 
 ## Building for an iOS device
 ```bash
@@ -55,7 +58,7 @@ Produces `build-ios-simulator/Release-iphonesimulator/Sandbox.app`.
 cmake -S . -B build-ios -G Xcode \
   -DCMAKE_SYSTEM_NAME=iOS \
   -DCMAKE_OSX_SYSROOT=iphoneos \
-  -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
   -DCMAKE_OSX_ARCHITECTURES=arm64
 ```
 Then open `build-ios/Sandbox.xcodeproj` and run the `Sandbox` scheme on your device or simulator.
