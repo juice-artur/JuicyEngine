@@ -56,10 +56,34 @@ Then open `build-ios/Sandbox.xcodeproj` and run the `Sandbox` scheme on your dev
 The GitHub workflow `.github/workflows/ios.yml` builds (and verifies) the app for both a
 device and the simulator on every push to `master` and on pull requests.
 
-Downloadable bundles (`Sandbox-ios-device` / `Sandbox-ios-simulator`) are attached to
-every iOS workflow run as GitHub Actions artifacts:
+Downloadable bundles are attached to every iOS workflow run as GitHub Actions artifacts:
 
 1. Open the **Actions** tab -> pick the latest **iOS** run.
-2. In the **Artifacts** section download `Sandbox-ios-device` (for iPhones when signed)
-   or `Sandbox-ios-simulator` (like the real device).
+2. In the **Artifacts** section download `Sandbox-ios-device` (the `.app` bundle) or
+   `Sandbox-ios-device-ipa` (the installable `.ipa`) for iPhones, and
+   `Sandbox-ios-simulator` / `Sandbox-ios-simulator-ipa` for the simulator.
+
+### Installing the .ipa on your iPhone with AltStore / Sideloadly
+No paid Apple Developer account is needed - both tools re-sign the app with your own
+(possibly free) Apple ID on install. The device `.ipa` is ad-hoc signed before it is
+packaged, which AltStore/Sideloadly then replace with your Apple ID signature.
+
+**Sideloadly**
+1. Download `Sandbox-ios-device-ipa` from the iOS run artifacts.
+2. Start Sideloadly, connect your iPhone via USB.
+3. Drag the `.ipa` into the window, enter your Apple ID, hit **Start**.
+
+**AltStore**
+1. Install AltStore on your iPhone (via AltServer from https://altstore.io).
+2. Download `Sandbox-ios-device-ipa` and open it in the **Files** app.
+3. Tap **Share** -> **AltStore** to install and let AltStore manage the 7-day refresh.
+
+**Notes for free Apple IDs**
+- Apps signed with a free Apple ID expire after **7 days**; AltStore refreshes them
+  automatically while the iPhone shares a network with AltServer. Sideloadly needs to
+  be re-run when the signature expires.
+- Up to 3 apps can be active at the same time on one free Apple ID.
+- Enable **Developer Mode** on iOS 16+ (Settings -> Privacy & Security -> Developer Mode).
+- If you get *"already signed to your Apple ID"*, change `CFBundleIdentifier` in
+  `Platform/iOS/Info.plist` to a unique value.
 

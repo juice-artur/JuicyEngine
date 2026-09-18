@@ -56,11 +56,28 @@ jobs:
           find "${APP}" -name '*.xcframework' | head -n3
           echo "App bundle OK: ${APP}"
 
+      - name: Package IPA
+        shell: bash
+        run: |
+          APP="$(find . -path '*/Release-iphoneos/Sandbox.app' | head -n1)"
+          mkdir -p ipa/Payload
+          codesign --force --sign - --timestamp=none "${APP}"
+          cp -R "${APP}" ipa/Payload/Sandbox.app
+          (cd ipa && zip -r -X ../Sandbox-ios-device.ipa Payload)
+
       - name: Upload iOS app artifact
         uses: actions/upload-artifact@v4
         with:
           name: Sandbox-ios-device
           path: build-ios/Release-iphoneos/Sandbox.app
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload iOS IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sandbox-ios-device-ipa
+          path: Sandbox-ios-device.ipa
           if-no-files-found: error
           retention-days: 7
 
@@ -104,10 +121,26 @@ jobs:
           test -f "${APP}/Sandbox" || { echo "Sandbox binary missing!"; exit 1; }
           echo "App bundle OK: ${APP}"
 
+      - name: Package IPA
+        shell: bash
+        run: |
+          APP="$(find . -path '*/Release-iphonesimulator/Sandbox.app' | head -n1)"
+          mkdir -p ipa/Payload
+          cp -R "${APP}" ipa/Payload/Sandbox.app
+          (cd ipa && zip -r -X ../Sandbox-ios-simulator.ipa Payload)
+
       - name: Upload iOS simulator app artifact
         uses: actions/upload-artifact@v4
         with:
           name: Sandbox-ios-simulator
           path: build-ios-sim/Release-iphonesimulator/Sandbox.app
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload iOS simulator IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sandbox-ios-simulator-ipa
+          path: Sandbox-ios-simulator.ipa
           if-no-files-found: error
           retention-days: 7
