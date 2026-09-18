@@ -27,7 +27,15 @@ graphics code is required. Input works through SDL's touch-to-mouse event synthe
 
 ## Requirements
 - macOS with Xcode (iOS SDK + simulator SDK)
-- LunarG Vulkan SDK for macOS (installs MoltenVK for iOS). Set `VULKAN_SDK`.
+- **MoltenVK + Vulkan headers** — one of:
+  - **iOS / tvOS builds**: install the LunarG Vulkan SDK for macOS
+    (<https://vulkan.lunarg.com/sdk/home>) and set `VULKAN_SDK`; it ships the MoltenVK
+    slices for iOS device and simulator. CMake looks for the SDK in these places:
+    `$VULKAN_SDK/{Latest/MoltenVK/static,Package/Latest/MoltenVK/static,MacOS/lib,macOS/lib,lib}/MoltenVK.xcframework`.
+    If your SDK has another layout, pass `-DJE_MOLTENVK_XCFRAMEWORK=/path/to/MoltenVK.xcframework`.
+  - **Native macOS-only builds**: `brew install molten-vk` is enough; the Homebrew
+    library is auto-detected, no `VULKAN_SDK` needed.
+  - Vulkan headers alone (if the SDK is not installed): `brew install vulkan-headers`.
 
 ## Building for an iOS device
 ```bash

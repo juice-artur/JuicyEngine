@@ -18,7 +18,10 @@ DEPLOYMENT_TARGET="${JE_IOS_DEPLOYMENT_TARGET:-14.0}"
 ARCHITECTURES="${JE_IOS_SIM_ARCHITECTURES:-arm64}"
 
 if [ -z "${VULKAN_SDK:-}" ]; then
-    echo "ERROR: VULKAN_SDK is not set. Install the LunarG Vulkan SDK (macOS) so MoltenVK is available." >&2
+    echo "ERROR: VULKAN_SDK is not set. Install the LunarG Vulkan SDK (macOS)," >&2
+    echo "       which ships MoltenVK for iOS simulator, then set VULKAN_SDK, e.g.:" >&2
+    echo "         export VULKAN_SDK=\"/usr/local/VulkanSDK/<version>/macOS\"" >&2
+    echo "       See https://vulkan.lunarg.com/sdk/home" >&2
     exit 1
 fi
 
