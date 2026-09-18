@@ -56,3 +56,10 @@ Then open `build-ios/Sandbox.xcodeproj` and run the `Sandbox` scheme on your dev
 The GitHub workflow `.github/workflows/ios.yml` builds (and verifies) the app for both a
 device and the simulator on every push to `master` and on pull requests.
 
+Downloadable bundles (`Sandbox-ios-device` / `Sandbox-ios-simulator`) are attached to
+every iOS workflow run as GitHub Actions artifacts:
+
+1. Open the **Actions** tab -> pick the latest **iOS** run.
+2. In the **Artifacts** section download `Sandbox-ios-device` (for iPhones when signed)
+   or `Sandbox-ios-simulator` (like the real device).
+
