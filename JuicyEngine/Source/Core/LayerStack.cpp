@@ -19,7 +19,7 @@ LayerStack::~LayerStack()
 
 void LayerStack::PushLayer(Layer* layer)
 {
-    m_Layers.emplace(m_Layers.begin() + m_LayerInsert, layer);
+    m_Layers.emplace(layers_end(), layer);
     m_LayerInsert++;
     layer->OnAttach();
 }
@@ -32,8 +32,9 @@ void LayerStack::PushOverlay(Layer* overlay)
 
 void LayerStack::PopLayer(Layer* layer)
 {
-    auto it = std::find(m_Layers.begin(), m_Layers.begin() + m_LayerInsert, layer);
-    if (it != m_Layers.begin() + m_LayerInsert)
+    auto layersEnd = layers_end();
+    auto it = std::find(m_Layers.begin(), layersEnd, layer);
+    if (it != layersEnd)
     {
         m_Layers.erase(it);
         m_LayerInsert--;
@@ -43,7 +44,7 @@ void LayerStack::PopLayer(Layer* layer)
 
 void LayerStack::PopOverlay(Layer* overlay)
 {
-    auto it = std::find(m_Layers.begin() + m_LayerInsert, m_Layers.end(), overlay);
+    auto it = std::find(layers_end(), m_Layers.end(), overlay);
     if (it != m_Layers.end())
     {
         m_Layers.erase(it);

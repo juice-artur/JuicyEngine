@@ -25,10 +25,15 @@ public:
     }
     std::vector<Layer*>::iterator end()
     {
-        return m_Layers.begin() + m_LayerInsert;
+        return m_Layers.end();
     }
 
 private:
+    std::vector<Layer*>::iterator layers_end()
+    {
+        return m_Layers.begin() + m_LayerInsert;
+    }
+
     std::vector<Layer*> m_Layers;
     size_t m_LayerInsert = 0;
 };
