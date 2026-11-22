@@ -30,7 +30,10 @@ class VulkanIndexBuffer : public IndexBuffer, public VulkanBuffer
 {
 public:
     VulkanIndexBuffer(const std::vector<uint16_t>& Indexes);
+    VulkanIndexBuffer(const std::vector<uint32_t>& Indexes);
     ~VulkanIndexBuffer() override;
+private:
+    void Init(const void* Source, size_t Count, size_t ElementSize);
 };
 
 class VulkanUniformBuffer : public UniformBuffer, public VulkanBuffer

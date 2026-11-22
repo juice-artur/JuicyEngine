@@ -8,3 +8,6 @@
 	path = JuicyEngine/vendor/imgui-docking
 	url = https://github.com/juice-artur/imgui.git
 	branch = docking
+[submodule "JuicyEngine/vendor/tinygltf"]
+	path = JuicyEngine/vendor/tinygltf
+	url = https://github.com/juice-artur/tinygltf.git

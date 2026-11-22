@@ -3,14 +3,31 @@
 
 #include "Core/Application.h"
 #include "Platform/Vulkan/VulkanContext.h"
+#include "SDL3/SDL_dialog.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_vulkan.h>
 
+#include <filesystem>
+#include <iterator>
+    
 namespace JuicyEngine
 {
+
+namespace
+{
+std::filesystem::path g_PendingMeshPath;
+std::string g_MeshStatus = "No mesh loaded";
+
+void SDLCALL OnMeshFileSelected(void*, const char* const* Files, int)
+{
+    if (Files && Files[0])
+        g_PendingMeshPath = Files[0]; 
+}
+}
+
 EditorLayer::EditorLayer() : Layer("EditorLayer") {}
 
 EditorLayer::~EditorLayer() {}
@@ -65,6 +82,21 @@ void EditorLayer::OnUpdate()
     {
         if (ImGui::BeginMenu("File"))
         {
+            if (ImGui::MenuItem("Open Mesh..."))
+            {
+                static const SDL_DialogFileFilter Filters[] = {
+                    {"glTF / GLB", "gltf;glb"},
+                    {"All files", "*"},
+                };
+                SDL_ShowOpenFileDialog(OnMeshFileSelected,
+                                       nullptr,
+                                       Application::Get().GetWindow().GetSDLWindow(),
+                                       Filters,
+                                       static_cast<int>(std::size(Filters)),
+                                       nullptr,
+                                       false);
+            }
+            
             if (ImGui::MenuItem("Exit"))
             {
                 Application::Get().GetWindow().SetEventCallback(nullptr);
@@ -73,6 +105,18 @@ void EditorLayer::OnUpdate()
         }
         ImGui::EndMenuBar();
     }
+    if (!g_PendingMeshPath.empty())
+    {
+        const auto Path = std::move(g_PendingMeshPath);
+        g_PendingMeshPath.clear();
+
+        auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+        g_MeshStatus = Context && Context->LoadMeshFromFile(Path) ?
+                           ("Loaded: " + Path.filename().string()) :
+                           ("Failed: " + Path.filename().string());
+    }
+
+    
 
     ImGui::Begin("FPS");
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
@@ -103,7 +147,7 @@ void EditorLayer::OnUpdate()
     ImGui::End();
 
     ImGui::Begin("Properties");
-    ImGui::Text("No selection");
+    ImGui::TextUnformatted(g_MeshStatus.c_str());
     ImGui::End();
 
     ImGui::Begin("Console");

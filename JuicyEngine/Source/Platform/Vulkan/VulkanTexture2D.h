@@ -10,6 +10,7 @@ class VulkanTexture2D
 {
 public:
     VulkanTexture2D(const std::string& Path);
+    VulkanTexture2D(const void* Pixels, int32_t Width, int32_t Height);
     ~VulkanTexture2D();
     VkSampler& GetSampler();
     VulkanImage* GetImage();
@@ -23,6 +24,9 @@ protected:
     void CreateTextureSampler();
     void UploadData(VkBuffer Buffer);
 
+private:
+    void InitFromPixels(const void* Pixels, int32_t Width, int32_t InHeight);
+    
 private:
     int32_t Width;
     int32_t Height;

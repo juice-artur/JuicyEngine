@@ -1,3 +1,7 @@
+set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(TINYGLTF_INSTALL OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(tinygltf)
 add_subdirectory(SDL)
 add_subdirectory(spdlog)
 add_subdirectory(glm)
@@ -16,13 +20,22 @@ set(IMGUI_SOURCES
 )
 
 add_library(imgui STATIC ${IMGUI_SOURCES})
+
 target_include_directories(imgui PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui-docking
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui-docking/backends
 )
+
 target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL3::SDL3)
 
+
+
 add_library(vendor INTERFACE)
+
+target_include_directories(vendor INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf
+)
+
 target_link_libraries(vendor INTERFACE 
     glm::glm
     SDL3::SDL3 

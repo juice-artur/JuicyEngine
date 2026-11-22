@@ -5,8 +5,10 @@
 #include "vulkan/vulkan.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "VulkanShader.h"
+#include "VulkanMesh.h"
 #include "Core/Core.h"
 #include "Renderer/Pipeline.h"
+#include "Renderer/GLTFMeshLoader.h"
 #define GLM_FORCE_RADIANS
 #include <array>
 #include <glm/glm.hpp>
@@ -123,7 +125,8 @@ void VulkanContext::Shutdown()
 
     GraphicsPipeline.Shutdown();
     ViewportGraphicsPipeline.Shutdown();
-
+    m_CurrentMesh.reset();
+    
     vkDestroyDescriptorPool(GetDevice()->GetLogicalDevice(), DescriptorPool, nullptr);
 
     VertexBuffer.reset();
@@ -200,7 +203,8 @@ void VulkanContext::Draw()
     auto CurrentTime = std::chrono::high_resolution_clock::now();
     float Time = std::chrono::duration<float, std::chrono::seconds::period>(CurrentTime - StartTime).count();
 
-    Ubo.Model = glm::rotate(glm::mat4(1.0f), Time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    Ubo.Model = m_CurrentMesh ? m_CurrentModelMatrix
+                           : glm::rotate(glm::mat4(1.0f), Time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     Ubo.View = glm::lookAt(glm::vec3(0.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     Ubo.Proj = glm::perspective(
         glm::radians(60.0f), SwapChain.GetExtent().width / (float) SwapChain.GetExtent().height, 0.1f, 100.0f);
@@ -399,21 +403,23 @@ void VulkanContext::RecordCommandBuffer(VulkanRenderCommandBuffer& CB)
 
         VkRect2D ScissorVP {.offset = {0, 0}, .extent = VPExtent};
         vkCmdSetScissor(CB.GetCommandBuffer(), 0, 1, &ScissorVP);
-
+        
         VkDeviceSize Offsets[] = {0};
-        vkCmdBindVertexBuffers(CB.GetCommandBuffer(), 0, 1, &VertexBuffer->GetBuffer(), Offsets);
-        vkCmdBindIndexBuffer(CB.GetCommandBuffer(), IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
-        vkCmdBindDescriptorSets(CB.GetCommandBuffer(),
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                ViewportGraphicsPipeline.GetPipelineLayout(),
-                                0,
-                                1,
-                                &DescriptorSet,
-                                0,
-                                nullptr);
-        ViewportGraphicsPipeline.Bind(CB.GetCommandBuffer());
-        vkCmdDrawIndexed(CB.GetCommandBuffer(), static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
+        const VkCommandBuffer Cmd = CB.GetCommandBuffer();
 
+        VkBuffer VertexBufferHandle = m_CurrentMesh ? m_CurrentMesh->GetVertexBuffer() : VertexBuffer->GetBuffer();
+        VkBuffer IndexBufferHandle = m_CurrentMesh ? m_CurrentMesh->GetIndexBuffer() : IndexBuffer->GetBuffer();
+        VkIndexType IndexType = m_CurrentMesh ? m_CurrentMesh->GetIndexType() : VK_INDEX_TYPE_UINT16;
+        uint32_t IndexCount = m_CurrentMesh ? m_CurrentMesh->GetIndexCount() : static_cast<uint32_t>(Indices.size());
+        VkDescriptorSet Set = m_CurrentMesh ? m_CurrentMesh->GetDescriptorSet() : DescriptorSet;
+
+        vkCmdBindVertexBuffers(Cmd, 0, 1, &VertexBufferHandle, Offsets);
+        vkCmdBindIndexBuffer(Cmd, IndexBufferHandle, 0, IndexType);
+        vkCmdBindDescriptorSets(Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                ViewportGraphicsPipeline.GetPipelineLayout(), 0, 1, &Set, 0, nullptr);
+        ViewportGraphicsPipeline.Bind(Cmd);
+        vkCmdDrawIndexed(Cmd, IndexCount, 1, 0, 0, 0);
+        
         vkCmdEndRenderPass(CB.GetCommandBuffer());
     }
 
@@ -529,15 +535,17 @@ void VulkanContext::RecreateSwapChain()
 
 void VulkanContext::CreateDescriptorPool()
 {
-    VkDescriptorPoolSize PoolSizes[] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
-                                        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2}};
+    static constexpr uint32_t MAX_MESHES = 32;
+
+    VkDescriptorPoolSize PoolSizes[] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_MESHES + 1},
+                                         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_MESHES + 1}};
 
     VkDescriptorPoolCreateInfo PoolInfo {};
     PoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     PoolInfo.flags = 0;
     PoolInfo.poolSizeCount = 2;
     PoolInfo.pPoolSizes = PoolSizes;
-    PoolInfo.maxSets = 2;
+    PoolInfo.maxSets = MAX_MESHES + 1;
 
     auto Result = vkCreateDescriptorPool(GetDevice()->GetLogicalDevice(), &PoolInfo, nullptr, &DescriptorPool);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create descriptor pool!")
@@ -584,8 +592,11 @@ void VulkanContext::CreateDescriptorSets()
     DescriptorWrites[1].descriptorCount = 1;
     DescriptorWrites[1].pImageInfo = &ImageInfo;
 
-    vkUpdateDescriptorSets(
-        GetDevice()->GetLogicalDevice(), DescriptorWrites.size(), DescriptorWrites.data(), 0, nullptr);
+    vkUpdateDescriptorSets(GetDevice()->GetLogicalDevice(),
+                         static_cast<uint32_t>(DescriptorWrites.size()),
+                       DescriptorWrites.data(),
+                       0,
+                       nullptr);
 }
 void VulkanContext::CreateDepthResources()
 {
@@ -664,5 +675,22 @@ VkDescriptorSet VulkanContext::GetViewportDescriptorSet() const
 VkExtent2D VulkanContext::GetViewportSize() const
 {
     return m_ViewportRT ? m_ViewportRT->GetExtent() : VkExtent2D {0, 0};
+}
+bool VulkanContext::LoadMeshFromFile(const std::filesystem::path& Path)
+{
+    auto Data = GLTFMeshLoader::Load(Path);
+    if (!Data)
+        return false;
+
+    const VkDevice Device = GetDevice()->GetLogicalDevice();
+    vkDeviceWaitIdle(Device);
+
+    m_CurrentMesh = std::make_unique<VulkanMesh>(*Data,
+                                                 DescriptorPool,
+                                                 GraphicsPipeline.GetDescriptorSetLayout(),
+                                                 UniformBuffer->GetBuffer(),
+                                                 sizeof(Ubo));
+    m_CurrentModelMatrix = Data->Transform;
+    return true;
 }
 } // namespace JuicyEngine

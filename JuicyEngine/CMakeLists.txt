@@ -32,6 +32,8 @@ set(SOURCES
     Source/Renderer/Buffer.h
     Source/Renderer/Buffer.cpp
     Source/Renderer/Mesh.h
+    Source/Renderer/GLTFMeshLoader.h
+    Source/Renderer/GLTFMeshLoader.cpp
     Source/Platform/Vulkan/VulkanContext.h
     Source/Platform/Vulkan/VulkanContext.cpp
     Source/Platform/Vulkan/VulkanDevice.h
@@ -53,7 +55,9 @@ set(SOURCES
     Source/Platform/Vulkan/VulkanBuffer.h
     Source/Platform/Vulkan/VulkanBuffer.cpp
     Source/Platform/Vulkan/VulkanTexture2D.h
-    Source/Platform/Vulkan/VulkanTexture2D.cpp
+    Source/Platform/Vulkan/VulkanTexture2D.cpp 
+    Source/Platform/Vulkan/VulkanMesh.h 
+    Source/Platform/Vulkan/VulkanMesh.cpp
     Source/Platform/Vulkan/VulkanUtils.h
     Source/Platform/Vulkan/VulkanUtils.cpp
     Source/Platform/Vulkan/VulkanImage.h
@@ -61,7 +65,8 @@ set(SOURCES
     Source/Platform/Vulkan/VulkanFramebuffer.h
     Source/Platform/Vulkan/VulkanFramebuffer.cpp
     Source/Platform/Vulkan/VulkanRenderTarget.h
-    Source/Platform/Vulkan/VulkanRenderTarget.cpp
+    Source/Platform/Vulkan/VulkanRenderTarget.cpp 
+    Source/Platform/GLTF/TinyGLTFImpl.cpp
     Source/ImGui/ImGuiLayer.cpp
     Source/ImGui/ImGuiLayer.h
     Source/Editor/EditorLayer.cpp

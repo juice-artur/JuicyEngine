@@ -15,6 +15,7 @@ class IndexBuffer
 public:
     virtual ~IndexBuffer() = default;
     static IndexBuffer* Create(std::vector<uint16_t> Indices);
+    static IndexBuffer* Create(std::vector<uint32_t> Indices);
 };
 
 class UniformBuffer

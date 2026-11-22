@@ -15,6 +15,8 @@
 #include "Renderer/GraphicsContext.h"
 #include "Renderer/Mesh.h"
 #include "vulkan/vulkan.h"
+#include <filesystem>
+
 
 namespace JuicyEngine
 {
@@ -22,6 +24,7 @@ class VulkanUniformBuffer;
 class VulkanIndexBuffer;
 class VulkanVertexBuffer;
 class IndexBuffer;
+class VulkanMesh;
 class VertexBuffer;
 
 class VulkanContext : public GraphicsContext
@@ -57,6 +60,9 @@ public:
     void ResizeViewportFramebuffer(uint32_t Width, uint32_t Height);
     void DestroyViewportFramebuffer();
     VkExtent2D GetViewportSize() const;
+    
+    bool LoadMeshFromFile(const std::filesystem::path& Path);
+    
 
 private:
     void CreateGraphicsPipeline();
@@ -125,5 +131,8 @@ private:
     std::unique_ptr<VulkanIndexBuffer> IndexBuffer;
     std::unique_ptr<VulkanUniformBuffer> UniformBuffer;
     std::unique_ptr<VulkanTexture2D> Texture;
+    
+    std::unique_ptr<VulkanMesh> m_CurrentMesh;
+    glm::mat4 m_CurrentModelMatrix = glm::mat4(1.0f);
 };
 } // namespace JuicyEngine

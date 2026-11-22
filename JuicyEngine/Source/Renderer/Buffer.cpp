@@ -14,6 +14,12 @@ IndexBuffer* IndexBuffer::Create(std::vector<uint16_t> Indices)
     return new VulkanIndexBuffer(Indices);
 }
 
+IndexBuffer* IndexBuffer::Create(std::vector<uint32_t> Indices)
+{
+    return new VulkanIndexBuffer(Indices);
+}
+
+
 UniformBuffer* UniformBuffer::Create(int Size)
 {
     return new VulkanUniformBuffer(Size);
