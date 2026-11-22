@@ -86,11 +86,11 @@ private:
     FindSupportedFormat(const std::vector<VkFormat>& Candidates, VkImageTiling Tiling, VkFormatFeatureFlags Features);
 
 private:
-    VulkanDeviceManager* m_DeviceManager;
+    VulkanDeviceManager* m_DeviceManager = nullptr;
     VulkanSwapChain SwapChain;
     VulkanPipeline GraphicsPipeline;
     VulkanPipeline ViewportGraphicsPipeline;
-    std::shared_ptr<VulkanRenderPass> RenderPass = std::make_shared<VulkanRenderPass>();
+    std::shared_ptr<VulkanRenderPass> RenderPass;
     VkCommandPool CommandPool = VK_NULL_HANDLE;
     VkDescriptorSet DescriptorSet;
     std::vector<VulkanRenderCommandBuffer> CommandBuffers;

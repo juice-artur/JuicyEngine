@@ -8,24 +8,25 @@
 
 namespace JuicyEngine
 {
-VulkanMesh::VulkanMesh(const Mesh& Data,
+VulkanMesh::VulkanMesh(VulkanContext& Context,
+                       const Mesh& Data,
                        VkDescriptorPool Pool,
                        VkDescriptorSetLayout Layout,
                        VkBuffer UniformBuffer,
                        VkDeviceSize UniformBufferSize)
-    : m_Pool(Pool), m_IndexCount(static_cast<uint32_t>(Data.Indices.size()))
+    : m_Context(Context), m_Pool(Pool), m_IndexCount(static_cast<uint32_t>(Data.Indices.size()))
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    const VkDevice Device = Context->GetDevice()->GetLogicalDevice();
+    const VkDevice Device = m_Context.GetDevice()->GetLogicalDevice();
 
     JE_CORE_ASSERT(!Data.Vertices.empty() && !Data.Indices.empty(), "Cannot create GPU mesh from empty data")
 
-    m_VertexBuffer.reset(static_cast<VulkanVertexBuffer*>(VertexBuffer::Create(Data.Vertices)));
-    m_IndexBuffer.reset(static_cast<VulkanIndexBuffer*>(IndexBuffer::Create(Data.Indices)));
+    m_VertexBuffer = std::make_unique<VulkanVertexBuffer>(m_Context, Data.Vertices);
+    m_IndexBuffer = std::make_unique<VulkanIndexBuffer>(m_Context, Data.Indices);
 
     if (Data.BaseColorTexture.Valid())
     {
-        m_Texture = std::make_unique<VulkanTexture2D>(Data.BaseColorTexture.Pixels.data(),
+        m_Texture = std::make_unique<VulkanTexture2D>(m_Context,
+                                                       Data.BaseColorTexture.Pixels.data(),
                                                       Data.BaseColorTexture.Width,
                                                       Data.BaseColorTexture.Height);
     }
@@ -33,7 +34,7 @@ VulkanMesh::VulkanMesh(const Mesh& Data,
     {
         // fallback: 1x1 white texture
         constexpr uint8_t WhitePixel[4] = {255, 255, 255, 255};
-        m_Texture = std::make_unique<VulkanTexture2D>(WhitePixel, 1, 1);
+        m_Texture = std::make_unique<VulkanTexture2D>(m_Context, WhitePixel, 1, 1);
     }
 
     VkDescriptorSetAllocateInfo AllocateInfo {};
@@ -71,8 +72,7 @@ VulkanMesh::VulkanMesh(const Mesh& Data,
 
 VulkanMesh::~VulkanMesh()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
     if (m_DescriptorSet != VK_NULL_HANDLE && m_Pool != VK_NULL_HANDLE)
-        vkFreeDescriptorSets(Context->GetDevice()->GetLogicalDevice(), m_Pool, 1, &m_DescriptorSet);
+        vkFreeDescriptorSets(m_Context.GetDevice()->GetLogicalDevice(), m_Pool, 1, &m_DescriptorSet);
 }
 } // namespace JuicyEngine

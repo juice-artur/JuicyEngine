@@ -4,10 +4,13 @@
 
 namespace JuicyEngine
 {
+class VulkanContext;
+
 class VulkanImage
 {
 public:
-    VulkanImage(uint32_t width,
+    VulkanImage(VulkanContext& Context,
+                uint32_t width,
                 uint32_t height,
                 VkFormat format,
                 VkImageUsageFlags usage,
@@ -34,19 +37,19 @@ public:
                                    VkImageAspectFlags Aspect = VK_IMAGE_ASPECT_COLOR_BIT);
 
 private:
-    static void CreateRawImage(VkDevice Device,
-                               uint32_t Width,
-                               uint32_t Height,
-                               VkFormat Format,
-                               VkImageTiling Tiling,
-                               VkImageUsageFlags Usage,
-                               VkMemoryPropertyFlags Properties,
-                               VkImage& OutImage,
-                               VkDeviceMemory& OutImageMemory);
+    void CreateRawImage(uint32_t Width,
+                        uint32_t Height,
+                        VkFormat Format,
+                        VkImageTiling Tiling,
+                        VkImageUsageFlags Usage,
+                        VkMemoryPropertyFlags Properties,
+                        VkImage& OutImage,
+                        VkDeviceMemory& OutImageMemory);
 
-    static VkImageView CreateRawImageView(VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags);
+    VkImageView CreateRawImageView(VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags);
 
 private:
+    VulkanContext& m_Context;
     VkImage Image;
     VkDeviceMemory Memory;
     VkImageView ImageView;
@@ -55,4 +58,4 @@ private:
     uint32_t Height;
 };
 
-}
+} // namespace JuicyEngine

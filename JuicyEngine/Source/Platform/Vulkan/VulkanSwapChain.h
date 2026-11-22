@@ -5,6 +5,8 @@
 
 namespace JuicyEngine
 {
+class VulkanContext;
+
 struct SwapChainSupportDetails
 {
     VkSurfaceCapabilitiesKHR Capabilities;
@@ -15,7 +17,7 @@ struct SwapChainSupportDetails
 class VulkanSwapChain
 {
 public:
-    VulkanSwapChain();
+    explicit VulkanSwapChain(VulkanContext& Context) : m_Context(Context) {}
     void Shutdown() const;
 
     void Init(VkSurfaceKHR Surface, void* Window);
@@ -34,6 +36,7 @@ private:
     void CreateImageViews(const VkDevice Device);
 
 private:
+    VulkanContext& m_Context;
     VkSwapchainKHR SwapChain;
     uint32_t ImageCount;
     std::vector<VkImage> SwapChainImages;

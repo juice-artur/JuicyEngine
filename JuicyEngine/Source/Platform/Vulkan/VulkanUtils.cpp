@@ -5,12 +5,10 @@
 
 namespace JuicyEngine::RHI::Vulkan
 {
-uint32_t VulkanUtils::FindMemoryType(uint32_t TypeFilter, VkMemoryPropertyFlags Properties)
+uint32_t VulkanUtils::FindMemoryType(VulkanContext& Context, uint32_t TypeFilter, VkMemoryPropertyFlags Properties)
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     VkPhysicalDeviceMemoryProperties MemProperties;
-    vkGetPhysicalDeviceMemoryProperties(Context->GetDevice()->GetPhysicalDevice(), &MemProperties);
+    vkGetPhysicalDeviceMemoryProperties(Context.GetDevice()->GetPhysicalDevice(), &MemProperties);
 
     for (uint32_t i = 0; i < MemProperties.memoryTypeCount; i++)
     {
@@ -24,19 +22,17 @@ uint32_t VulkanUtils::FindMemoryType(uint32_t TypeFilter, VkMemoryPropertyFlags 
     return 0;
 }
 
-VkCommandBuffer VulkanUtils::BeginSingleTimeCommands()
+VkCommandBuffer VulkanUtils::BeginSingleTimeCommands(VulkanContext& Context)
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     VkCommandBufferAllocateInfo CmdBufAllocInfo = {};
     CmdBufAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    CmdBufAllocInfo.commandPool = Context->GetCommandPool();
+    CmdBufAllocInfo.commandPool = Context.GetCommandPool();
     CmdBufAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     CmdBufAllocInfo.commandBufferCount = 1;
 
     VkCommandBuffer VkCommandBuffer;
     auto AllocResult =
-        vkAllocateCommandBuffers(Context->GetDevice()->GetLogicalDevice(), &CmdBufAllocInfo, &VkCommandBuffer);
+        vkAllocateCommandBuffers(Context.GetDevice()->GetLogicalDevice(), &CmdBufAllocInfo, &VkCommandBuffer);
     JE_CORE_ASSERT(AllocResult == VK_SUCCESS, "Failed to allocate command buffers!")
 
     VkCommandBufferBeginInfo CmdBufBeginInfo = {};
@@ -49,10 +45,8 @@ VkCommandBuffer VulkanUtils::BeginSingleTimeCommands()
     return VkCommandBuffer;
 }
 
-void VulkanUtils::EndSingleTimeCommands(VkCommandBuffer VkCommandBuffer)
+void VulkanUtils::EndSingleTimeCommands(VulkanContext& Context, VkCommandBuffer VkCommandBuffer)
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     vkEndCommandBuffer(VkCommandBuffer);
 
     VkSubmitInfo SubmitInfo = {};
@@ -61,14 +55,15 @@ void VulkanUtils::EndSingleTimeCommands(VkCommandBuffer VkCommandBuffer)
     SubmitInfo.pCommandBuffers = &VkCommandBuffer;
 
     const VkResult SubmitResult =
-        vkQueueSubmit(Context->GetDevice()->GetGraphicsQueue(), 1, &SubmitInfo, VK_NULL_HANDLE);
+        vkQueueSubmit(Context.GetDevice()->GetGraphicsQueue(), 1, &SubmitInfo, VK_NULL_HANDLE);
     JE_CORE_ASSERT(SubmitResult == VK_SUCCESS, "Failed to submit copy command buffer")
 
-    vkQueueWaitIdle(Context->GetDevice()->GetGraphicsQueue());
+    vkQueueWaitIdle(Context.GetDevice()->GetGraphicsQueue());
 
-    vkFreeCommandBuffers(Context->GetDevice()->GetLogicalDevice(), Context->GetCommandPool(), 1, &VkCommandBuffer);
+    vkFreeCommandBuffers(Context.GetDevice()->GetLogicalDevice(), Context.GetCommandPool(), 1, &VkCommandBuffer);
 }
-void VulkanUtils::CreateBuffer(VkDeviceSize Size,
+void VulkanUtils::CreateBuffer(VulkanContext& Context,
+                               VkDeviceSize Size,
                                VkBufferUsageFlags Usage,
                                VkMemoryPropertyFlags Properties,
                                VkBuffer& InBuffer,
@@ -83,26 +78,25 @@ void VulkanUtils::CreateBuffer(VkDeviceSize Size,
                                      .queueFamilyIndexCount = 0,
                                      .pQueueFamilyIndices = nullptr};
 
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    const auto Result = vkCreateBuffer(Context->GetDevice()->GetLogicalDevice(), &BufferInfo, nullptr, &InBuffer);
+    const auto Result = vkCreateBuffer(Context.GetDevice()->GetLogicalDevice(), &BufferInfo, nullptr, &InBuffer);
 
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create Vulkan buffer!")
 
     VkMemoryRequirements MemRequirements;
 
-    vkGetBufferMemoryRequirements(Context->GetDevice()->GetLogicalDevice(), InBuffer, &MemRequirements);
+    vkGetBufferMemoryRequirements(Context.GetDevice()->GetLogicalDevice(), InBuffer, &MemRequirements);
 
     VkMemoryAllocateInfo AllocInfo = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = nullptr,
         .allocationSize = MemRequirements.size,
-        .memoryTypeIndex = RHI::Vulkan::VulkanUtils::FindMemoryType(MemRequirements.memoryTypeBits, Properties)};
+        .memoryTypeIndex = RHI::Vulkan::VulkanUtils::FindMemoryType(Context, MemRequirements.memoryTypeBits, Properties)};
 
     const auto AllocResult =
-        vkAllocateMemory(Context->GetDevice()->GetLogicalDevice(), &AllocInfo, nullptr, &InBufferMemory);
+        vkAllocateMemory(Context.GetDevice()->GetLogicalDevice(), &AllocInfo, nullptr, &InBufferMemory);
 
     JE_CORE_ASSERT(AllocResult == VK_SUCCESS, "Failed to allocate vertex buffer memory")
 
-    vkBindBufferMemory(Context->GetDevice()->GetLogicalDevice(), InBuffer, InBufferMemory, 0);
+    vkBindBufferMemory(Context.GetDevice()->GetLogicalDevice(), InBuffer, InBufferMemory, 0);
 }
 } // namespace JuicyEngine::RHI::Vulkan

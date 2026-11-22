@@ -6,11 +6,13 @@
 
 namespace JuicyEngine
 {
+class VulkanContext;
+
 class VulkanTexture2D
 {
 public:
-    VulkanTexture2D(const std::string& Path);
-    VulkanTexture2D(const void* Pixels, int32_t Width, int32_t Height);
+    VulkanTexture2D(VulkanContext& Context, const std::string& Path);
+    VulkanTexture2D(VulkanContext& Context, const void* Pixels, int32_t Width, int32_t Height);
     ~VulkanTexture2D();
     VkSampler& GetSampler();
     VulkanImage* GetImage();
@@ -26,11 +28,12 @@ protected:
 
 private:
     void InitFromPixels(const void* Pixels, int32_t Width, int32_t InHeight);
-    
+
 private:
+    VulkanContext& m_Context;
     int32_t Width;
     int32_t Height;
     std::unique_ptr<VulkanImage> Image;
     VkSampler TextureSampler;
 };
-}
+} // namespace JuicyEngine

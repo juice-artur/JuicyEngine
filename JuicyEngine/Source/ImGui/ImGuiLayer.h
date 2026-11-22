@@ -5,27 +5,26 @@
 
 namespace JuicyEngine
 {
+class Window;
+class VulkanContext;
+
 class ImGuiLayer : public Layer
 {
 public:
-    ImGuiLayer();
-    ~ImGuiLayer();
+    ImGuiLayer(Window& Window, VulkanContext& Context);
+    ~ImGuiLayer() override;
 
-    virtual void OnAttach();
-    virtual void OnDetach();
-    virtual void OnUpdate();
-    virtual void OnEvent(Event& event);
+    void OnAttach() override;
+    void OnDetach() override;
+    void OnUpdate() override;
+    void OnEvent(Event& event) override;
 
     void Begin();
     void Render();
 
-    static ImGuiLayer* Get()
-    {
-        return s_Instance;
-    }
-
 private:
-    static ImGuiLayer* s_Instance;
-    VkDescriptorPool ImGuiDescriptorPool;
+    Window& m_Window;
+    VulkanContext& m_Context;
+    VkDescriptorPool ImGuiDescriptorPool = VK_NULL_HANDLE;
 };
-}
+} // namespace JuicyEngine

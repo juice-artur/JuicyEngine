@@ -19,7 +19,13 @@
 
 namespace JuicyEngine
 {
-VulkanContext::VulkanContext() {}
+VulkanContext::VulkanContext()
+    : SwapChain(*this),
+      GraphicsPipeline(*this),
+      ViewportGraphicsPipeline(*this),
+      RenderPass(std::make_shared<VulkanRenderPass>(*this))
+{
+}
 
 void VulkanContext::Init(void* Window)
 {
@@ -52,10 +58,10 @@ void VulkanContext::Init(void* Window)
     CreateViewportGraphicsPipeline();
     CreateSyncObjects();
 
-    VertexBuffer.reset(static_cast<std::unique_ptr<VulkanVertexBuffer>::pointer>(VertexBuffer::Create(Vertices)));
-    IndexBuffer.reset(static_cast<std::unique_ptr<VulkanIndexBuffer>::pointer>(IndexBuffer::Create(Indices)));
-    UniformBuffer.reset(static_cast<std::unique_ptr<VulkanUniformBuffer>::pointer>(UniformBuffer::Create(sizeof(Ubo))));
-    Texture.reset(new VulkanTexture2D("Assets/Textures/statue.jpg"));
+    VertexBuffer = std::make_unique<VulkanVertexBuffer>(*this, Vertices);
+    IndexBuffer = std::make_unique<VulkanIndexBuffer>(*this, Indices);
+    UniformBuffer = std::make_unique<VulkanUniformBuffer>(*this, sizeof(Ubo));
+    Texture = std::make_unique<VulkanTexture2D>(*this, "Assets/Textures/statue.jpg");
 
     Ubo.View = glm::lookAt(glm::vec3(0.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     Ubo.Proj = glm::perspective(
@@ -361,7 +367,7 @@ void VulkanContext::CreateImGuiFramebuffers()
     for (size_t i = 0; i < ImageViews.size(); i++)
     {
         ImGuiFramebuffers.push_back(std::make_unique<VulkanFramebuffer>(
-            ImGuiRenderPass, SwapChain.GetExtent(), std::vector<VkImageView> {ImageViews[i]}));
+            *this, ImGuiRenderPass, SwapChain.GetExtent(), std::vector<VkImageView> {ImageViews[i]}));
     }
 }
 
@@ -602,7 +608,8 @@ void VulkanContext::CreateDescriptorSets()
 void VulkanContext::CreateDepthResources()
 {
     VkFormat DepthFormat = FindDepthFormat();
-    DepthImage = std::make_unique<VulkanImage>(SwapChain.GetExtent().width,
+    DepthImage = std::make_unique<VulkanImage>(*this,
+                                               SwapChain.GetExtent().width,
                                                SwapChain.GetExtent().height,
                                                DepthFormat,
                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -663,7 +670,7 @@ void VulkanContext::ResizeViewportFramebuffer(uint32_t Width, uint32_t Height)
     Info.DepthFormat = FindDepthFormat();
     Info.CreateImGuiDescriptor = true;
     Info.ImGuiLayout = VK_IMAGE_LAYOUT_GENERAL;
-    m_ViewportRT = std::make_unique<VulkanRenderTarget>(Info);
+    m_ViewportRT = std::make_unique<VulkanRenderTarget>(*this, Info);
 
     CreateViewportGraphicsPipeline();
 }
@@ -686,7 +693,7 @@ bool VulkanContext::LoadMeshFromFile(const std::filesystem::path& Path)
     const VkDevice Device = GetDevice()->GetLogicalDevice();
     vkDeviceWaitIdle(Device);
 
-    m_CurrentMesh = std::make_unique<VulkanMesh>(*Data,
+    m_CurrentMesh = std::make_unique<VulkanMesh>(*this, *Data,
                                                  DescriptorPool,
                                                  GraphicsPipeline.GetDescriptorSetLayout(),
                                                  UniformBuffer->GetBuffer(),

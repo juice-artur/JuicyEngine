@@ -5,10 +5,15 @@
 
 namespace JuicyEngine
 {
+class VulkanContext;
+
 class VulkanFramebuffer
 {
 public:
-    VulkanFramebuffer(VkRenderPass RenderPass, VkExtent2D Extent, const std::vector<VkImageView>& Attachments);
+    VulkanFramebuffer(VulkanContext& Context,
+                      VkRenderPass RenderPass,
+                      VkExtent2D Extent,
+                      const std::vector<VkImageView>& Attachments);
     ~VulkanFramebuffer();
 
     VulkanFramebuffer(VulkanFramebuffer&& Other) noexcept;
@@ -27,6 +32,7 @@ public:
     }
 
 private:
+    VulkanContext& m_Context;
     VkFramebuffer Framebuffer = VK_NULL_HANDLE;
     VkExtent2D Extent {};
 };

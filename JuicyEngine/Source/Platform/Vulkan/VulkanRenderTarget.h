@@ -8,6 +8,8 @@
 namespace JuicyEngine
 {
 
+class VulkanContext;
+
 class VulkanRenderTarget
 {
 public:
@@ -25,7 +27,7 @@ public:
         VkImageLayout DepthFinalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     };
 
-    VulkanRenderTarget(const CreateInfo& Info);
+    VulkanRenderTarget(VulkanContext& Context, const CreateInfo& Info);
     ~VulkanRenderTarget();
 
     VulkanRenderTarget(VulkanRenderTarget&& Other) noexcept;
@@ -57,6 +59,7 @@ public:
     }
 
 private:
+    VulkanContext& m_Context;
     void CreateRenderPass();
     void CreateSampler();
     void CreateDescriptor();

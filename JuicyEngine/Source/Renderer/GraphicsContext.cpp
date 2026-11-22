@@ -4,9 +4,13 @@
 
 namespace JuicyEngine
 {
-GraphicsContext* GraphicsContext::Get()
+std::unique_ptr<GraphicsContext> GraphicsContext::Create(RendererAPI API)
 {
-    static VulkanContext Instance;
-    return &Instance;
+    switch (API)
+    {
+    case RendererAPI::Vulkan:
+        return std::make_unique<VulkanContext>();
+    }
+    return nullptr;
 }
 } // namespace JuicyEngine

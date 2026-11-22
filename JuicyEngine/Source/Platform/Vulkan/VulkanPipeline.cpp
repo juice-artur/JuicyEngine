@@ -10,8 +10,6 @@ namespace JuicyEngine
 {
 void VulkanPipeline::Create(const PipelineCreateInfo& Info)
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     VkVertexInputBindingDescription BindingDescriptions = {
         .binding = 0,
         .stride = sizeof(Vertex),
@@ -122,7 +120,7 @@ void VulkanPipeline::Create(const PipelineCreateInfo& Info)
     LayoutInfo.pBindings = Bindings.data();
 
     auto CreateDescriptorResult = vkCreateDescriptorSetLayout(
-        Context->GetDevice()->GetLogicalDevice(), &LayoutInfo, nullptr, &DescriptorSetLayout);
+        m_Context.GetDevice()->GetLogicalDevice(), &LayoutInfo, nullptr, &DescriptorSetLayout);
     JE_CORE_ASSERT(CreateDescriptorResult == VK_SUCCESS, "Failed to create descriptor set layout!")
 
     VkPipelineLayoutCreateInfo PipelineLayoutInfo {};
@@ -132,7 +130,7 @@ void VulkanPipeline::Create(const PipelineCreateInfo& Info)
     PipelineLayoutInfo.pushConstantRangeCount = 0;
 
     auto PipelineLayoutResult =
-        vkCreatePipelineLayout(Context->GetDevice()->GetLogicalDevice(), &PipelineLayoutInfo, nullptr, &PipelineLayout);
+        vkCreatePipelineLayout(m_Context.GetDevice()->GetLogicalDevice(), &PipelineLayoutInfo, nullptr, &PipelineLayout);
 
     JE_CORE_ASSERT(PipelineLayoutResult == VK_SUCCESS, "Failed to create pipeline layout!")
 
@@ -154,17 +152,16 @@ void VulkanPipeline::Create(const PipelineCreateInfo& Info)
     PipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
     auto Result = vkCreateGraphicsPipelines(
-        Context->GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline);
+        m_Context.GetDevice()->GetLogicalDevice(), VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline);
 
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create graphics pipeline!")
 }
 
 void VulkanPipeline::Shutdown()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    vkDestroyPipeline(Context->GetDevice()->GetLogicalDevice(), Pipeline, nullptr);
-    vkDestroyPipelineLayout(Context->GetDevice()->GetLogicalDevice(), PipelineLayout, nullptr);
-    vkDestroyDescriptorSetLayout(Context->GetDevice()->GetLogicalDevice(), DescriptorSetLayout, nullptr);
+    vkDestroyPipeline(m_Context.GetDevice()->GetLogicalDevice(), Pipeline, nullptr);
+    vkDestroyPipelineLayout(m_Context.GetDevice()->GetLogicalDevice(), PipelineLayout, nullptr);
+    vkDestroyDescriptorSetLayout(m_Context.GetDevice()->GetLogicalDevice(), DescriptorSetLayout, nullptr);
 }
 
 void VulkanPipeline::Bind(VkCommandBuffer CommandBuffer)

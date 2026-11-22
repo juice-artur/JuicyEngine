@@ -5,13 +5,13 @@
 namespace JuicyEngine
 {
 
-VulkanFramebuffer::VulkanFramebuffer(VkRenderPass RenderPass,
+VulkanFramebuffer::VulkanFramebuffer(VulkanContext& Context,
+                                     VkRenderPass RenderPass,
                                      VkExtent2D Extent,
                                      const std::vector<VkImageView>& Attachments)
-    : Extent(Extent)
+    : m_Context(Context), Extent(Extent)
 {
-    auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    auto Device = Context->GetDevice()->GetLogicalDevice();
+    auto Device = m_Context.GetDevice()->GetLogicalDevice();
 
     VkFramebufferCreateInfo info {};
     info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -30,13 +30,12 @@ VulkanFramebuffer::~VulkanFramebuffer()
 {
     if (Framebuffer != VK_NULL_HANDLE)
     {
-        auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-        vkDestroyFramebuffer(Context->GetDevice()->GetLogicalDevice(), Framebuffer, nullptr);
+        vkDestroyFramebuffer(m_Context.GetDevice()->GetLogicalDevice(), Framebuffer, nullptr);
     }
 }
 
 VulkanFramebuffer::VulkanFramebuffer(VulkanFramebuffer&& Other) noexcept
-    : Framebuffer(Other.Framebuffer), Extent(Other.Extent)
+    : m_Context(Other.m_Context), Framebuffer(Other.Framebuffer), Extent(Other.Extent)
 {
     Other.Framebuffer = VK_NULL_HANDLE;
 }
@@ -47,8 +46,7 @@ VulkanFramebuffer& VulkanFramebuffer::operator=(VulkanFramebuffer&& Other) noexc
     {
         if (Framebuffer != VK_NULL_HANDLE)
         {
-            auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-            vkDestroyFramebuffer(Context->GetDevice()->GetLogicalDevice(), Framebuffer, nullptr);
+            vkDestroyFramebuffer(m_Context.GetDevice()->GetLogicalDevice(), Framebuffer, nullptr);
         }
         Framebuffer = Other.Framebuffer;
         Extent = Other.Extent;

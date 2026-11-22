@@ -7,9 +7,13 @@
 
 namespace JuicyEngine
 {
+class VulkanContext;
+
 class VulkanRenderPass
 {
 public:
+    explicit VulkanRenderPass(VulkanContext& Context) : m_Context(Context) {}
+
     void CreateRenderPass(VkFormat SwapChainImageFormat,
                           std::vector<VkImageView>& SwapChainImageViews,
                           VkExtent2D SwapChainExtent);
@@ -22,6 +26,7 @@ public:
     uint32_t SwapChainImageIndex = 0;
 
 private:
+    VulkanContext& m_Context;
     VkRenderPass RenderPass = VK_NULL_HANDLE;
     std::vector<std::unique_ptr<VulkanFramebuffer>> SwapChainFramebuffers;
 };

@@ -8,7 +8,8 @@
 
 namespace JuicyEngine
 {
-VulkanTexture2D::VulkanTexture2D(const std::string& Path)
+VulkanTexture2D::VulkanTexture2D(VulkanContext& Context, const std::string& Path)
+    : m_Context(Context)
 {
     int TexChannels = 0;
     stbi_uc* Pixels = stbi_load(Path.c_str(), &Width, &Height, &TexChannels, STBI_rgb_alpha);
@@ -18,23 +19,21 @@ VulkanTexture2D::VulkanTexture2D(const std::string& Path)
     stbi_image_free(Pixels);
 }
 
-VulkanTexture2D::VulkanTexture2D(const void* Pixels, int32_t InWidth, int32_t InHeight)
+VulkanTexture2D::VulkanTexture2D(VulkanContext& Context, const void* Pixels, int32_t InWidth, int32_t InHeight)
+    : m_Context(Context)
 {
     InitFromPixels(Pixels, InWidth, InHeight);
 }
 
 VulkanTexture2D::~VulkanTexture2D()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
-    vkDestroySampler(Context->GetDevice()->GetLogicalDevice(), TextureSampler, nullptr);
+    vkDestroySampler(m_Context.GetDevice()->GetLogicalDevice(), TextureSampler, nullptr);
 }
 
 void VulkanTexture2D::CreateTextureSampler()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
     VkPhysicalDeviceProperties Properties {};
-    vkGetPhysicalDeviceProperties(Context->GetDevice()->GetPhysicalDevice(), &Properties);
+    vkGetPhysicalDeviceProperties(m_Context.GetDevice()->GetPhysicalDevice(), &Properties);
 
     VkSamplerCreateInfo SamplerInfo {};
     SamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -51,13 +50,13 @@ void VulkanTexture2D::CreateTextureSampler()
     SamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     SamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    auto Result = vkCreateSampler(Context->GetDevice()->GetLogicalDevice(), &SamplerInfo, nullptr, &TextureSampler);
+    auto Result = vkCreateSampler(m_Context.GetDevice()->GetLogicalDevice(), &SamplerInfo, nullptr, &TextureSampler);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create texture sampler!")
 }
 
 void VulkanTexture2D::UploadData(VkBuffer Buffer)
 {
-    VkCommandBuffer CommandBuffer = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands();
+    VkCommandBuffer CommandBuffer = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands(m_Context);
 
     VkBufferImageCopy Region {};
     Region.bufferOffset = 0;
@@ -72,7 +71,7 @@ void VulkanTexture2D::UploadData(VkBuffer Buffer)
 
     vkCmdCopyBufferToImage(CommandBuffer, Buffer, Image->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &Region);
 
-    RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(CommandBuffer);
+    RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(m_Context, CommandBuffer);
 }
 
 void VulkanTexture2D::InitFromPixels(const void* Pixels, int32_t InWidth, int32_t InHeight)
@@ -82,22 +81,23 @@ void VulkanTexture2D::InitFromPixels(const void* Pixels, int32_t InWidth, int32_
     JE_CORE_ASSERT(Pixels && Width > 0 && Height > 0, "Invalid texture data!")
 
     const int32_t ImageSize = Width * Height * 4;
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
 
     VkBuffer StagingBuffer;
     VkDeviceMemory StagingBufferMemory;
-    RHI::Vulkan::VulkanUtils::CreateBuffer(ImageSize,
+    RHI::Vulkan::VulkanUtils::CreateBuffer(m_Context,
+                                            ImageSize,
                                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                             StagingBuffer,
                                             StagingBufferMemory);
 
     void* Data = nullptr;
-    vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, ImageSize, 0, &Data);
+    vkMapMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, ImageSize, 0, &Data);
     memcpy(Data, Pixels, static_cast<size_t>(ImageSize));
-    vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
+    vkUnmapMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory);
 
-    Image.reset(new VulkanImage(Width,
+    Image.reset(new VulkanImage(m_Context,
+                                Width,
                                 Height,
                                 VK_FORMAT_R8G8B8A8_SRGB,
                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -107,8 +107,8 @@ void VulkanTexture2D::InitFromPixels(const void* Pixels, int32_t InWidth, int32_
     UploadData(StagingBuffer);
     Image->TransitionLayoutImmediate(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
-    vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
+    vkDestroyBuffer(m_Context.GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
+    vkFreeMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
     CreateTextureSampler();
 }
 

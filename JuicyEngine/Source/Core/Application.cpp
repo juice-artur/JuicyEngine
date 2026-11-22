@@ -2,7 +2,7 @@
 #include "jepch.h"
 
 #include "ImGui/ImGuiLayer.h"
-#include "Editor/EditorLayer.h"
+#include "Renderer/GraphicsContext.h"
 #include "Platform/Vulkan/VulkanContext.h"
 
 namespace JuicyEngine
@@ -10,45 +10,40 @@ namespace JuicyEngine
 
 #define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
 
-Application* s_Instance = nullptr;
-
 Application::Application()
 {
-    JE_CORE_ASSERT(!s_Instance, "Application already exists!")
-    s_Instance = this;
-
     m_Window = std::unique_ptr<Window>(Window::Create());
     m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
-    auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    Context->Init(m_Window->GetNativeWindow());
+    m_Context = GraphicsContext::Create();
 
-    ImGuiLayer* ImGui = new ImGuiLayer();
-    PushOverlay(ImGui);
-    PushLayer(new EditorLayer());
+    auto* Vulkan = static_cast<VulkanContext*>(m_Context.get());
+    Vulkan->Init(m_Window->GetNativeWindow());
+
+    m_ImGuiLayer = new ImGuiLayer(*m_Window, *Vulkan);
+    PushOverlay(m_ImGuiLayer);
 }
 
 Application::~Application()
 {
-    auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    vkDeviceWaitIdle(Context->GetDevice()->GetLogicalDevice());
+    auto* Vulkan = static_cast<VulkanContext*>(m_Context.get());
 
-    Context->DestroyViewportFramebuffer();
+    vkDeviceWaitIdle(Vulkan->GetDevice()->GetLogicalDevice());
+    Vulkan->DestroyViewportFramebuffer();
 
     m_LayerStack.Cleanup();
 
-    Context->Shutdown();
-}
-
-Application& Application::Get()
-{
-    JE_CORE_ASSERT(s_Instance, "Application not created!")
-    return *s_Instance;
+    Vulkan->Shutdown();
 }
 
 Window& Application::GetWindow()
 {
     return *m_Window;
+}
+
+VulkanContext& Application::GetVulkanContext()
+{
+    return *static_cast<VulkanContext*>(m_Context.get());
 }
 
 void Application::PushLayer(Layer* layer)
@@ -59,8 +54,6 @@ void Application::PushLayer(Layer* layer)
 void Application::PushOverlay(Layer* layer)
 {
     m_LayerStack.PushOverlay(layer);
-    if (auto* ImGui = dynamic_cast<ImGuiLayer*>(layer))
-        m_ImGuiLayer = ImGui;
 }
 
 void Application::OnEvent(Event& e)
@@ -80,8 +73,6 @@ void Application::OnEvent(Event& e)
 
 void Application::Run()
 {
-    auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     while (m_Running)
     {
         m_Window->OnUpdate();
@@ -97,8 +88,8 @@ void Application::Run()
         if (m_ImGuiLayer)
             m_ImGuiLayer->Render();
 
-        Context->Draw();
-        Context->SwapBuffers();
+        m_Context->Draw();
+        m_Context->SwapBuffers();
     }
 }
 

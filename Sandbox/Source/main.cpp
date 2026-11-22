@@ -1,5 +1,7 @@
 #include "JuicyEngine.h"
 #include "Core/Input.h"
+#include "Editor/EditorLayer.h"
+#include "Platform/Vulkan/VulkanContext.h"
 
 class ExampleLayer : public JuicyEngine::Layer
 {
@@ -25,6 +27,7 @@ class Sandbox : public JuicyEngine::Application
 public:
     Sandbox()
     {
+        PushLayer(new JuicyEngine::EditorLayer(GetWindow(), GetVulkanContext()));
         PushLayer(new ExampleLayer());
     }
 

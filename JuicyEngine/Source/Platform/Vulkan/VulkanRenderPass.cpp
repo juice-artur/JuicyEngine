@@ -12,8 +12,6 @@ void VulkanRenderPass::CreateRenderPass(VkFormat SwapChainImageFormat,
                                         std::vector<VkImageView>& SwapChainImageViews,
                                         VkExtent2D SwapChainExtent)
 {
-    auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     VkAttachmentDescription ColorAttachment {};
     ColorAttachment.format = SwapChainImageFormat;
     ColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -27,7 +25,7 @@ void VulkanRenderPass::CreateRenderPass(VkFormat SwapChainImageFormat,
     VkAttachmentReference ColorAttachmentRef = {.attachment = 0, .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
     VkAttachmentDescription DepthAttachment {};
-    DepthAttachment.format = Context->FindDepthFormat();
+    DepthAttachment.format = m_Context.FindDepthFormat();
     DepthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     DepthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     DepthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -65,24 +63,23 @@ void VulkanRenderPass::CreateRenderPass(VkFormat SwapChainImageFormat,
     RenderPassInfo.pDependencies = &Dependency;
     RenderPassInfo.dependencyCount = 1;
 
-    auto Result = vkCreateRenderPass(Context->GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &RenderPass);
+    auto Result = vkCreateRenderPass(m_Context.GetDevice()->GetLogicalDevice(), &RenderPassInfo, nullptr, &RenderPass);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create render pass!")
 
     for (size_t i = 0; i < SwapChainImageViews.size(); i++)
     {
-        std::array<VkImageView, 2> attachments = {SwapChainImageViews[i], Context->GetDepthImageView()};
+        std::array<VkImageView, 2> attachments = {SwapChainImageViews[i], m_Context.GetDepthImageView()};
 
         SwapChainFramebuffers.push_back(std::make_unique<VulkanFramebuffer>(
-            RenderPass, SwapChainExtent, std::vector<VkImageView> {attachments.begin(), attachments.end()}));
+            m_Context, RenderPass, SwapChainExtent, std::vector<VkImageView> {attachments.begin(), attachments.end()}));
     }
 }
 
 void VulkanRenderPass::Shutdown()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
     SwapChainFramebuffers.clear();
 
-    vkDestroyRenderPass(Context->GetDevice()->GetLogicalDevice(), RenderPass, nullptr);
+    vkDestroyRenderPass(m_Context.GetDevice()->GetLogicalDevice(), RenderPass, nullptr);
 }
 
 VkRenderPass VulkanRenderPass::GetVulkanRenderPass() const

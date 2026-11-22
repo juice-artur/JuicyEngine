@@ -10,8 +10,8 @@
 namespace JuicyEngine
 {
 
-VulkanRenderTarget::VulkanRenderTarget(const CreateInfo& Info)
-    : Width(Info.Width), Height(Info.Height), ColorFormat(Info.ColorFormat), DepthFormat(Info.DepthFormat),
+VulkanRenderTarget::VulkanRenderTarget(VulkanContext& Context, const CreateInfo& Info)
+    : m_Context(Context), Width(Info.Width), Height(Info.Height), ColorFormat(Info.ColorFormat), DepthFormat(Info.DepthFormat),
     ImGuiLayout(Info.ImGuiLayout), ShadowSampler(Info.ShadowSampler),
     DepthFinalLayout(Info.DepthFinalLayout)
 {
@@ -19,7 +19,7 @@ VulkanRenderTarget::VulkanRenderTarget(const CreateInfo& Info)
 
     if (ColorFormat != VK_FORMAT_UNDEFINED)
     {
-        ColorImage = std::make_unique<VulkanImage>(Width,
+        ColorImage = std::make_unique<VulkanImage>(m_Context, Width,
                                                    Height,
                                                    ColorFormat,
                                                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -33,7 +33,7 @@ VulkanRenderTarget::VulkanRenderTarget(const CreateInfo& Info)
         if (ShadowSampler)
             DepthUsage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 
-        DepthImage = std::make_unique<VulkanImage>(Width, Height, DepthFormat, DepthUsage);
+        DepthImage = std::make_unique<VulkanImage>(m_Context, Width, Height, DepthFormat, DepthUsage);
     }
 
     CreateSampler();
@@ -44,7 +44,7 @@ VulkanRenderTarget::VulkanRenderTarget(const CreateInfo& Info)
     if (DepthImage)
         Attachments.push_back(DepthImage->GetImageView());
 
-    Framebuffer = std::make_unique<VulkanFramebuffer>(RenderPass, VkExtent2D {Width, Height}, Attachments);
+    Framebuffer = std::make_unique<VulkanFramebuffer>(m_Context, RenderPass, VkExtent2D {Width, Height}, Attachments);
 
     if (Info.CreateImGuiDescriptor)
     {
@@ -59,7 +59,7 @@ VulkanRenderTarget::~VulkanRenderTarget()
 }
 
 VulkanRenderTarget::VulkanRenderTarget(VulkanRenderTarget&& Other) noexcept
-    : Width(Other.Width), Height(Other.Height), ColorFormat(Other.ColorFormat), DepthFormat(Other.DepthFormat),
+    : m_Context(Other.m_Context), Width(Other.Width), Height(Other.Height), ColorFormat(Other.ColorFormat), DepthFormat(Other.DepthFormat),
       ImGuiLayout(Other.ImGuiLayout), ShadowSampler(Other.ShadowSampler), RenderPass(Other.RenderPass),
       ColorImage(std::move(Other.ColorImage)), DepthImage(std::move(Other.DepthImage)),
       Framebuffer(std::move(Other.Framebuffer)), Sampler(Other.Sampler), DescriptorSet(Other.DescriptorSet),
@@ -108,8 +108,7 @@ void VulkanRenderTarget::Resize(uint32_t InWidth, uint32_t InHeight)
     if (Width == InWidth && Height == InHeight)
         return;
 
-    auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    vkDeviceWaitIdle(Context->GetDevice()->GetLogicalDevice());
+    vkDeviceWaitIdle(m_Context.GetDevice()->GetLogicalDevice());
 
     Destroy();
     Width = InWidth;
@@ -120,7 +119,7 @@ void VulkanRenderTarget::Resize(uint32_t InWidth, uint32_t InHeight)
     if (ColorFormat != VK_FORMAT_UNDEFINED)
     {
         ColorImage = std::make_unique<VulkanImage>(
-            Width, Height, ColorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+            m_Context, Width, Height, ColorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         ColorImage->TransitionLayoutImmediate(VK_IMAGE_LAYOUT_UNDEFINED, ImGuiLayout);
     }
 
@@ -130,7 +129,7 @@ void VulkanRenderTarget::Resize(uint32_t InWidth, uint32_t InHeight)
         if (ShadowSampler)
             DepthUsage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 
-        DepthImage = std::make_unique<VulkanImage>(Width, Height, DepthFormat, DepthUsage);
+        DepthImage = std::make_unique<VulkanImage>(m_Context, Width, Height, DepthFormat, DepthUsage);
     }
 
     CreateSampler();
@@ -141,7 +140,7 @@ void VulkanRenderTarget::Resize(uint32_t InWidth, uint32_t InHeight)
     if (DepthImage)
         Attachments.push_back(DepthImage->GetImageView());
 
-    Framebuffer = std::make_unique<VulkanFramebuffer>(RenderPass, VkExtent2D {Width, Height}, Attachments);
+    Framebuffer = std::make_unique<VulkanFramebuffer>(m_Context, RenderPass, VkExtent2D {Width, Height}, Attachments);
 
     if (HasImGuiDescriptor)
         CreateDescriptor();
@@ -164,8 +163,7 @@ VkImageView VulkanRenderTarget::GetDepthImageView() const
 
 void VulkanRenderTarget::CreateRenderPass()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    auto Device = Context->GetDevice()->GetLogicalDevice();
+    auto Device = m_Context.GetDevice()->GetLogicalDevice();
 
     std::vector<VkAttachmentDescription> Attachments;
     std::vector<VkAttachmentReference> ColorRefs;
@@ -238,8 +236,7 @@ void VulkanRenderTarget::CreateRenderPass()
 
 void VulkanRenderTarget::CreateSampler()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    auto Device = Context->GetDevice()->GetLogicalDevice();
+    auto Device = m_Context.GetDevice()->GetLogicalDevice();
 
     VkSamplerCreateInfo SamplerInfo {};
     SamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -287,17 +284,15 @@ void VulkanRenderTarget::Destroy()
     ColorImage.reset();
     DepthImage.reset();
 
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     if (Sampler != VK_NULL_HANDLE)
     {
-        vkDestroySampler(Context->GetDevice()->GetLogicalDevice(), Sampler, nullptr);
+        vkDestroySampler(m_Context.GetDevice()->GetLogicalDevice(), Sampler, nullptr);
         Sampler = VK_NULL_HANDLE;
     }
 
     if (RenderPass != VK_NULL_HANDLE)
     {
-        vkDestroyRenderPass(Context->GetDevice()->GetLogicalDevice(), RenderPass, nullptr);
+        vkDestroyRenderPass(m_Context.GetDevice()->GetLogicalDevice(), RenderPass, nullptr);
         RenderPass = VK_NULL_HANDLE;
     }
 }

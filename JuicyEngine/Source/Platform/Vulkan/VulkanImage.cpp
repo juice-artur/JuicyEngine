@@ -7,14 +7,15 @@
 
 namespace JuicyEngine
 {
-VulkanImage::VulkanImage(
-    uint32_t Width, uint32_t Height, VkFormat Format, VkImageUsageFlags Usage, VkMemoryPropertyFlags Props)
-    : Width(Width), Height(Height), Format(Format)
+VulkanImage::VulkanImage(VulkanContext& Context,
+                         uint32_t Width,
+                         uint32_t Height,
+                         VkFormat Format,
+                         VkImageUsageFlags Usage,
+                         VkMemoryPropertyFlags Props)
+    : m_Context(Context), Width(Width), Height(Height), Format(Format)
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    auto Device = Context->GetDevice()->GetLogicalDevice();
-
-    CreateRawImage(Device, Width, Height, Format, VK_IMAGE_TILING_OPTIMAL, Usage, Props, Image, Memory);
+    CreateRawImage(Width, Height, Format, VK_IMAGE_TILING_OPTIMAL, Usage, Props, Image, Memory);
 
     VkImageAspectFlags Aspect = (Format >= VK_FORMAT_D16_UNORM && Format <= VK_FORMAT_D32_SFLOAT_S8_UINT)
                                     ? VK_IMAGE_ASPECT_DEPTH_BIT
@@ -24,11 +25,9 @@ VulkanImage::VulkanImage(
 
 VulkanImage::~VulkanImage()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
-    vkDestroyImageView(Context->GetDevice()->GetLogicalDevice(), ImageView, nullptr);
-    vkDestroyImage(Context->GetDevice()->GetLogicalDevice(), Image, nullptr);
-    vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), Memory, nullptr);
+    vkDestroyImageView(m_Context.GetDevice()->GetLogicalDevice(), ImageView, nullptr);
+    vkDestroyImage(m_Context.GetDevice()->GetLogicalDevice(), Image, nullptr);
+    vkFreeMemory(m_Context.GetDevice()->GetLogicalDevice(), Memory, nullptr);
 }
 
 VkImage VulkanImage::GetImage() const
@@ -119,13 +118,12 @@ void VulkanImage::TransitionLayout(VkCommandBuffer Cmd,
 }
 void VulkanImage::TransitionLayoutImmediate(VkImageLayout OldLayout, VkImageLayout NewLayout, VkImageAspectFlags Aspect)
 {
-    VkCommandBuffer Cmd = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands();
+    VkCommandBuffer Cmd = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands(m_Context);
     TransitionLayout(Cmd, OldLayout, NewLayout, Aspect);
-    RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(Cmd);
+    RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(m_Context, Cmd);
 }
 
-void VulkanImage::CreateRawImage(VkDevice Device,
-                                 uint32_t Width,
+void VulkanImage::CreateRawImage(uint32_t Width,
                                  uint32_t Height,
                                  VkFormat Format,
                                  VkImageTiling Tiling,
@@ -134,6 +132,8 @@ void VulkanImage::CreateRawImage(VkDevice Device,
                                  VkImage& OutImage,
                                  VkDeviceMemory& OutImageMemory)
 {
+    const VkDevice Device = m_Context.GetDevice()->GetLogicalDevice();
+
     VkImageCreateInfo ImageInfo {};
     ImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     ImageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -158,7 +158,8 @@ void VulkanImage::CreateRawImage(VkDevice Device,
     VkMemoryAllocateInfo AllocInfo {};
     AllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     AllocInfo.allocationSize = MemRequirements.size;
-    AllocInfo.memoryTypeIndex = RHI::Vulkan::VulkanUtils::FindMemoryType(MemRequirements.memoryTypeBits, Properties);
+    AllocInfo.memoryTypeIndex =
+        RHI::Vulkan::VulkanUtils::FindMemoryType(m_Context, MemRequirements.memoryTypeBits, Properties);
 
     auto AllocateResult = vkAllocateMemory(Device, &AllocInfo, nullptr, &OutImageMemory);
     JE_CORE_ASSERT(AllocateResult == VK_SUCCESS, "Failed to allocate memory!")
@@ -181,9 +182,8 @@ VkImageView VulkanImage::CreateRawImageView(VkImage Image, VkFormat Format, VkIm
     ViewInfo.subresourceRange.layerCount = 1;
 
     VkImageView ImageViewData;
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
 
-    auto Result = vkCreateImageView(Context->GetDevice()->GetLogicalDevice(), &ViewInfo, nullptr, &ImageViewData);
+    auto Result = vkCreateImageView(m_Context.GetDevice()->GetLogicalDevice(), &ViewInfo, nullptr, &ImageViewData);
     JE_CORE_ASSERT(Result == VK_SUCCESS, "Failed to create image view!")
 
     return ImageViewData;

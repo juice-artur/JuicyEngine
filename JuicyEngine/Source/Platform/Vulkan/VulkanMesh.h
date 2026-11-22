@@ -6,10 +6,13 @@
 
 namespace JuicyEngine
 {
+class VulkanContext;
+
 class VulkanMesh
 {
 public:
-    VulkanMesh(const Mesh& Data,
+    VulkanMesh(VulkanContext& Context,
+               const Mesh& Data,
                VkDescriptorPool Pool,
                VkDescriptorSetLayout Layout,
                VkBuffer UniformBuffer,
@@ -26,6 +29,7 @@ public:
     VulkanMesh& operator=(const VulkanMesh&) = delete;
 
 private:
+    VulkanContext& m_Context;
     std::unique_ptr<VulkanVertexBuffer> m_VertexBuffer;
     std::unique_ptr<VulkanIndexBuffer> m_IndexBuffer;
     std::unique_ptr<VulkanTexture2D> m_Texture;

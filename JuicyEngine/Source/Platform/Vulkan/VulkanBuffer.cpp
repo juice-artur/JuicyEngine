@@ -13,26 +13,24 @@ VkBuffer& VulkanBuffer::GetBuffer()
 
 VulkanBuffer::~VulkanBuffer()
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-    vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), Buffer, nullptr);
-    vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, nullptr);
+    vkDestroyBuffer(m_Context.GetDevice()->GetLogicalDevice(), Buffer, nullptr);
+    vkFreeMemory(m_Context.GetDevice()->GetLogicalDevice(), BufferMemory, nullptr);
 }
 
 void VulkanBuffer::CopyBuffer(VkBuffer SrcBuffer, VkBuffer DstBuffer, VkDeviceSize Size)
 {
-    VkCommandBuffer CommandBuffer = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands();
+    VkCommandBuffer CommandBuffer = RHI::Vulkan::VulkanUtils::BeginSingleTimeCommands(m_Context);
 
     VkBufferCopy CopyRegion {};
     CopyRegion.size = Size;
     vkCmdCopyBuffer(CommandBuffer, SrcBuffer, DstBuffer, 1, &CopyRegion);
 
-    RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(CommandBuffer);
+    RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(m_Context, CommandBuffer);
 }
 
-VulkanVertexBuffer::VulkanVertexBuffer(const std::vector<Vertex>& Vertexes)
+VulkanVertexBuffer::VulkanVertexBuffer(VulkanContext& Context, const std::vector<Vertex>& Vertexes)
+    : VulkanBuffer(Context)
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     const auto VertexCount = Vertexes.size();
     JE_CORE_ASSERT(VertexCount > 0, "Vertex buffer creation requires at least one vertex")
 
@@ -40,7 +38,8 @@ VulkanVertexBuffer::VulkanVertexBuffer(const std::vector<Vertex>& Vertexes)
 
     VkBuffer StagingBuffer;
     VkDeviceMemory StagingBufferMemory;
-    RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize,
+    RHI::Vulkan::VulkanUtils::CreateBuffer(m_Context,
+                                           BufferSize,
                                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                            StagingBuffer,
@@ -48,13 +47,14 @@ VulkanVertexBuffer::VulkanVertexBuffer(const std::vector<Vertex>& Vertexes)
 
     void* Data;
     const VkResult MapResult =
-        vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
+        vkMapMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
     JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map staging buffer memory")
 
     memcpy(Data, Vertexes.data(), (size_t) BufferSize);
-    vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
+    vkUnmapMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory);
 
-    RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize,
+    RHI::Vulkan::VulkanUtils::CreateBuffer(m_Context,
+                                           BufferSize,
                                            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                            Buffer,
@@ -62,17 +62,19 @@ VulkanVertexBuffer::VulkanVertexBuffer(const std::vector<Vertex>& Vertexes)
 
     CopyBuffer(StagingBuffer, Buffer, BufferSize);
 
-    vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
-    vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
+    vkDestroyBuffer(m_Context.GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
+    vkFreeMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
 }
 
 VulkanVertexBuffer::~VulkanVertexBuffer() {}
 
-VulkanIndexBuffer::VulkanIndexBuffer(const std::vector<uint16_t>& Indexes)
+VulkanIndexBuffer::VulkanIndexBuffer(VulkanContext& Context, const std::vector<uint16_t>& Indexes)
+    : VulkanBuffer(Context)
 {
     Init(Indexes.data(), Indexes.size(), sizeof(uint16_t));
 }
-VulkanIndexBuffer::VulkanIndexBuffer(const std::vector<uint32_t>& Indexes)
+VulkanIndexBuffer::VulkanIndexBuffer(VulkanContext& Context, const std::vector<uint32_t>& Indexes)
+    : VulkanBuffer(Context)
 {
     Init(Indexes.data(), Indexes.size(), sizeof(uint32_t));
 }
@@ -81,39 +83,42 @@ VulkanIndexBuffer::~VulkanIndexBuffer() {}
 
 void VulkanIndexBuffer::Init(const void* Source, size_t Count, size_t ElementSize)
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
     JE_CORE_ASSERT(Count > 0, "Index buffer creation requires at least one index")
 
     const VkDeviceSize BufferSize = static_cast<VkDeviceSize>(Count) * ElementSize;
 
     VkBuffer StagingBuffer;
     VkDeviceMemory StagingBufferMemory;
-    RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize,
-                                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                            StagingBuffer,
-                                            StagingBufferMemory);
+    RHI::Vulkan::VulkanUtils::CreateBuffer(m_Context,
+                                           BufferSize,
+                                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                           StagingBuffer,
+                                           StagingBufferMemory);
 
     void* Data = nullptr;
-    vkMapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
+    vkMapMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory, 0, BufferSize, 0, &Data);
     memcpy(Data, Source, static_cast<size_t>(BufferSize));
-    vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory);
+    vkUnmapMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory);
 
-    RHI::Vulkan::VulkanUtils::CreateBuffer(BufferSize,
-                                            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                            Buffer,
-                                            BufferMemory);
+    RHI::Vulkan::VulkanUtils::CreateBuffer(m_Context,
+                                           BufferSize,
+                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                           Buffer,
+                                           BufferMemory);
 
     CopyBuffer(StagingBuffer, Buffer, BufferSize);
 
-    vkDestroyBuffer(Context->GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
-    vkFreeMemory(Context->GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
+    vkDestroyBuffer(m_Context.GetDevice()->GetLogicalDevice(), StagingBuffer, nullptr);
+    vkFreeMemory(m_Context.GetDevice()->GetLogicalDevice(), StagingBufferMemory, nullptr);
 }
 
-VulkanUniformBuffer::VulkanUniformBuffer(int Size)
+VulkanUniformBuffer::VulkanUniformBuffer(VulkanContext& Context, int Size)
+    : VulkanBuffer(Context)
 {
-    RHI::Vulkan::VulkanUtils::CreateBuffer(Size,
+    RHI::Vulkan::VulkanUtils::CreateBuffer(m_Context,
+                                           Size,
                                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                            Buffer,
@@ -124,13 +129,12 @@ VulkanUniformBuffer::~VulkanUniformBuffer() {}
 
 void VulkanUniformBuffer::UploadData(int Size, void* Data)
 {
-    const auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-
     void* MappedData = nullptr;
-    VkResult MapResult = vkMapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory, 0, Size, 0, &MappedData);
+    VkResult MapResult =
+        vkMapMemory(m_Context.GetDevice()->GetLogicalDevice(), BufferMemory, 0, Size, 0, &MappedData);
     JE_CORE_ASSERT(MapResult == VK_SUCCESS, "Failed to map uniform buffer memory")
 
     memcpy(MappedData, Data, Size);
-    vkUnmapMemory(Context->GetDevice()->GetLogicalDevice(), BufferMemory);
+    vkUnmapMemory(m_Context.GetDevice()->GetLogicalDevice(), BufferMemory);
 }
 } // namespace JuicyEngine

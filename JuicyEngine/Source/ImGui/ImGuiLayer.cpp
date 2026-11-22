@@ -1,7 +1,7 @@
 #include "jepch.h"
 #include "ImGuiLayer.h"
 
-#include "Core/Application.h"
+#include "Core/Window.h"
 #include "Platform/Vulkan/VulkanContext.h"
 
 #include <SDL3/SDL.h>
@@ -10,18 +10,14 @@
 
 namespace JuicyEngine
 {
-ImGuiLayer* ImGuiLayer::s_Instance = nullptr;
-
-ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer")
-{
-    s_Instance = this;
-}
+ImGuiLayer::ImGuiLayer(Window& Window, VulkanContext& Context)
+    : Layer("ImGuiLayer"), m_Window(Window), m_Context(Context) {}
 
 ImGuiLayer::~ImGuiLayer() {}
 
 void ImGuiLayer::OnAttach()
 {
-    auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+    VulkanContext& Context = m_Context;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -50,24 +46,24 @@ void ImGuiLayer::OnAttach()
     pool_info.poolSizeCount = std::size(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
 
-    vkCreateDescriptorPool(Context->GetDevice()->GetLogicalDevice(), &pool_info, nullptr, &ImGuiDescriptorPool);
+    vkCreateDescriptorPool(Context.GetDevice()->GetLogicalDevice(), &pool_info, nullptr, &ImGuiDescriptorPool);
     JE_CORE_ASSERT(ImGuiDescriptorPool != VK_NULL_HANDLE, "Failed to create ImGuiDescriptorPool!")
 
-    SDL_Window* window = Application::Get().GetWindow().GetSDLWindow();
+    SDL_Window* window = m_Window.GetSDLWindow();
     JE_CORE_ASSERT(window, "No SDL window available for ImGui!")
 
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = Context->GetInstance();
-    init_info.PhysicalDevice = Context->GetDevice()->GetPhysicalDevice();
-    init_info.Device = Context->GetDevice()->GetLogicalDevice();
-    init_info.QueueFamily = Context->GetDevice()->GetQueueFamilyIndices().GraphicsFamily.value();
-    init_info.Queue = Context->GetDevice()->GetGraphicsQueue();
+    init_info.Instance = Context.GetInstance();
+    init_info.PhysicalDevice = Context.GetDevice()->GetPhysicalDevice();
+    init_info.Device = Context.GetDevice()->GetLogicalDevice();
+    init_info.QueueFamily = Context.GetDevice()->GetQueueFamilyIndices().GraphicsFamily.value();
+    init_info.Queue = Context.GetDevice()->GetGraphicsQueue();
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = ImGuiDescriptorPool;
     init_info.MinImageCount = 2;
-    init_info.ImageCount = Context->GetSwapchain().GetImageCount();
+    init_info.ImageCount = Context.GetSwapchain().GetImageCount();
     init_info.Allocator = nullptr;
-    init_info.PipelineInfoMain.RenderPass = Context->GetImGuiRenderPass();
+    init_info.PipelineInfoMain.RenderPass = Context.GetImGuiRenderPass();
     init_info.PipelineInfoMain.Subpass = 0;
     init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -80,9 +76,8 @@ void ImGuiLayer::OnAttach()
 
 void ImGuiLayer::OnDetach()
 {
-    auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
     ImGui_ImplVulkan_Shutdown();
-    vkDestroyDescriptorPool(Context->GetDevice()->GetLogicalDevice(), ImGuiDescriptorPool, nullptr);
+    vkDestroyDescriptorPool(m_Context.GetDevice()->GetLogicalDevice(), ImGuiDescriptorPool, nullptr);
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 }
@@ -97,8 +92,7 @@ void ImGuiLayer::Begin()
     ImGui_ImplSDL3_NewFrame();
 
     ImGuiIO& io = ImGui::GetIO();
-    Application& app = Application::Get();
-    io.DisplaySize = ImVec2((float) app.GetWindow().GetWidth(), (float) app.GetWindow().GetHeight());
+    io.DisplaySize = ImVec2((float) m_Window.GetWidth(), (float) m_Window.GetHeight());
 
     ImGui::NewFrame();
 }
@@ -107,4 +101,4 @@ void ImGuiLayer::Render()
 {
     ImGui::Render();
 }
-}
+} // namespace JuicyEngine

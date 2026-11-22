@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "LayerStack.h"
 #include "Events/Event.h"
 #include "Window.h"
@@ -7,8 +9,9 @@
 
 namespace JuicyEngine
 {
-
+class GraphicsContext;
 class ImGuiLayer;
+class VulkanContext;
 
 class Application
 {
@@ -23,13 +26,14 @@ public:
     void PushLayer(Layer* layer);
     void PushOverlay(Layer* layer);
 
-    static Application& Get();
     Window& GetWindow();
+    VulkanContext& GetVulkanContext();
 
 private:
     bool OnWindowClose(WindowCloseEvent& e);
 
     std::unique_ptr<Window> m_Window;
+    std::unique_ptr<GraphicsContext> m_Context;
     bool m_Running = true;
     LayerStack m_LayerStack;
     ImGuiLayer* m_ImGuiLayer = nullptr;

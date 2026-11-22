@@ -1,7 +1,7 @@
 #include "EditorLayer.h"
 #include "jepch.h"
 
-#include "Core/Application.h"
+#include "Core/Window.h"
 #include "Platform/Vulkan/VulkanContext.h"
 #include "SDL3/SDL_dialog.h"
 
@@ -30,7 +30,8 @@ void SDLCALL OnMeshFileSelected(void*, const char* const* Files, int)
 }
 }
 
-EditorLayer::EditorLayer() : Layer("EditorLayer") {}
+EditorLayer::EditorLayer(Window& Window, VulkanContext& Context)
+    : Layer("EditorLayer"), m_Window(Window), m_Context(Context) {}
 
 EditorLayer::~EditorLayer() {}
 
@@ -92,7 +93,7 @@ void EditorLayer::OnUpdate()
                 };
                 SDL_ShowOpenFileDialog(OnMeshFileSelected,
                                        nullptr,
-                                       Application::Get().GetWindow().GetSDLWindow(),
+                                       m_Window.GetSDLWindow(),
                                        Filters,
                                        static_cast<int>(std::size(Filters)),
                                        nullptr,
@@ -101,7 +102,7 @@ void EditorLayer::OnUpdate()
             
             if (ImGui::MenuItem("Exit"))
             {
-                Application::Get().GetWindow().SetEventCallback(nullptr);
+                m_Window.SetEventCallback(nullptr);
             }
             ImGui::EndMenu();
         }
@@ -112,8 +113,7 @@ void EditorLayer::OnUpdate()
         const auto Path = std::move(g_PendingMeshPath);
         g_PendingMeshPath.clear();
 
-        auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-        g_MeshStatus = Context && Context->LoadMeshFromFile(Path) ?
+        g_MeshStatus = m_Context.LoadMeshFromFile(Path) ?
                            ("Loaded: " + Path.filename().string()) :
                            ("Failed: " + Path.filename().string());
     }
@@ -135,18 +135,14 @@ void EditorLayer::OnUpdate()
         uint32_t vp_width = static_cast<uint32_t>(viewport_panel_size.x);
         uint32_t vp_height = static_cast<uint32_t>(viewport_panel_size.y);
 
-        auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-        if (Context)
+        VkExtent2D current_size = m_Context.GetViewportSize();
+        if (current_size.width != vp_width || current_size.height != vp_height)
         {
-            VkExtent2D current_size = Context->GetViewportSize();
-            if (current_size.width != vp_width || current_size.height != vp_height)
-            {
-                Context->ResizeViewportFramebuffer(vp_width, vp_height);
-            }
-
-            ImTextureID texture_id = reinterpret_cast<ImTextureID>(Context->GetViewportDescriptorSet());
-            ImGui::Image(texture_id, viewport_panel_size);
+            m_Context.ResizeViewportFramebuffer(vp_width, vp_height);
         }
+
+        ImTextureID texture_id = reinterpret_cast<ImTextureID>(m_Context.GetViewportDescriptorSet());
+        ImGui::Image(texture_id, viewport_panel_size);
     }
     ImGui::End();
 
@@ -169,11 +165,7 @@ void EditorLayer::OnEvent(Event& event)
         if (!m_ViewportHovered)
             return false;
 
-        auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
-        if (!Context)
-            return false;
-
-        Context->ZoomCamera(e.GetYOffset());
+        m_Context.ZoomCamera(e.GetYOffset());
         return true; 
     });
 }
