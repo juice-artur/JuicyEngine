@@ -1,7 +1,7 @@
 ﻿#include "GLTFMeshLoader.h"
 
 #include <tiny_gltf_v3.h>
-
+#include <stb_image.h>
 #include "Core/Log.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -222,9 +222,108 @@ void AccumulateTransform(const tg3_model& Model,
         AccumulateTransform(Model, Node.children[i], Local, Out, Depth + 1);
 }
 
-std::optional<TextureData> ReadBaseColorTexture(const tg3_model& Model, int MaterialIndex)
+int Base64Value(char C)
 {
- 	 if (MaterialIndex < 0 || static_cast<uint32_t>(MaterialIndex) >= Model.materials_count)
+    if (C >= 'A' && C <= 'Z') return C - 'A';
+    if (C >= 'a' && C <= 'z') return C - 'a' + 26;
+    if (C >= '0' && C <= '9') return C - '0' + 52;
+    if (C == '+' || C == '-') return 62;
+    if (C == '/' || C == '_') return 63;
+    return -1;
+}
+
+std::optional<std::vector<uint8_t>> DecodeBase64DataUri(std::string_view Uri)
+{
+    const size_t Comma = Uri.find(',');
+    if (Uri.rfind("data:", 0) != 0 || Comma == std::string_view::npos)
+        return std::nullopt;
+
+    std::vector<uint8_t> Result;
+    int Accumulator = 0;
+    int Bits = 0;
+
+    for (char C : Uri.substr(Comma + 1))
+    {
+        if (C == '=') break;
+        if (std::isspace(static_cast<unsigned char>(C))) continue;
+
+        const int Value = Base64Value(C);
+        if (Value < 0) return std::nullopt;
+
+        Accumulator = (Accumulator << 6) | Value;
+        Bits += 6;
+        if (Bits >= 8)
+        {
+            Bits -= 8;
+            Result.push_back(static_cast<uint8_t>((Accumulator >> Bits) & 0xFF));
+        }
+    }
+    return Result;
+}
+
+std::optional<TextureData> DecodeImage(const tg3_model& Model,
+                                       const tg3_image& Image,
+                                       const std::filesystem::path& BaseDir)
+{
+    int Width = 0;
+    int Height = 0;
+    int Channels = 0;
+    stbi_uc* Pixels = nullptr;
+
+    // Avocado.glb: текстура вбудована у GLB через bufferView
+    if (Image.buffer_view >= 0 && static_cast<uint32_t>(Image.buffer_view) < Model.buffer_views_count)
+    {
+        const auto& View = Model.buffer_views[Image.buffer_view];
+        if (View.buffer >= 0 && static_cast<uint32_t>(View.buffer) < Model.buffers_count)
+        {
+            const auto& Buffer = Model.buffers[View.buffer];
+            if (View.byte_offset + View.byte_length <= Buffer.data.count)
+            {
+                Pixels = stbi_load_from_memory(Buffer.data.data + View.byte_offset,
+                                               static_cast<int>(View.byte_length),
+                                               &Width, &Height, &Channels, 4);
+            }
+        }
+    }
+    else if (Image.uri.data && Image.uri.len > 0)
+    {
+        const std::string_view Uri(Image.uri.data, Image.uri.len);
+        if (Uri.rfind("data:", 0) == 0)
+        {
+            auto Bytes = DecodeBase64DataUri(Uri);
+            if (Bytes)
+                Pixels = stbi_load_from_memory(Bytes->data(),
+                                               static_cast<int>(Bytes->size()),
+                                               &Width, &Height, &Channels, 4);
+        }
+        else
+        {
+            std::filesystem::path Path(Uri);
+            if (Path.is_relative())
+                Path = BaseDir / Path;
+            Pixels = stbi_load(Path.string().c_str(), &Width, &Height, &Channels, 4);
+        }
+    }
+
+    if (!Pixels)
+    {
+        JE_CORE_WARN("Failed to decode glTF baseColor image (bufferView={0})", Image.buffer_view);
+        return std::nullopt;
+    }
+
+    TextureData Result;
+    Result.Width = Width;
+    Result.Height = Height;
+    Result.Pixels.assign(Pixels, Pixels + static_cast<size_t>(Width) * static_cast<size_t>(Height) * 4);
+    stbi_image_free(Pixels);
+    return Result;
+}
+
+std::optional<TextureData> ReadBaseColorTexture(const tg3_model& Model,
+                                                int MaterialIndex,
+                                                const std::filesystem::path& BaseDir)
+{
+    if (MaterialIndex < 0 || static_cast<uint32_t>(MaterialIndex) >= Model.materials_count)
         return std::nullopt;
 
     const int TextureIndex = Model.materials[MaterialIndex].pbr_metallic_roughness.base_color_texture.index;
@@ -235,45 +334,7 @@ std::optional<TextureData> ReadBaseColorTexture(const tg3_model& Model, int Mate
     if (ImageIndex < 0 || static_cast<uint32_t>(ImageIndex) >= Model.images_count)
         return std::nullopt;
 
-    const auto& Image = Model.images[ImageIndex];
-    if (Image.image.count == 0 || Image.image.data == nullptr || Image.width <= 0 || Image.height <= 0)
-        return std::nullopt;
-
-    const size_t PixelCount = static_cast<size_t>(Image.width) * static_cast<size_t>(Image.height);
-    int Channels = Image.component;
-    if (Channels != 1 && Channels != 3 && Channels != 4)
-        Channels = static_cast<int>(Image.image.count / PixelCount);
-
-    TextureData Result;
-    Result.Width = Image.width;
-    Result.Height = Image.height;
-
-    if (Channels == 4 && Image.image.count == PixelCount * 4)
-    {
-        Result.Pixels.assign(Image.image.data, Image.image.data + Image.image.count);
-    }
-    else if ((Channels == 3 || Channels == 1) && Image.image.count >= PixelCount * static_cast<size_t>(Channels))
-    {
-        Result.Pixels.resize(PixelCount * 4);
-        for (size_t i = 0; i < PixelCount; ++i)
-        {
-            const uint8_t Grey = Image.image.data[i * static_cast<size_t>(Channels)];
-            Result.Pixels[i * 4 + 0] = Channels == 3 ? Image.image.data[i * 3 + 0] : Grey;
-            Result.Pixels[i * 4 + 1] = Channels == 3 ? Image.image.data[i * 3 + 1] : Grey;
-            Result.Pixels[i * 4 + 2] = Channels == 3 ? Image.image.data[i * 3 + 2] : Grey;
-            Result.Pixels[i * 4 + 3] = 255;
-        }
-    }
-    else
-    {
-		const std::string_view Uri = (Image.uri.data && Image.uri.len > 0) ?
-                                         std::string_view(Image.uri.data, Image.uri.len) :
-                                         std::string_view("<embedded>");
-        JE_CORE_WARN("Unsupported image layout in glTF '{0}' (channels={1})", Uri, Channels);
-        return std::nullopt;
-    }
-
-    return Result;
+    return DecodeImage(Model, Model.images[ImageIndex], BaseDir);
 }
 
 int FindAttribute(const tg3_primitive& Primitive, std::string_view Name)
@@ -287,7 +348,7 @@ int FindAttribute(const tg3_primitive& Primitive, std::string_view Name)
     return -1;
 }
 
-bool AppendMesh(const tg3_model& Model, int MeshIndex, Mesh& Out)
+bool AppendMesh(const tg3_model& Model, int MeshIndex, Mesh& Out, const std::filesystem::path& BaseDir)
 {
     if (MeshIndex < 0 || static_cast<uint32_t>(MeshIndex) >= Model.meshes_count)
         return false;
@@ -343,7 +404,7 @@ bool AppendMesh(const tg3_model& Model, int MeshIndex, Mesh& Out)
 
         if (!Out.BaseColorTexture.Valid())
         {
-            auto Texture = ReadBaseColorTexture(Model, Primitive.material);
+            auto Texture = ReadBaseColorTexture(Model, Primitive.material, BaseDir);
             if (Texture)
                 Out.BaseColorTexture = std::move(*Texture);
         }
@@ -382,7 +443,8 @@ std::optional<Mesh> GLTFMeshLoader::Load(const std::filesystem::path& Path)
 
     Mesh Result;
     Result.Name = Path.filename().string();
-
+    const std::filesystem::path BaseDir = Path.parent_path();
+    
     if (Model.scenes_count > 0)
     {
         const int SceneIndex = Model.default_scene >= 0 ? Model.default_scene : 0;
@@ -396,14 +458,14 @@ std::optional<Mesh> GLTFMeshLoader::Load(const std::filesystem::path& Path)
 
     for (uint32_t i = 0; i < Model.nodes_count; ++i)
     {
-        if (Model.nodes[i].mesh >= 0 && AppendMesh(Model, Model.nodes[i].mesh, Result))
+        if (Model.nodes[i].mesh >= 0 && AppendMesh(Model, Model.nodes[i].mesh, Result, BaseDir))
             break;
     }
 
     if (Result.Vertices.empty())
     {
         for (uint32_t i = 0; i < Model.meshes_count; ++i)
-            if (AppendMesh(Model, static_cast<int>(i), Result))
+            if (AppendMesh(Model, static_cast<int>(i), Result, BaseDir))
                 break;
     }
 
