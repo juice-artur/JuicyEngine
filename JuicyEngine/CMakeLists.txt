@@ -1,6 +1,4 @@
 cmake_minimum_required(VERSION 3.20)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCES
     Source/jepch.h
@@ -86,6 +84,9 @@ target_sources(JuicyEngine PRIVATE ${SOURCES})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 
 
-target_link_libraries(JuicyEngine vendor)
+target_link_libraries(JuicyEngine
+        PUBLIC  project_options vendor
+        PRIVATE project_warnings
+)
 
 target_include_directories(JuicyEngine PUBLIC "Source")

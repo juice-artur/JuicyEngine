@@ -93,7 +93,7 @@ void Application::Run()
     }
 }
 
-bool Application::OnWindowClose(WindowCloseEvent& e)
+bool Application::OnWindowClose(WindowCloseEvent&)
 {
     m_Running = false;
     return true;

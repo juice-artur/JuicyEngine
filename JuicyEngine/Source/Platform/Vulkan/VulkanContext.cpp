@@ -60,7 +60,7 @@ void VulkanContext::Init(void* Window)
 
     VertexBuffer = std::make_unique<VulkanVertexBuffer>(*this, Vertices);
     IndexBuffer = std::make_unique<VulkanIndexBuffer>(*this, Indices);
-    UniformBuffer = std::make_unique<VulkanUniformBuffer>(*this, sizeof(Ubo));
+    UniformBuffer = std::make_unique<VulkanUniformBuffer>(*this, static_cast<int>(sizeof(Ubo)));
     Texture = std::make_unique<VulkanTexture2D>(*this, "Assets/Textures/statue.jpg");
 
     Ubo.View = glm::lookAt(glm::vec3(0.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));

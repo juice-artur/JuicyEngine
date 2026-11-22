@@ -17,7 +17,7 @@ public:
 
     virtual void OnUpdate() {}
 
-    virtual void OnEvent(Event& event) {}
+    virtual void OnEvent(Event&) {}
 
     inline const std::string& GetName() const
     {

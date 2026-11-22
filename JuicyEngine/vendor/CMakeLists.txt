@@ -32,7 +32,7 @@ target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL3::SDL3)
 
 add_library(vendor INTERFACE)
 
-target_include_directories(vendor INTERFACE
+target_include_directories(vendor SYSTEM INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf
 )
 

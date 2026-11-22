@@ -37,16 +37,16 @@ public:
                                    VkImageAspectFlags Aspect = VK_IMAGE_ASPECT_COLOR_BIT);
 
 private:
-    void CreateRawImage(uint32_t Width,
-                        uint32_t Height,
-                        VkFormat Format,
+    void CreateRawImage(uint32_t InWidth,
+                        uint32_t InHeight,
+                        VkFormat InFormat,
                         VkImageTiling Tiling,
                         VkImageUsageFlags Usage,
                         VkMemoryPropertyFlags Properties,
                         VkImage& OutImage,
                         VkDeviceMemory& OutImageMemory);
 
-    VkImageView CreateRawImageView(VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags);
+    VkImageView CreateRawImageView(VkImage InImage, VkFormat InFormat, VkImageAspectFlags AspectFlags);
 
 private:
     VulkanContext& m_Context;

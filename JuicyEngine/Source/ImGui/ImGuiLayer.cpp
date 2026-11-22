@@ -84,7 +84,7 @@ void ImGuiLayer::OnDetach()
 
 void ImGuiLayer::OnUpdate() {}
 
-void ImGuiLayer::OnEvent(Event& event) {}
+void ImGuiLayer::OnEvent(Event&) {}
 
 void ImGuiLayer::Begin()
 {

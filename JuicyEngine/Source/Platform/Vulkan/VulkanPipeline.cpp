@@ -39,7 +39,7 @@ void VulkanPipeline::Create(const PipelineCreateInfo& Info)
         .flags = 0,
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &BindingDescriptions,
-        .vertexAttributeDescriptionCount = AttributeDescriptions.size(),
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(AttributeDescriptions.size()),
         .pVertexAttributeDescriptions = AttributeDescriptions.data(),
     };
 
@@ -136,7 +136,7 @@ void VulkanPipeline::Create(const PipelineCreateInfo& Info)
 
     VkGraphicsPipelineCreateInfo PipelineInfo {};
     PipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    PipelineInfo.stageCount = Info.VulkanShaderModules.size();
+    PipelineInfo.stageCount = static_cast<uint32_t>(Info.VulkanShaderModules.size());
     PipelineInfo.pStages = Info.VulkanShaderModules.data();
     PipelineInfo.pVertexInputState = &VertexInputInfo;
     PipelineInfo.pInputAssemblyState = &InputAssembly;

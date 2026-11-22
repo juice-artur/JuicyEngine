@@ -99,9 +99,9 @@ void VulkanDeviceManager::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessenger
 }
 
 VkBool32 VulkanDeviceManager::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT MessageSeverity,
-                                            VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                            VkDebugUtilsMessageTypeFlagsEXT,
                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                            void* pUserData)
+                                            void*)
 {
     switch (MessageSeverity)
     {

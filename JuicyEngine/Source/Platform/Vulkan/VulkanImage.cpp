@@ -123,9 +123,9 @@ void VulkanImage::TransitionLayoutImmediate(VkImageLayout OldLayout, VkImageLayo
     RHI::Vulkan::VulkanUtils::EndSingleTimeCommands(m_Context, Cmd);
 }
 
-void VulkanImage::CreateRawImage(uint32_t Width,
-                                 uint32_t Height,
-                                 VkFormat Format,
+void VulkanImage::CreateRawImage(uint32_t InWidth,
+                                 uint32_t InHeight,
+                                 VkFormat InFormat,
                                  VkImageTiling Tiling,
                                  VkImageUsageFlags Usage,
                                  VkMemoryPropertyFlags Properties,
@@ -137,12 +137,12 @@ void VulkanImage::CreateRawImage(uint32_t Width,
     VkImageCreateInfo ImageInfo {};
     ImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     ImageInfo.imageType = VK_IMAGE_TYPE_2D;
-    ImageInfo.extent.width = Width;
-    ImageInfo.extent.height = Height;
+    ImageInfo.extent.width = InWidth;
+    ImageInfo.extent.height = InHeight;
     ImageInfo.extent.depth = 1;
     ImageInfo.mipLevels = 1;
     ImageInfo.arrayLayers = 1;
-    ImageInfo.format = Format;
+    ImageInfo.format = InFormat;
     ImageInfo.tiling = Tiling;
     ImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     ImageInfo.usage = Usage;
@@ -168,13 +168,13 @@ void VulkanImage::CreateRawImage(uint32_t Width,
     JE_CORE_ASSERT(BindResult == VK_SUCCESS, "Failed to bind image memory!")
 }
 
-VkImageView VulkanImage::CreateRawImageView(VkImage Image, VkFormat Format, VkImageAspectFlags AspectFlags)
+VkImageView VulkanImage::CreateRawImageView(VkImage InImage, VkFormat InFormat, VkImageAspectFlags AspectFlags)
 {
     VkImageViewCreateInfo ViewInfo {};
     ViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    ViewInfo.image = Image;
+    ViewInfo.image = InImage;
     ViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ViewInfo.format = Format;
+    ViewInfo.format = InFormat;
     ViewInfo.subresourceRange.aspectMask = AspectFlags;
     ViewInfo.subresourceRange.baseMipLevel = 0;
     ViewInfo.subresourceRange.levelCount = 1;
