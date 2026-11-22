@@ -198,16 +198,17 @@ void VulkanContext::Draw()
         CurrentFrameIndex++;
         return;
     }
-
+    
+    const VkExtent2D Extent = m_ViewportRT ? m_ViewportRT->GetExtent() : SwapChain.GetExtent();
+    const float Aspect = Extent.height > 0 ? static_cast<float>(Extent.width) / Extent.height : 1.0f;
     static auto StartTime = std::chrono::high_resolution_clock::now();
     auto CurrentTime = std::chrono::high_resolution_clock::now();
     float Time = std::chrono::duration<float, std::chrono::seconds::period>(CurrentTime - StartTime).count();
-
+    
     Ubo.Model = m_CurrentMesh ? m_CurrentModelMatrix
-                           : glm::rotate(glm::mat4(1.0f), Time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    Ubo.View = glm::lookAt(glm::vec3(0.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    Ubo.Proj = glm::perspective(
-        glm::radians(60.0f), SwapChain.GetExtent().width / (float) SwapChain.GetExtent().height, 0.1f, 100.0f);
+                              : glm::rotate(glm::mat4(1.0f), Time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    Ubo.View = glm::lookAt(m_Camera.Position, m_Camera.Target, m_Camera.Up);
+    Ubo.Proj = glm::perspective(glm::radians(m_Camera.FovDegrees), Aspect, 0.1f, 100.0f);
     Ubo.Proj[1][1] *= -1;
 
     UniformBuffer->UploadData(sizeof(Ubo), &Ubo);
@@ -692,5 +693,17 @@ bool VulkanContext::LoadMeshFromFile(const std::filesystem::path& Path)
                                                  sizeof(Ubo));
     m_CurrentModelMatrix = Data->Transform;
     return true;
+}
+void VulkanContext::ZoomCamera(float Delta)
+{
+    const glm::vec3 Offset = m_Camera.Position - m_Camera.Target;
+    const float Distance = glm::length(Offset);
+    if (Distance < 1e-4f)
+        return;
+
+    const float NewDistance = glm::clamp(Distance * std::exp(-Delta * 0.1f),
+                                         m_Camera.MinDistance,
+                                         m_Camera.MaxDistance);
+    m_Camera.Position = m_Camera.Target + Offset * (NewDistance / Distance);
 }
 } // namespace JuicyEngine

@@ -18,5 +18,6 @@ public:
 private:
     float m_FrameTime = 0.0f;
     bool first_frame = true;
+    bool m_ViewportHovered = false;
 };
 }

@@ -62,7 +62,7 @@ public:
     VkExtent2D GetViewportSize() const;
     
     bool LoadMeshFromFile(const std::filesystem::path& Path);
-    
+    void ZoomCamera(float Delta);
 
 private:
     void CreateGraphicsPipeline();
@@ -134,5 +134,15 @@ private:
     
     std::unique_ptr<VulkanMesh> m_CurrentMesh;
     glm::mat4 m_CurrentModelMatrix = glm::mat4(1.0f);
+    
+    struct CameraState
+    {
+        glm::vec3 Position = glm::vec3(0.0f, 2.0f, -6.0f);
+        glm::vec3 Target   = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 Up       = glm::vec3(0.0f, 1.0f, 0.0f);
+        float FovDegrees   = 60.0f;
+        float MinDistance  = 1.0f;
+        float MaxDistance  = 50.0f;
+    } m_Camera;
 };
 } // namespace JuicyEngine

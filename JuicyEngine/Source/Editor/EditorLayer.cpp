@@ -5,6 +5,8 @@
 #include "Platform/Vulkan/VulkanContext.h"
 #include "SDL3/SDL_dialog.h"
 
+#include "Events/MouseEvent.h"
+
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <backends/imgui_impl_sdl3.h>
@@ -125,6 +127,8 @@ void EditorLayer::OnUpdate()
     ImGui::End();
 
     ImGui::Begin("Scene Viewport");
+    m_ViewportHovered = ImGui::IsWindowHovered();
+    
     ImVec2 viewport_panel_size = ImGui::GetContentRegionAvail();
     if (viewport_panel_size.x > 0.0f && viewport_panel_size.y > 0.0f)
     {
@@ -157,5 +161,20 @@ void EditorLayer::OnUpdate()
     ImGui::End();
 }
 
-void EditorLayer::OnEvent(Event& event) {}
+void EditorLayer::OnEvent(Event& event)
+{
+    EventDispatcher Dispatcher(event);
+    Dispatcher.Dispatch<MouseScrolledEvent>([this](MouseScrolledEvent& e)
+    {
+        if (!m_ViewportHovered)
+            return false;
+
+        auto* Context = dynamic_cast<VulkanContext*>(VulkanContext::Get());
+        if (!Context)
+            return false;
+
+        Context->ZoomCamera(e.GetYOffset());
+        return true; 
+    });
+}
 }
